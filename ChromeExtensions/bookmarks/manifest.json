@@ -1,0 +1,27 @@
+{
+    "name": "Bookmarks Extension",
+    "version": "1.0",
+    "manifest_version": 1,
+    "description": "Bookmarks extension.",
+    "browser_action": {
+        "default_icon": "images/icon.png"
+        ,"default_title": "Bookmarks (Ctrl+B)"
+    },
+    "permissions": [
+        "tabs", "bookmarks", "unlimitedStorage", "<all_urls>"
+    ],
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["bookmarkscript.js"],
+            "css": ["bookmarkstyle.css"]
+        }
+    ],
+    "background": {
+        "scripts": ["background.js"]
+    },
+    "web_accessible_resources": [
+        "images/toggle_sprite.png", "images/sync.png", "images/minimize.png", "images/cross.png",
+        "bookmarkstyles.css"
+      ]
+}

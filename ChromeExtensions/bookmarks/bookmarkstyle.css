@@ -1,0 +1,182 @@
+#bookmark-div-content {
+    /*
+    position = 'absolute'
+    top = '221px'
+    ---
+    position = 'fixed'
+    top = '0'
+    */
+    position:fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    margin: 1px 0 1px 1px;
+    padding: 1px 5px 10px 1px;
+    width: 250px;
+    height: auto;
+    color: #FFFFFF;
+    background-color: #92A4AE;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    /*no-repeat left bottom*/
+    /*visibility: visible;*/
+
+    font-family: Helvetica,Arial,sans-serif;
+    /*font-size: small; - this breaks indents*/
+    z-index:100;
+}
+
+#bookmark-bookmarks {
+    position: absolute;
+    /*height: auto;*/
+    top: 48px;
+    bottom: 0;
+    left: 10px;
+    right: 5px;
+
+    overflow: auto;
+}
+
+
+#bookmark-div-content .bookmarkToggle {
+    background: url("images/toggle_sprite.png") no-repeat scroll 0 0 transparent;
+    cursor: pointer;
+    float: left;
+    height: 9px;
+    margin: 4px 1px 4px -13px;
+    overflow: hidden;
+    text-decoration: none;
+    width: 9px;
+}
+#bookmark-div-content .bookmarkToggle.closed {
+    background-position: 0 0;
+}
+#bookmark-div-content .bookmarkToggle.opened {
+    background-position: 0 -9px;
+}
+#bookmark-div-content .bookmarkToggle.closed:hover {
+    background-position: 0 -18px;
+}
+#bookmark-div-content .bookmarkToggle.opened:hover {
+    background-position: 0 -27px;
+}
+
+#bookmark-div-content ul {
+    /*line-height: 120%;*/
+    padding: 0 0 0 0;
+    margin: 0 0 0 0;
+    /*margin-left: 1em;*/
+    display: block;
+}
+
+#bookmark-div-content li {
+    padding: 0 0 0 1em;
+    margin: 0 0 0 0;
+    list-style: none;
+    display: block;
+}
+
+/* Special breaks (placeholders) that are displayed during drag and drop */
+#bookmark-div-content li.bookmarkPlaceHolder {
+    padding: 3px 0 0 0;
+    margin: 0 0 0 0;
+    list-style: none;
+    display: block;
+    background-color: #ae6b44;
+}
+
+#bookmark-div-content div.bookmarkFolderTitle {
+    /*margin-top: 1em;*/
+}
+
+#bookmark-div-content div.bookmarkFolderTitle:hover {
+    background-color: #79ae88;
+}
+
+#bookmark-div-content li.bookmarkItem {
+    margin: 0.3em 0 0.3em 0;
+    display: block;
+    font-size: small;
+}
+
+#bookmark-div-content li.bookmarkItem:hover {
+    background-color: #79ae88;
+}
+
+/* site icon */
+#bookmark-div-content li.bookmarkItem img {
+    width: 16px;
+    height: 16px;
+    margin: 1px 0.1em 1px 1px;
+}
+
+
+/* Used during drag and drop to show drop target */
+#bookmark-div-content li.bookmarkDrag {
+    background-color: #79ae88;
+}
+
+#bookmarsVerticalScrollbar {
+    cursor: ew-resize;
+    width: 5px;
+    height: auto;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    position: absolute;
+    background-color: #CCCCCC;
+    /*float:right;*/
+}
+
+#bookmarsButtonsBar {
+    float:right;
+}
+
+ul#bookmarks-contextmenu-div {
+    position: absolute;
+    display: none;
+    margin: 0 0 0 0;
+    padding: 0.1em 0.1em 0.1em 0.1em;
+    color: #FFFFFF;
+    background-color: #4371ae;
+    border-color: #193dd1;
+    border-width: 2px;
+    border-style: solid;
+    border-radius: 3px;
+    font-family: Helvetica,Arial,sans-serif;
+    font-size: small;
+    list-style-type: none;
+    z-index:110;
+
+}
+
+ul#bookmarks-contextmenu-div li {
+    margin: 0 0 0 0;
+    padding: 0.1em 0.4em 0.1em 0.4em;
+    display: list-item;
+    text-align: match-parent;
+}
+
+ul#bookmarks-contextmenu-div li:hover {
+    background-color: #ae820e;
+}
+
+#bookmark-div-content p {
+    margin: 0 2px 0 2px;
+    padding: 0 0 0 0;
+}
+
+#bookmark-div-content div#searchDiv {
+    margin: 0 2px 0 2px;
+    padding: 0 0 0 0;
+    border: 1px solid #95C2EC;
+}
+
+#bookmark-div-content div#searchDiv input {
+    margin: 0 0 0 0;
+    padding: 0 0 0 0;
+    border: none;
+    width: 100%;
+    height: 1.5em;
+    outline: none;
+}
