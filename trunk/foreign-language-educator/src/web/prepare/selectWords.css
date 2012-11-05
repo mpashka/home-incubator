@@ -1,0 +1,51 @@
+#PageSelectWords div#Text {
+    width:70%;
+    position: relative;
+    float: left;
+}
+
+#PageSelectWords #Text span:hover {
+    background-color: #eee;
+}
+
+#PageSelectWords #Text span.selected {
+    background-color: yellow;
+}
+
+
+#PageSelectWords div#Splitter {
+    /*position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 5px;
+    */
+    float: left;
+    height: 100%;
+    width: 5px;
+    height: 100%;
+    background-color: #f38;
+
+}
+
+
+#PageSelectWords div#SelectedWords {
+    background-color: #ad4;
+    position: relative;
+    float: left;
+    width: 20%;
+    margin: 10px 10px 10px 10px;
+    /*position: absolute;*/
+    /*top:0;*/
+    /*right:0;*/
+}
+
+#PageSelectWords div#SelectedWords ul {
+}
+
+#PageSelectWords div#SelectedWords ul .selected {
+    display: block;
+}
+
+#PageSelectWords div#SelectedWords ul .unselected {
+    display: none;
+}
