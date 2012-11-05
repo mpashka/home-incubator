@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Html jQuery Test</title>
+
+    <script type="text/javascript" src="jquery-1.7.2.js"></script>
+    <script type="text/javascript">
+        var myInput;
+
+        $(function() {
+            myInput = $('<input type="text"/>');
+            myInput.val("text1");
+            $('#RootContainer').append(myInput);
+            $('#RootContainer2').append(myInput);
+        });
+
+        function checkValue() {
+            alert("Value=" + myInput.val());
+        }
+
+    </script>
+
+</head>
+
+<body>
+
+<div id="RootContainer" >
+    RootContainer
+</div>
+
+<div id="RootContainer2" >
+    RootContainer2
+</div>
+
+<a onclick="checkValue()">Check</a>
+
+<!--
+
+<div id="PageEducation">
+<div id="EducationMoveWord">
+</div>
+</div>
+-->
+
+</body>
+</html>

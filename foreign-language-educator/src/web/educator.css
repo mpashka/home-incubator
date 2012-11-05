@@ -1,0 +1,27 @@
+/*
+
+*/
+
+#EducationMoveWord {
+display:none;
+width:100%;
+height:500px;
+}
+
+
+
+#EducationMoveWord .word {
+position: absolute;
+width:100px;
+height: 30px;
+background-color: #dff;
+border: 3px dashed black;
+text-align: center;
+}
+
+#EducationMoveWord .word.foreignWord {
+}
+
+#EducationMoveWord .word.nativeWord {
+}
+

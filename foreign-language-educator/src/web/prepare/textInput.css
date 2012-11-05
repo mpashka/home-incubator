@@ -1,0 +1,11 @@
+#PageTextInput {
+    position:relative;
+    height: auto;
+}
+
+
+#PageTextInput textarea#InputTextArea {
+    display:block;
+    position: relative;
+    width: auto;
+}
