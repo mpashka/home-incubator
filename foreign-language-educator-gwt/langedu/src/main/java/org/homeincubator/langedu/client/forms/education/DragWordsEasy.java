@@ -6,7 +6,7 @@ import org.homeincubator.langedu.client.Educator;
 
 /**
  */
-public class DragWordsEasy implements EducationPage {
+public class DragWordsEasy extends DragWords {
     @Override
     public int getWordsCount() {
         return 5;
@@ -22,13 +22,9 @@ public class DragWordsEasy implements EducationPage {
         return 7;
     }
 
-    @Override
-    public void educate(List<Educator.WordEducation> words) {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
 
     @Override
-    public Level getLevel() {
-        return Level.select;
+    public EducationPage.Level getLevel() {
+        return EducationPage.Level.notseen;
     }
 }

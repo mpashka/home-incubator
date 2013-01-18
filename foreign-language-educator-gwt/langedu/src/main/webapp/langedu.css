@@ -32,3 +32,10 @@ h1 {
 #closeButton {
   margin: 15px 6px 6px;
 }
+
+.dragAndDropWord {
+    padding: 10px 10px 10px 10px;
+    border: 4px dashed black;
+    background: #90a1ff;
+    margin: 10px 10px 10px 10px;
+}
