@@ -1,6 +1,8 @@
 <ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
              xmlns:g='urn:import:com.google.gwt.user.client.ui'>
     <div>
+        <table ui:field="table" cols="2">
 
+        </table>
     </div>
 </ui:UiBinder>
