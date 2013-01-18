@@ -1,0 +1,11 @@
+<ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
+             xmlns:g='urn:import:com.google.gwt.user.client.ui'>
+    <div>
+        <div id="InputArea">
+            InputText:
+            <g:TextArea ui:field="inputTextArea" width="40" height="20">
+            </g:TextArea>
+        </div>
+        <g:Anchor ui:field="startLink">Select words</g:Anchor>
+    </div>
+</ui:UiBinder>
