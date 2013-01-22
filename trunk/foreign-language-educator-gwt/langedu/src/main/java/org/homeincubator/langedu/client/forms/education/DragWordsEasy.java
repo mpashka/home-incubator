@@ -7,6 +7,11 @@ import org.homeincubator.langedu.client.Educator;
 /**
  */
 public class DragWordsEasy extends DragWords {
+
+    public DragWordsEasy(Educator educator) {
+        super(educator);
+    }
+
     @Override
     public int getWordsCount() {
         return 5;
@@ -14,7 +19,7 @@ public class DragWordsEasy extends DragWords {
 
     @Override
     public int getMinWordsCount() {
-        return 4;  //To change body of implemented methods use File | Settings | File Templates.
+        return 4;
     }
 
     @Override

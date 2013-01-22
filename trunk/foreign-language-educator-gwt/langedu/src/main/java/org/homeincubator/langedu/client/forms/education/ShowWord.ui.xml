@@ -1,0 +1,22 @@
+<ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
+             xmlns:g='urn:import:com.google.gwt.user.client.ui'>
+    <div>
+        <g:VerticalPanel>
+            <g:cell>
+                <div ui:field="sound"></div>
+            </g:cell>
+            <g:cell>
+                <div ui:field="image"></div>
+            </g:cell>
+            <g:cell>
+                <div ui:field="wordHtml"></div>
+            </g:cell>
+            <g:cell>
+                <div ui:field="translation"></div>
+            </g:cell>
+        </g:VerticalPanel>
+
+        <g:Anchor ui:field="finish" >Finish</g:Anchor>
+
+    </div>
+</ui:UiBinder>

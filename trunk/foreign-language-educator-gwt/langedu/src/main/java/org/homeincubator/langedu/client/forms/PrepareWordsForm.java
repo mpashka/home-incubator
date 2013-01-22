@@ -79,7 +79,7 @@ public class PrepareWordsForm {
 
 
         // Create a data provider.
-        dataProvider = new ListDataProvider<>();
+        dataProvider = new ListDataProvider<Educator.WordEducation>();
         dataProvider.addDataDisplay(wordsTable);
 
 /*

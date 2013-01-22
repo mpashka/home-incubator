@@ -38,7 +38,7 @@ public class SelectWordsForm {
     @UiField SpanElement text;
     @UiField VerticalPanel selectedWords;
 
-    private Map<String, SelectWordInfo> selectText = new HashMap<>();
+    private Map<String, SelectWordInfo> selectText = new HashMap<String, SelectWordInfo>();
 
     public SelectWordsForm(Educator educator) {
         this.educator = educator;
@@ -72,7 +72,7 @@ public class SelectWordsForm {
     private class SelectWordInfo implements ClickHandler {
         private String word;
         private Label wordLabel;
-        private List<Label> textWords = new ArrayList<>();
+        private List<Label> textWords = new ArrayList<Label>();
         boolean selected;
 
         public SelectWordInfo(String word) {
@@ -110,7 +110,7 @@ public class SelectWordsForm {
 
     @UiHandler("startLink")
     public void onClick(ClickEvent event) {
-        List<String> words = new ArrayList<>();
+        List<String> words = new ArrayList<String>();
         for (SelectWordInfo selectWordInfo : selectText.values()) {
             if (selectWordInfo.isSelected()) {
                 words.add(selectWordInfo.getWord());

@@ -14,6 +14,7 @@ import org.homeincubator.langedu.client.forms.PrepareWordsForm;
 import org.homeincubator.langedu.client.forms.SelectWordsForm;
 import org.homeincubator.langedu.client.forms.TextInputForm;
 import org.homeincubator.langedu.client.forms.education.DragWordsEasy;
+import org.homeincubator.langedu.client.forms.education.ShowWord;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -29,14 +30,15 @@ public class Educator {
 
     private Element mainDiv;
     private Element form;
-    private List<WordEducation> words = new ArrayList<>();
+    private List<WordEducation> words = new ArrayList<WordEducation>();
     private TextInputForm textInputForm = new TextInputForm(this);
     private SelectWordsForm selectWordsForm = new SelectWordsForm(this);
     private PrepareWordsForm prepareWordsForm = new PrepareWordsForm(this);
     private EducationPage[] educationPagesArray = new EducationPage[] {
-            new DragWordsEasy()
+            new ShowWord(this),
+            new DragWordsEasy(this)
     };
-    private Map<EducationPage.Level, EducationPage> educationPages = new HashMap<>();
+    private Map<EducationPage.Level, EducationPage> educationPages = new HashMap<EducationPage.Level, EducationPage>();
 
     public Educator(Element mainDiv) {
         this.mainDiv = mainDiv;
@@ -80,7 +82,7 @@ public class Educator {
 
     private static final RegExp wordPattern = RegExp.compile("\\w");
     public void finishTextInput(String text) {
-        List<WordInfo> textWords = new ArrayList<>();
+        List<WordInfo> textWords = new ArrayList<WordInfo>();
         MatchResult matchResult;
         wordPattern.setLastIndex(0);
         int lastIndex = 0;
@@ -118,11 +120,28 @@ public class Educator {
     }
 
     public void finishPrepareWords() {
-        displayForm(form);
+        nextEducation();
     }
 
+    public void nextEducation() {
+        EducationPage educationPage = selectEductation();
+        EducationPage.Level level = educationPage.getLevel();
+        List<WordEducation> allEducationWords = new ArrayList<WordEducation>();
+        for (WordEducation word : words) {
+            if (word.getLevel() == level) {
+                allEducationWords.add(word);
+            }
+        }
+        List<WordEducation> educationWords = new ArrayList<WordEducation>();
+        for (int i = 0; i < educationPage.getWordsCount(); i++) {
+            WordEducation word = randomSelect(allEducationWords);
+            allEducationWords.remove(word);
+            educationWords.add(word);
+        }
+        educationPage.educate(educationWords);
+    }
 
-    private void selectEductation() {
+    private EducationPage selectEductation() {
         int minLevel = MAX_LEVEL.ordinal();
         int maxLevel = MIN_LEVEL.ordinal();
         int sum = 0;
@@ -130,7 +149,25 @@ public class Educator {
             int level = word.getLevel().ordinal();
             minLevel = Math.min(level, minLevel);
             maxLevel = Math.max(level, maxLevel);
+            sum += level;
         }
+        int avg = (int) Math.round(((double) sum) / words.size());
+        // todo [!] need complex calculation here - use min, max, avg
+
+        EducationPage.Level level = EducationPage.Level.values()[minLevel];
+        List<EducationPage> appropriatePages = new ArrayList<EducationPage>();
+        for (EducationPage educationPage : educationPagesArray) {
+            if (educationPage.getLevel() == level) {
+                appropriatePages.add(educationPage);
+            }
+        }
+        EducationPage educationPage = randomSelect(appropriatePages);
+
+        return educationPage;
+    }
+
+    private <T> T randomSelect(List<T> list) {
+        return list.get((int) Math.floor(Math.random() * list.size()));
     }
 
     /**

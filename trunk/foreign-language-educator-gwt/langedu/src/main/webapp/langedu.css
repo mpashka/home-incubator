@@ -36,6 +36,13 @@ h1 {
 .dragAndDropWord {
     padding: 10px 10px 10px 10px;
     border: 4px dashed black;
-    background: #90a1ff;
     margin: 10px 10px 10px 10px;
+}
+
+.draggableWord {
+    background-color: #90a1ff;
+}
+
+.droppableWord {
+    background-color: #bcffbc;
 }
