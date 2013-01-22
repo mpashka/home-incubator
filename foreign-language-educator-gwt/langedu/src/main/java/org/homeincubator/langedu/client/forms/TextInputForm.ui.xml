@@ -2,7 +2,7 @@
              xmlns:g='urn:import:com.google.gwt.user.client.ui'>
     <div>
         <div id="InputArea">
-            InputText:
+            <!--InputText:-->
             <g:TextArea ui:field="inputTextArea" width="40" height="20">
             </g:TextArea>
         </div>
