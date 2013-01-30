@@ -3,9 +3,10 @@
     <div>
         <div id="InputArea">
             <!--InputText:-->
-            <g:TextArea ui:field="inputTextArea" width="40" height="20">
-            </g:TextArea>
+
+            <textarea ui:field="inputTextArea" cols="40" rows="20">
+            </textarea>
         </div>
-        <g:Anchor ui:field="startLink">Select words</g:Anchor>
+        <a ui:field="startLink">Select words</a>
     </div>
 </ui:UiBinder>
