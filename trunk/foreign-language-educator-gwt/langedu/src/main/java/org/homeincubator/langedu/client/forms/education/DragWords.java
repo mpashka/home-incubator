@@ -14,7 +14,9 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
+import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.ui.AbsolutePanel;
+import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Label;
 
 /**
@@ -22,7 +24,7 @@ import com.google.gwt.user.client.ui.Label;
 public abstract class DragWords implements EducationPage, DragHandler {
     private Educator educator;
 
-    interface OverlapWordsUiBinder extends UiBinder<DivElement, DragWords> {}
+    interface OverlapWordsUiBinder extends UiBinder<HTMLPanel, DragWords> {}
     private static OverlapWordsUiBinder ourUiBinder = GWT.create(OverlapWordsUiBinder.class);
 
     private static final int WIDTH = 200;
@@ -32,7 +34,7 @@ public abstract class DragWords implements EducationPage, DragHandler {
 
     @UiField AbsolutePanel panel;
 
-    private DivElement rootElement;
+    private HTMLPanel rootElement;
     private PickupDragController dragController;
 
 
@@ -47,8 +49,8 @@ public abstract class DragWords implements EducationPage, DragHandler {
 */
     }
 
-    public DivElement getRootElement() {
-        return rootElement;
+    public Element getRootElement() {
+        return rootElement.getElement();
     }
 
     @Override

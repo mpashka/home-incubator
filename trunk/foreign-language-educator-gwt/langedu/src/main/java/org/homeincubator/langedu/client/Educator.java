@@ -1,5 +1,6 @@
 package org.homeincubator.langedu.client;
 
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.DivElement;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Element;
@@ -72,6 +73,8 @@ public class Educator {
     }
 
     private void displayForm(Element form) {
+        GWT.log("Display form");
+
         if (this.form == null) {
             mainDiv.appendChild(form);
         } else {
@@ -80,7 +83,7 @@ public class Educator {
         this.form = form;
     }
 
-    private static final RegExp wordPattern = RegExp.compile("\\w");
+    private static final RegExp wordPattern = RegExp.compile("\\w+", "g");
     public void finishTextInput(String text) {
         List<WordInfo> textWords = new ArrayList<WordInfo>();
         MatchResult matchResult;
@@ -88,6 +91,7 @@ public class Educator {
         int lastIndex = 0;
         while ((matchResult = wordPattern.exec(text)) != null) {
             String word = matchResult.getGroup(0);
+            GWT.log("Next word:" + word);
             if (matchResult.getIndex() > lastIndex) {
                 String gap = text.substring(lastIndex, matchResult.getIndex());
                 if (gap.length() > 0) {

@@ -4,15 +4,19 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.DivElement;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.SpanElement;
+import com.google.gwt.dom.client.UListElement;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.regexp.shared.MatchResult;
+import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.DOM;
+import com.google.gwt.user.client.Element;
 import com.google.gwt.user.client.ui.Anchor;
 import com.google.gwt.user.client.ui.FlowPanel;
+import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.user.client.ui.Label;
 import com.google.gwt.user.client.ui.VerticalPanel;
 import com.google.gwt.user.client.ui.Widget;
@@ -28,15 +32,21 @@ import java.util.Map;
 public class SelectWordsForm {
     private Educator educator;
 
-    interface SelectWordsFormUiBinder extends UiBinder<DivElement, SelectWordsForm> {
-        SelectWordsStyle getSelectWordsStyle();
+    interface SelectWordsFormUiBinder extends UiBinder<HTMLPanel, SelectWordsForm> {}
+
+    public interface SelectWordsStyle extends CssResource {
+        String selected();
     }
+
+
 
     private static SelectWordsFormUiBinder ourUiBinder = GWT.create(SelectWordsFormUiBinder.class);
 
-    private DivElement rootElement;
-    @UiField SpanElement text;
-    @UiField VerticalPanel selectedWords;
+    private HTMLPanel rootElement;
+    @UiField HTMLPanel text;
+    @UiField FlowPanel selectedWords;
+
+    @UiField SelectWordsStyle myStyle;
 
     private Map<String, SelectWordInfo> selectText = new HashMap<String, SelectWordInfo>();
 
@@ -45,15 +55,15 @@ public class SelectWordsForm {
         rootElement = ourUiBinder.createAndBindUi(this);
     }
 
-    public DivElement getRootElement() {
-        return rootElement;
+    public Element getRootElement() {
+        return rootElement.getElement();
     }
 
     public void setText(List<Educator.WordInfo> words) {
         for (Educator.WordInfo wordInfo : words) {
             if (wordInfo.getType() == Educator.WordInfo.GAP) {
 //                DOM.createElement("span")
-                text.appendChild(Document.get().createTextNode(wordInfo.getWord()));
+                text.add(new Label(wordInfo.getWord()));
             } else if (wordInfo.getType() == Educator.WordInfo.WORD) {
                 String wordNorm = wordInfo.getWord().toLowerCase();
                 Label textWord = new Label(wordInfo.getWord());
@@ -63,6 +73,7 @@ public class SelectWordsForm {
                     selectText.put(wordNorm, selectWordInfo);
                 }
                 textWord.addClickHandler(selectWordInfo);
+                text.add(textWord);
             }
         }
 
@@ -94,8 +105,8 @@ public class SelectWordsForm {
                 selectedWords.remove(wordLabel);
             }
             for (Label textWord : textWords) {
-                if (selected) textWord.addStyleName(ourUiBinder.getSelectWordsStyle().selected());
-                else textWord.removeStyleName(ourUiBinder.getSelectWordsStyle().selected());
+                if (selected) textWord.addStyleName(myStyle.selected());
+                else textWord.removeStyleName(myStyle.selected());
             }
         }
 
@@ -117,6 +128,8 @@ public class SelectWordsForm {
             }
         }
         educator.finishSelectWords(words);
+        event.preventDefault();
+        event.stopPropagation();
     }
 
 }

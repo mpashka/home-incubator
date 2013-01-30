@@ -12,6 +12,8 @@ import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.cellview.client.CellTable;
 import com.google.gwt.user.cellview.client.Column;
 import com.google.gwt.user.cellview.client.TextColumn;
+import com.google.gwt.user.client.Element;
+import com.google.gwt.user.client.ui.HTMLPanel;
 import com.google.gwt.view.client.ListDataProvider;
 import org.homeincubator.langedu.client.Educator;
 
@@ -21,11 +23,11 @@ public class PrepareWordsForm {
     private Educator educator;
     private List<Educator.WordEducation> words;
 
-    interface PrepareWordsFormUiBinder extends UiBinder<DivElement, PrepareWordsForm> {}
+    interface PrepareWordsFormUiBinder extends UiBinder<HTMLPanel, PrepareWordsForm> {}
     private static PrepareWordsFormUiBinder ourUiBinder = GWT.create(PrepareWordsFormUiBinder.class);
 
 
-    private DivElement rootElement;
+    private HTMLPanel rootElement;
     @UiField CellTable<Educator.WordEducation> wordsTable;
     private ListDataProvider<Educator.WordEducation> dataProvider;
 
@@ -91,8 +93,8 @@ public class PrepareWordsForm {
 */
     }
 
-    public DivElement getRootElement() {
-        return rootElement;
+    public Element getRootElement() {
+        return rootElement.getElement();
     }
 
     public void setWords(List<Educator.WordEducation> words) {
@@ -104,5 +106,7 @@ public class PrepareWordsForm {
     @UiHandler("finishLink")
     public void finishPrepareWords(ClickEvent event) {
         educator.finishPrepareWords();
+        event.preventDefault();
+        event.stopPropagation();
     }
 }

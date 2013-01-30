@@ -9,18 +9,20 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
+import com.google.gwt.user.client.Element;
+import com.google.gwt.user.client.ui.HTMLPanel;
 
 /**
  */
 public class ShowWord implements EducationPage {
 
-    interface ShowWordUiBinder extends UiBinder<DivElement, ShowWord> {}
+    interface ShowWordUiBinder extends UiBinder<HTMLPanel, ShowWord> {}
     private static ShowWordUiBinder ourUiBinder = GWT.create(ShowWordUiBinder.class);
 
     private Educator educator;
     private Educator.WordEducation word;
 
-    private DivElement rootElement;
+    private HTMLPanel rootElement;
     @UiField DivElement sound;
     @UiField DivElement image;
     @UiField DivElement wordHtml;
@@ -31,8 +33,8 @@ public class ShowWord implements EducationPage {
         rootElement = ourUiBinder.createAndBindUi(this);
     }
 
-    public DivElement getRootElement() {
-        return rootElement;
+    public Element getRootElement() {
+        return rootElement.getElement();
     }
 
     @Override
