@@ -1,13 +1,13 @@
 <ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
-             xmlns:g='urn:import:com.google.gwt.user.client.ui'>
+             >
 
-    <g:HTMLPanel>
-        <g:AbsolutePanel width="400px" height="200px" ui:field="panel"/>
+    <div class="PageDragAndDrop">
+        <div class="DragPanel" ui:field="panel"/>
 <!--
         <table ui:field="table" cols="2">
 
         </table>
 -->
-        <g:Anchor ui:field="finish">Finish</g:Anchor>
-    </g:HTMLPanel>
+        <a ui:field="finishLink">Finish</a>
+    </div>
 </ui:UiBinder>

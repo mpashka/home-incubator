@@ -1,5 +1,7 @@
 package org.homeincubator.langedu.client;
 
+import com.google.gwt.dom.client.Element;
+
 import java.util.List;
 import java.util.logging.Level;
 
@@ -39,4 +41,5 @@ public interface EducationPage {
     int getMaxWordsCount();
     void educate(List<Educator.WordEducation> words);
     Level getLevel();
+    Element getRootElement();
 }

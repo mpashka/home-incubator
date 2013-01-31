@@ -83,7 +83,7 @@ public class Educator {
         this.form = form;
     }
 
-    private static final RegExp wordPattern = RegExp.compile("\\w+", "g");
+    private static final RegExp wordPattern = RegExp.compile("[a-zA-Z\\u0080-\\u2000]+", "g");
     public void finishTextInput(String text) {
         List<WordInfo> textWords = new ArrayList<WordInfo>();
         MatchResult matchResult;
@@ -91,7 +91,7 @@ public class Educator {
         int lastIndex = 0;
         while ((matchResult = wordPattern.exec(text)) != null) {
             String word = matchResult.getGroup(0);
-            GWT.log("Next word:" + word);
+//            GWT.log("Next word:" + word);
             if (matchResult.getIndex() > lastIndex) {
                 String gap = text.substring(lastIndex, matchResult.getIndex());
                 if (gap.length() > 0) {
@@ -114,35 +114,40 @@ public class Educator {
         words.clear();
         for (String wordName : wordNames) {
             WordEducation word = new WordEducation(wordName);
-            word.setTranslation("-" + word + "-trans");
-            word.setImageUrl("-" + word + "-img");
-            word.setSoundUrl("-" + word + "-snd");
+            word.setTranslation("-" + wordName + "-trans");
+            word.setImageUrl("-" + wordName + "-img");
+            word.setSoundUrl("-" + wordName + "-snd");
             words.add(word);
         }
         prepareWordsForm.setWords(words);
         displayForm(prepareWordsForm.getRootElement());
     }
 
-    public void finishPrepareWords() {
+    public void finishPrepareWords(List<WordEducation> words) {
+        this.words = words;
         nextEducation();
     }
 
     public void nextEducation() {
+        GWT.log("Next education");
         EducationPage educationPage = selectEductation();
         EducationPage.Level level = educationPage.getLevel();
+        GWT.log("    Page selected: " + educationPage + ", level: " + level);
         List<WordEducation> allEducationWords = new ArrayList<WordEducation>();
         for (WordEducation word : words) {
             if (word.getLevel() == level) {
                 allEducationWords.add(word);
             }
         }
+        GWT.log("    All suitable words:" + allEducationWords.size());
         List<WordEducation> educationWords = new ArrayList<WordEducation>();
-        for (int i = 0; i < educationPage.getWordsCount(); i++) {
+        for (int i = 0; i < educationPage.getWordsCount() && !allEducationWords.isEmpty(); i++) {
             WordEducation word = randomSelect(allEducationWords);
             allEducationWords.remove(word);
             educationWords.add(word);
         }
         educationPage.educate(educationWords);
+        displayForm(educationPage.getRootElement());
     }
 
     private EducationPage selectEductation() {
@@ -200,7 +205,7 @@ public class Educator {
     /**
      * Обучение
      */
-    public class WordEducation {
+    public static final class WordEducation {
         private String word;
         private String translation;
         private String imageUrl;

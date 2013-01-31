@@ -1,40 +1,53 @@
 package org.homeincubator.langedu.client.forms.education;
 
-import java.util.List;
-import org.homeincubator.langedu.client.EducationPage;
-import org.homeincubator.langedu.client.Educator;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.AnchorElement;
 import com.google.gwt.dom.client.DivElement;
+import com.google.gwt.dom.client.Element;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
-import com.google.gwt.user.client.Element;
-import com.google.gwt.user.client.ui.HTMLPanel;
+import com.google.gwt.user.client.Event;
+import com.google.gwt.user.client.EventListener;
+import org.homeincubator.langedu.client.EducationPage;
+import org.homeincubator.langedu.client.Educator;
+import org.homeincubator.langedu.client.GwtUtils;
+
+import java.util.List;
 
 /**
  */
 public class ShowWord implements EducationPage {
 
-    interface ShowWordUiBinder extends UiBinder<HTMLPanel, ShowWord> {}
+    interface ShowWordUiBinder extends UiBinder<DivElement, ShowWord> {}
     private static ShowWordUiBinder ourUiBinder = GWT.create(ShowWordUiBinder.class);
 
     private Educator educator;
     private Educator.WordEducation word;
 
-    private HTMLPanel rootElement;
+    private DivElement rootElement;
     @UiField DivElement sound;
     @UiField DivElement image;
     @UiField DivElement wordHtml;
     @UiField DivElement translation;
+    @UiField AnchorElement finishLink;
 
     public ShowWord(Educator educator) {
         this.educator = educator;
         rootElement = ourUiBinder.createAndBindUi(this);
+
+        GwtUtils.addEventListener(finishLink, Event.ONCLICK, new EventListener() {
+            @Override
+            public void onBrowserEvent(Event event) {
+                onFinish(event);
+                GwtUtils.stopEvent(event);
+            }
+        });
     }
 
     public Element getRootElement() {
-        return rootElement.getElement();
+        return rootElement;
     }
 
     @Override
@@ -69,8 +82,7 @@ public class ShowWord implements EducationPage {
         return Level.notseen;
     }
 
-    @UiHandler("finish")
-    public void onFinish(ClickEvent event) {
+    public void onFinish(Event event) {
         word.setLevel(Level.trans_fwd0);
         educator.nextEducation();
     }

@@ -1,12 +1,31 @@
 <ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
-             xmlns:g='urn:import:com.google.gwt.user.client.ui'
-             xmlns:cellview="urn:import:com.google.gwt.user.cellview.client">
+        >
 
-    <g:HTMLPanel>
-    <div>
-        <cellview:CellTable ui:field="wordsTable" width="100%"/>
-        <g:Anchor ui:field="finishLink">Start education</g:Anchor>
+    <div class="PagePrepareWords">
+        <div class="PrepareWordsWrapper">
+            <table class="PrepareWordsTable">
+                <colgroup>
+                    <col style="width:20%;"/>
+                    <col style="width:30%;"/>
+                    <col style="width:40%;"/>
+                    <col style="width:10%;"/>
+                </colgroup>
+                <thead>
+                    <tr>
+                        <td>Word</td>
+                        <td>Translation</td>
+                        <td>Image</td>
+                        <td>Sound</td>
+                    </tr>
+                </thead>
+                <tfoot>
+                </tfoot>
+                <tbody ui:field="wordsTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <a ui:field="finishLink">Start education</a>
 
     </div>
-    </g:HTMLPanel>
 </ui:UiBinder>
