@@ -1,22 +1,18 @@
 <ui:UiBinder xmlns:ui='urn:ui:com.google.gwt.uibinder'
-             xmlns:g='urn:import:com.google.gwt.user.client.ui'>
+        >
 
-    <ui:style field="myStyle" type="org.homeincubator.langedu.client.forms.SelectWordsForm.SelectWordsStyle">
-        .selected {color:#ffff00;}
-    </ui:style>
+    <div class="PageSelectWords">
+        <div class="PageSelectWordsContainer">
+            <div class="Text" ui:field="text"></div>
+            <!--div class="Splitter"></div-->
 
-
-    <g:HTMLPanel>
-    <div>
-        <div>
-            <g:HTMLPanel ui:field="text"></g:HTMLPanel>
-
-            <g:Anchor ui:field="startLink">Prepare words</g:Anchor>
+            <div class="SelectedWords">
+                <ul ui:field="selectedWords"></ul>
+            </div>
         </div>
-        <div id="Splitter"></div>
 
-        <g:FlowPanel ui:field="selectedWords" />
+        <a ui:field="nextLink">Prepare words</a>
 
     </div>
-    </g:HTMLPanel>
+
 </ui:UiBinder>

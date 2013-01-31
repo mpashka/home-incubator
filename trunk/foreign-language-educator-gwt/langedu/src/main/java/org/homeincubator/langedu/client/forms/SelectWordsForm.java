@@ -1,26 +1,20 @@
 package org.homeincubator.langedu.client.forms;
 
 import com.google.gwt.core.client.GWT;
-import com.google.gwt.dom.client.DivElement;
-import com.google.gwt.dom.client.Document;
-import com.google.gwt.dom.client.SpanElement;
-import com.google.gwt.dom.client.UListElement;
+import com.google.gwt.dom.client.*;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.regexp.shared.MatchResult;
-import com.google.gwt.resources.client.CssResource;
+import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
 import com.google.gwt.user.client.DOM;
-import com.google.gwt.user.client.Element;
-import com.google.gwt.user.client.ui.Anchor;
-import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.HTMLPanel;
+import com.google.gwt.dom.client.Element;
+import com.google.gwt.user.client.Event;
+import com.google.gwt.user.client.EventListener;
 import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.VerticalPanel;
-import com.google.gwt.user.client.ui.Widget;
 import org.homeincubator.langedu.client.Educator;
+import org.homeincubator.langedu.client.GwtUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,83 +24,112 @@ import java.util.Map;
 /**
  */
 public class SelectWordsForm {
-    private Educator educator;
-
-    interface SelectWordsFormUiBinder extends UiBinder<HTMLPanel, SelectWordsForm> {}
-
-    public interface SelectWordsStyle extends CssResource {
-        String selected();
-    }
 
 
-
+    interface SelectWordsFormUiBinder extends UiBinder<DivElement, SelectWordsForm> {}
     private static SelectWordsFormUiBinder ourUiBinder = GWT.create(SelectWordsFormUiBinder.class);
+    private static final String WORD_INFO_ATTR = "word";
+    private static final String WORD_SELECTED_CLASS = "selected";
 
-    private HTMLPanel rootElement;
-    @UiField HTMLPanel text;
-    @UiField FlowPanel selectedWords;
-
-    @UiField SelectWordsStyle myStyle;
+    private Educator educator;
+    private DivElement rootElement;
+    @UiField Element text;
+    @UiField UListElement selectedWords;
+    @UiField AnchorElement nextLink;
 
     private Map<String, SelectWordInfo> selectText = new HashMap<String, SelectWordInfo>();
 
     public SelectWordsForm(Educator educator) {
         this.educator = educator;
         rootElement = ourUiBinder.createAndBindUi(this);
+        GwtUtils.addEventListener(nextLink, Event.ONCLICK, new EventListener() {
+            @Override
+            public void onBrowserEvent(Event event) {
+                finishSelectWords(event);
+                GwtUtils.stopEvent(event);
+            }
+        });
+
+        EventListener listener = new EventListener() {
+            @Override
+            public void onBrowserEvent(Event event) {
+                EventTarget targetEvnt = event.getEventTarget();
+                Element target = targetEvnt.cast();
+                SelectWordInfo wordInfo = (SelectWordInfo) target.getPropertyObject(WORD_INFO_ATTR);
+                if (wordInfo != null) {
+                    wordInfo.switchSelected();
+                } else {
+                    GWT.log("Click on no-word: " + target);
+                }
+                GwtUtils.stopEvent(event);
+            }
+        };
+        GwtUtils.addEventListener(text, Event.ONCLICK, listener);
+        GwtUtils.addEventListener(selectedWords, Event.ONCLICK, listener);
     }
 
-    public Element getRootElement() {
-        return rootElement.getElement();
+     public Element getRootElement() {
+        return rootElement.cast();
     }
 
     public void setText(List<Educator.WordInfo> words) {
+//        StringBuilder textContent = new StringBuilder();
         for (Educator.WordInfo wordInfo : words) {
-            if (wordInfo.getType() == Educator.WordInfo.GAP) {
-//                DOM.createElement("span")
-                text.add(new Label(wordInfo.getWord()));
-            } else if (wordInfo.getType() == Educator.WordInfo.WORD) {
+            String word = wordInfo.getWord();
+
+            if (wordInfo.getType() == Educator.WordInfo.WORD) {
+                Element span = DOM.createSpan();
+                span.setInnerHTML(word);
                 String wordNorm = wordInfo.getWord().toLowerCase();
-                Label textWord = new Label(wordInfo.getWord());
                 SelectWordInfo selectWordInfo = selectText.get(wordNorm);
                 if (selectWordInfo == null) {
                     selectWordInfo = new SelectWordInfo(wordNorm);
                     selectText.put(wordNorm, selectWordInfo);
                 }
-                textWord.addClickHandler(selectWordInfo);
-                text.add(textWord);
+                span.setPropertyObject(WORD_INFO_ATTR, selectWordInfo);
+                selectWordInfo.addTextWord(span);
+                text.appendChild(span);
+            } else {
+                Text textNode = Document.get().createTextNode(word);
+                text.appendChild(textNode);
             }
         }
-
     }
 
 
-    private class SelectWordInfo implements ClickHandler {
+    private class SelectWordInfo {
         private String word;
-        private Label wordLabel;
-        private List<Label> textWords = new ArrayList<Label>();
+        private Element wordLabel;
+        private List<Element> textWords = new ArrayList<Element>();
         boolean selected;
 
         public SelectWordInfo(String word) {
             this.word = word;
-            this.wordLabel = new Label(word);
-            wordLabel.addClickHandler(this);
         }
 
-        public void addTextWord(Label textWord) {
+        private Element getLabel() {
+            if (wordLabel == null) {
+                wordLabel = DOM.createElement(LIElement.TAG);
+                wordLabel.setInnerHTML(word);
+                wordLabel.setPropertyObject(WORD_INFO_ATTR, this);
+            }
+            return wordLabel;
+        }
+
+        public void addTextWord(Element textWord) {
             textWords.add(textWord);
         }
 
-        @Override
-        public void onClick(ClickEvent event) {
+        public void switchSelected() {
             selected = !selected;
+            GWT.log("Selected [" + selected + "] word: " + word);
             if (selected) {
-                selectedWords.add(wordLabel);
+                selectedWords.appendChild(getLabel());
             } else {
-                selectedWords.remove(wordLabel);
+                selectedWords.removeChild(wordLabel);
             }
-            for (Label textWord : textWords) {
-                if (selected) textWord.addStyleName(myStyle.selected());
-                else textWord.removeStyleName(myStyle.selected());
+            for (Element textWord : textWords) {
+                textWord.setClassName(selected ? WORD_SELECTED_CLASS : "");
             }
         }
 
@@ -119,8 +142,8 @@ public class SelectWordsForm {
         }
     }
 
-    @UiHandler("startLink")
-    public void onClick(ClickEvent event) {
+    public void finishSelectWords(Event event) {
+        GWT.log("Finish select words");
         List<String> words = new ArrayList<String>();
         for (SelectWordInfo selectWordInfo : selectText.values()) {
             if (selectWordInfo.isSelected()) {
@@ -128,8 +151,6 @@ public class SelectWordsForm {
             }
         }
         educator.finishSelectWords(words);
-        event.preventDefault();
-        event.stopPropagation();
     }
 
 }

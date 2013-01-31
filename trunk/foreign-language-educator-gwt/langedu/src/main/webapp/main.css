@@ -1,0 +1,95 @@
+
+
+.PageSelectWords .PageSelectWordsContainer {
+    position: relative;
+    height: 50%;
+    /*Somehow this helps to place link below*/
+    overflow: hidden;
+}
+
+.PageSelectWords .Text {
+    width:70%;
+    /*position: relative;*/
+    float: left;
+}
+
+.PageSelectWords .Text>span:hover {
+    background-color: #eee;
+}
+
+.PageSelectWords .Text span.selected {
+    background-color: yellow;
+}
+
+
+.PageSelectWords div.Splitter {
+    /*position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 5px;
+    */
+    float: left;
+    height: 100%;
+    width: 5px;
+    background-color: #f38;
+}
+
+
+.PageSelectWords div.SelectedWords {
+    background-color: #ad4;
+    /*position: relative;*/
+    float: left;
+    width: 25%;
+    margin: 10px 10px 10px 10px;
+    /*position: absolute;*/
+    /*top:0;*/
+    /*right:0;*/
+}
+
+.PageSelectWords div.SelectedWords ul {
+}
+
+.PageSelectWords div.SelectedWords ul li:hover {
+    background-color: #eee;
+}
+
+
+.PagePrepareWords div.PrepareWordsWrapper {
+    overflow: auto;
+    width: 100%;
+    height: 50%;
+}
+
+.PagePrepareWords table.PrepareWordsTable {
+    /*display: block;*/
+    /*width: 100%;*/
+}
+
+
+.PageDragAndDrop div.DragPanel {
+    position: relative;
+    overflow: auto;
+    width: 90%;
+    border: 1px dotted blue;
+}
+
+.PageDragAndDrop div.DragPanel > div {
+    width: 200px;
+    height: 30px;
+    position: absolute;
+    border: 2px dashed #050491;
+}
+
+.PageDragAndDrop div.DragPanel div.Draggable {
+    background-color: #95ff95;
+}
+
+.PageDragAndDrop div.DragPanel div.Dragging {
+    opacity: 0.8;
+}
+
+.PageDragAndDrop div.DragPanel div.Droppable {
+    background-color: #a0e5ff;
+}
+
+
