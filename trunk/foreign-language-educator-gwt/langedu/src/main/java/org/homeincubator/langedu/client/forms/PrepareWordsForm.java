@@ -1,24 +1,26 @@
 package org.homeincubator.langedu.client.forms;
 
 import java.util.List;
-import com.google.gwt.cell.client.EditTextCell;
-import com.google.gwt.cell.client.FieldUpdater;
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.dom.client.*;
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.uibinder.client.UiBinder;
-import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.uibinder.client.UiHandler;
-import com.google.gwt.user.cellview.client.CellTable;
-import com.google.gwt.user.cellview.client.Column;
-import com.google.gwt.user.cellview.client.TextColumn;
-import com.google.gwt.user.client.DOM;
-import com.google.gwt.user.client.Event;
-import com.google.gwt.user.client.EventListener;
-import com.google.gwt.user.client.ui.HTMLPanel;
-import com.google.gwt.view.client.ListDataProvider;
+
 import org.homeincubator.langedu.client.Educator;
 import org.homeincubator.langedu.client.GwtUtils;
+
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.AnchorElement;
+import com.google.gwt.dom.client.ButtonElement;
+import com.google.gwt.dom.client.DivElement;
+import com.google.gwt.dom.client.Document;
+import com.google.gwt.dom.client.Element;
+import com.google.gwt.dom.client.InputElement;
+import com.google.gwt.dom.client.NodeList;
+import com.google.gwt.dom.client.TableCellElement;
+import com.google.gwt.dom.client.TableRowElement;
+import com.google.gwt.dom.client.TableSectionElement;
+import com.google.gwt.dom.client.Text;
+import com.google.gwt.uibinder.client.UiBinder;
+import com.google.gwt.uibinder.client.UiField;
+import com.google.gwt.user.client.Event;
+import com.google.gwt.user.client.EventListener;
 
 /**
  */
@@ -53,21 +55,33 @@ public class PrepareWordsForm {
         this.words = words;
         for (Educator.WordEducation word : words) {
             TableRowElement tr = wordsTableBody.insertRow(-1);
+            Document document = Document.get();
+
             {   TableCellElement wordCell = tr.insertCell(-1);
-                wordCell.appendChild(Document.get().createTextNode(word.getWord()));
+                wordCell.appendChild(document.createTextNode(word.getWord()));
             }
             {   TableCellElement translationCell = tr.insertCell(-1);
-                InputElement translationInput = Document.get().createTextInputElement();
+                DivElement divElement = document.createDivElement();
+                InputElement translationInput = document.createTextInputElement();
                 translationInput.setValue(word.getTranslation());
-                translationCell.appendChild(translationInput);
+                divElement.appendChild(translationInput);
+                ButtonElement browserButtonElement = document.createPushButtonElement();
+                GwtUtils.addEventListener(browserButtonElement, Event.ONCLICK, new EventListener() {
+                    @Override
+                    public void onBrowserEvent(Event event) {
+                        educator.showBrowserWindow(event.getEventTarget());
+                    }
+                });
+                divElement.appendChild(browserButtonElement);
+                translationCell.appendChild(divElement);
             }
             {   TableCellElement imageCell = tr.insertCell(-1);
-                InputElement imageInput = Document.get().createTextInputElement();
+                InputElement imageInput = document.createTextInputElement();
                 imageInput.setValue(word.getImageUrl());
                 imageCell.appendChild(imageInput);
             }
             {   TableCellElement soundCell = tr.insertCell(-1);
-                InputElement soundInput = Document.get().createTextInputElement();
+                InputElement soundInput = document.createTextInputElement();
                 soundInput.setValue(word.getSoundUrl());
                 soundCell.appendChild(soundInput);
             }

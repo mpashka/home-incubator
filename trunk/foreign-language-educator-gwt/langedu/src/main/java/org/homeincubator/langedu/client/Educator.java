@@ -1,33 +1,32 @@
 package org.homeincubator.langedu.client;
 
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.dom.client.DivElement;
-import com.google.gwt.dom.client.Document;
-import com.google.gwt.dom.client.Element;
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.regexp.shared.MatchResult;
-import com.google.gwt.regexp.shared.RegExp;
-import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.Label;
-import com.google.gwt.user.client.ui.RootPanel;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Logger;
+
+import org.homeincubator.langedu.client.forms.BrowserWindow;
 import org.homeincubator.langedu.client.forms.PrepareWordsForm;
 import org.homeincubator.langedu.client.forms.SelectWordsForm;
 import org.homeincubator.langedu.client.forms.TextInputForm;
 import org.homeincubator.langedu.client.forms.education.DragWordsEasy;
 import org.homeincubator.langedu.client.forms.education.ShowWord;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.google.gwt.dom.client.Element;
+import com.google.gwt.dom.client.EventTarget;
+import com.google.gwt.regexp.shared.MatchResult;
+import com.google.gwt.regexp.shared.RegExp;
 
 /**
  */
 public class Educator {
 
-    private static final EducationPage.Level MIN_LEVEL = EducationPage.Level.values()[0];
-    private static final EducationPage.Level MAX_LEVEL = EducationPage.Level.values()[EducationPage.Level.values().length-1];
+    private static final Logger log = Logger.getLogger(Educator.class.getName());
+
+//    private static final EducationPage.Level MIN_LEVEL = EducationPage.Level.values()[0];
+//    private static final int MAX_LEVEL = EducationPage.Level.values().length-1;
+    private static final int LEVEL_COUNT = EducationPage.Level.values().length;
 
     private Element mainDiv;
     private Element form;
@@ -35,11 +34,15 @@ public class Educator {
     private TextInputForm textInputForm = new TextInputForm(this);
     private SelectWordsForm selectWordsForm = new SelectWordsForm(this);
     private PrepareWordsForm prepareWordsForm = new PrepareWordsForm(this);
+    private BrowserWindow browserWindow = new BrowserWindow();
     private EducationPage[] educationPagesArray = new EducationPage[] {
             new ShowWord(this),
             new DragWordsEasy(this)
     };
     private Map<EducationPage.Level, EducationPage> educationPages = new HashMap<EducationPage.Level, EducationPage>();
+
+    public int[] questionLastRun = new int[LEVEL_COUNT];
+
 
     public Educator(Element mainDiv) {
         this.mainDiv = mainDiv;
@@ -73,7 +76,7 @@ public class Educator {
     }
 
     private void displayForm(Element form) {
-        GWT.log("Display form");
+        log.finest("Display form");
 
         if (this.form == null) {
             mainDiv.appendChild(form);
@@ -91,7 +94,7 @@ public class Educator {
         int lastIndex = 0;
         while ((matchResult = wordPattern.exec(text)) != null) {
             String word = matchResult.getGroup(0);
-//            GWT.log("Next word:" + word);
+//            log.finest("Next word:" + word);
             if (matchResult.getIndex() > lastIndex) {
                 String gap = text.substring(lastIndex, matchResult.getIndex());
                 if (gap.length() > 0) {
@@ -129,54 +132,64 @@ public class Educator {
     }
 
     public void nextEducation() {
-        GWT.log("Next education");
+        log.finest("Next education");
+        for (int i = 0; i < questionLastRun.length; i++) {
+            questionLastRun[i]++;
+        }
         EducationPage educationPage = selectEductation();
         EducationPage.Level level = educationPage.getLevel();
-        GWT.log("    Page selected: " + educationPage + ", level: " + level);
+        questionLastRun[level.ordinal()] = 0;
+
+        log.finest("    Page selected [" + level + "] " + GwtUtils.getClassSimpleName(educationPage.getClass()));
         List<WordEducation> allEducationWords = new ArrayList<WordEducation>();
         for (WordEducation word : words) {
             if (word.getLevel() == level) {
                 allEducationWords.add(word);
             }
         }
-        GWT.log("    All suitable words:" + allEducationWords.size());
+        log.finest("    All suitable words:" + allEducationWords.size());
         List<WordEducation> educationWords = new ArrayList<WordEducation>();
         for (int i = 0; i < educationPage.getWordsCount() && !allEducationWords.isEmpty(); i++) {
-            WordEducation word = randomSelect(allEducationWords);
-            allEducationWords.remove(word);
+            WordEducation word = RandomSelector.randomSelect(allEducationWords, true);
             educationWords.add(word);
         }
+        log.finest("    Lesson words [" + educationWords.size() + "]");
         educationPage.educate(educationWords);
         displayForm(educationPage.getRootElement());
     }
 
     private EducationPage selectEductation() {
-        int minLevel = MAX_LEVEL.ordinal();
-        int maxLevel = MIN_LEVEL.ordinal();
-        int sum = 0;
+        int[] wordsCount = new int[LEVEL_COUNT];
         for (WordEducation word : words) {
             int level = word.getLevel().ordinal();
-            minLevel = Math.min(level, minLevel);
-            maxLevel = Math.max(level, maxLevel);
-            sum += level;
+            wordsCount[level]++;
         }
-        int avg = (int) Math.round(((double) sum) / words.size());
-        // todo [!] need complex calculation here - use min, max, avg
 
-        EducationPage.Level level = EducationPage.Level.values()[minLevel];
+        RandomSelector<EducationPage.Level> levelSelector = new RandomSelector<EducationPage.Level>();
+        for (int i = 0; i < wordsCount.length; i++) {
+            if (wordsCount[i] > 0) {
+                double probability = wordsCount[i] * Math.pow(questionLastRun[i], 1.5);
+                log.finest("Level[" + i + "] probability: " + probability);
+                levelSelector.add(EducationPage.Level.values()[i], probability);
+            }
+        }
+        EducationPage.Level level = levelSelector.select();
+        log.finest("Level selected: " + level);
+
         List<EducationPage> appropriatePages = new ArrayList<EducationPage>();
         for (EducationPage educationPage : educationPagesArray) {
             if (educationPage.getLevel() == level) {
                 appropriatePages.add(educationPage);
             }
         }
-        EducationPage educationPage = randomSelect(appropriatePages);
+        EducationPage educationPage = RandomSelector.randomSelect(appropriatePages, false);
 
         return educationPage;
     }
 
-    private <T> T randomSelect(List<T> list) {
-        return list.get((int) Math.floor(Math.random() * list.size()));
+    public void showBrowserWindow(EventTarget eventTarget) {
+        mainDiv.appendChild(browserWindow.getRootElement());
+        browserWindow.setPosition(eventTarget);
     }
 
     /**

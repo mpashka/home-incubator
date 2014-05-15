@@ -8,5 +8,7 @@
             </textarea>
         </div>
         <a ui:field="startLink">Select words</a>
+        <br/>
+        <a ui:field="startTestsLink">Start education</a>
     </div>
 </ui:UiBinder>
