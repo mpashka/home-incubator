@@ -1,29 +1,34 @@
 package org.homeincubator.langedu.client.forms;
 
-import com.google.gwt.core.client.GWT;
-import com.google.gwt.dom.client.*;
-import com.google.gwt.event.dom.client.ClickEvent;
-import com.google.gwt.event.dom.client.ClickHandler;
-import com.google.gwt.safehtml.shared.SafeHtmlBuilder;
-import com.google.gwt.uibinder.client.UiBinder;
-import com.google.gwt.uibinder.client.UiField;
-import com.google.gwt.uibinder.client.UiHandler;
-import com.google.gwt.user.client.DOM;
-import com.google.gwt.dom.client.Element;
-import com.google.gwt.user.client.Event;
-import com.google.gwt.user.client.EventListener;
-import com.google.gwt.user.client.ui.Label;
-import org.homeincubator.langedu.client.Educator;
-import org.homeincubator.langedu.client.GwtUtils;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
+
+import org.homeincubator.langedu.client.Educator;
+import org.homeincubator.langedu.client.GwtUtils;
+
+import com.google.gwt.core.client.GWT;
+import com.google.gwt.dom.client.AnchorElement;
+import com.google.gwt.dom.client.DivElement;
+import com.google.gwt.dom.client.Document;
+import com.google.gwt.dom.client.Element;
+import com.google.gwt.dom.client.EventTarget;
+import com.google.gwt.dom.client.LIElement;
+import com.google.gwt.dom.client.Text;
+import com.google.gwt.dom.client.UListElement;
+import com.google.gwt.uibinder.client.UiBinder;
+import com.google.gwt.uibinder.client.UiField;
+import com.google.gwt.user.client.DOM;
+import com.google.gwt.user.client.Event;
+import com.google.gwt.user.client.EventListener;
 
 /**
  */
 public class SelectWordsForm {
+
+    private static final Logger log = Logger.getLogger(SelectWordsForm.class.getName());
 
 
     interface SelectWordsFormUiBinder extends UiBinder<DivElement, SelectWordsForm> {}
@@ -59,7 +64,7 @@ public class SelectWordsForm {
                 if (wordInfo != null) {
                     wordInfo.switchSelected();
                 } else {
-                    GWT.log("Click on no-word: " + target);
+                    log.finest("Click on no-word: " + target);
                 }
                 GwtUtils.stopEvent(event);
             }
@@ -122,7 +127,7 @@ public class SelectWordsForm {
 
         public void switchSelected() {
             selected = !selected;
-            GWT.log("Selected [" + selected + "] word: " + word);
+            log.finest("Selected [" + selected + "] word: " + word);
             if (selected) {
                 selectedWords.appendChild(getLabel());
             } else {
@@ -143,7 +148,7 @@ public class SelectWordsForm {
     }
 
     public void finishSelectWords(Event event) {
-        GWT.log("Finish select words");
+        log.finest("Finish select words");
         List<String> words = new ArrayList<String>();
         for (SelectWordInfo selectWordInfo : selectText.values()) {
             if (selectWordInfo.isSelected()) {

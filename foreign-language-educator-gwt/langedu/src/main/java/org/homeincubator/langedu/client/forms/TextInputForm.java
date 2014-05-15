@@ -1,6 +1,11 @@
 package org.homeincubator.langedu.client.forms;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.logging.Logger;
+
 import org.homeincubator.langedu.client.Educator;
+import org.homeincubator.langedu.client.GwtUtils;
 
 import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.DivElement;
@@ -16,35 +21,43 @@ import com.google.gwt.user.client.EventListener;
 /**
  */
 public class TextInputForm {
+
+    private static final Logger log = Logger.getLogger(TextInputForm.class.getName());
+
+
     interface TextInputFormUiBinder extends UiBinder<DivElement, TextInputForm> {}
-    private static TextInputFormUiBinder ourUiBinder = GWT.create(TextInputFormUiBinder.class);
 
 
     private Educator educator;
 
     @UiField TextAreaElement inputTextArea;
     @UiField Element startLink;
+    @UiField Element startTestsLink;
 
     private DivElement rootElement;
 
     public TextInputForm(Educator educator) {
         this.educator = educator;
-        rootElement = ourUiBinder.createAndBindUi(this);
-        com.google.gwt.user.client.Element element = (com.google.gwt.user.client.Element) startLink;
-        DOM.setEventListener(element, new EventListener() {
+        rootElement = GWT.<TextInputFormUiBinder>create(TextInputFormUiBinder.class).createAndBindUi(this);
+        GwtUtils.addEventListener(startLink, Event.ONCLICK, new EventListener() {
             @Override
             public void onBrowserEvent(Event event) {
-                GWT.log("Event " + event.getType());
+                log.finest("Event " + event.getType());
                 if (DOM.eventGetType(event) == Event.ONCLICK) {
-                    GWT.log("Event processing");
+                    log.finest("Event processing");
 
                     finishTextInput(event);
-                    event.preventDefault();
-                    event.stopPropagation();
+                    GwtUtils.stopEvent(event);
                 }
             }
         });
-        DOM.sinkEvents(element, Event.ONCLICK);
+        // todo [!] Че за хуйня
+        GwtUtils.addEventListener(startTestsLink, Event.ONCLICK, new EventListener() {
+            @Override
+            public void onBrowserEvent(Event event) {
+                onStartTests(null);
+            }
+        });
     }
 
     public void setText(String text) {
@@ -56,7 +69,34 @@ public class TextInputForm {
     }
 
     public void finishTextInput(Event event) {
-        GWT.log("Finish text input");
+        log.finest("Finish text input");
         educator.finishTextInput(inputTextArea.getValue());
+    }
+
+//    @UiHandler("startTestsLink")
+    void onStartTests(ClickEvent event) {
+        log.finest("Start tests");
+        List<String> words = Arrays.asList(
+            "Example",
+            "text ",
+            "used",
+            "to",
+            "test",
+            "application ",
+            "tr ",
+            "Description",
+            "Bind",
+            "an",
+            "event",
+            "handler",
+            "the",
+            "click",
+            "JavaScript",
+            "or",
+            "trigger"
+        );
+        educator.finishSelectWords(words);
+        educator.nextEducation();
+//        GwtUtils.stopEvent(event);
     }
 }

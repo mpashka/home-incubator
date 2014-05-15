@@ -82,14 +82,49 @@
 
 .PageDragAndDrop div.DragPanel div.Draggable {
     background-color: #95ff95;
+    z-index: 10;
 }
 
 .PageDragAndDrop div.DragPanel div.Dragging {
     opacity: 0.8;
 }
 
+.PageDragAndDrop div.DragPanel div.DraggingError {
+    background-color: #ff2025; !important
+}
+
 .PageDragAndDrop div.DragPanel div.Droppable {
+    /*background-color: #a0e5ff;*/
+}
+
+.PageDragAndDrop div.DragPanel div.Help {
     background-color: #a0e5ff;
 }
 
 
+
+.browser-window {
+    border: 2px solid green;
+    position: absolute;
+    padding: 0 6px 0 1px;
+    width: 400px;
+    height: 400px;
+    background: #fff;
+}
+
+.browser-window-triangle {
+    border: 20px solid transparent;	 border-right: 20px solid green;
+    position: relative;
+    left: -40px;
+    top: 50px;
+}
+
+.browser-address {
+    width: 100%;
+    height: 360px;
+}
+
+.browser-content {
+    width: 100%;
+    height: 95%;
+}

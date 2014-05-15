@@ -130,7 +130,7 @@ public class langedu implements EntryPoint {
                         serverResponseLabel.addStyleName("serverResponseLabelError");
                         serverResponseLabel.setHTML(/*SERVER_ERROR*/caught.getMessage());
                         dialogBox.center();
-                        GWT.log("Server error", caught);
+                        log.finest("Server error", caught);
                         closeButton.setFocus(true);
                     }
 

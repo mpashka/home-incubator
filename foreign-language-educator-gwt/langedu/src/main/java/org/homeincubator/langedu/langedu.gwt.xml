@@ -21,6 +21,11 @@
     <!-- Other module inherits                                      -->
     <inherits name="com.allen_sauer.gwt.dnd.gwt-dnd"/>
 
+    <inherits name="com.google.gwt.logging.Logging"/>
+    <set-property name="gwt.logging.logLevel" value="FINEST"/>          # To change the default logLevel
+    <set-property name="gwt.logging.enabled" value="TRUE"/>            # To disable logging
+    <!--<set-property name="gwt.logging.consoleHandler" value="DISABLED"/>  # To disable a default Handler-->
+
 
     <!-- Specify the app entry point class.                         -->
     <entry-point class='org.homeincubator.langedu.client.langedu' />
