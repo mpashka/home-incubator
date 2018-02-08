@@ -1,0 +1,11 @@
+# All gitignores originally placed in one file because this was easier than many .gitignore files
+
+*.log
+*~
+*.jar
+*.class
+**/*.iml
+**/*.ipr
+**/.idea
+**/target
+**/.DS_Store
