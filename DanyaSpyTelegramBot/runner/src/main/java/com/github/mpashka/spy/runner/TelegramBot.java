@@ -1,4 +1,4 @@
-package my.test.teleg;
+package com.github.mpashka.spy.runner;
 
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
@@ -7,7 +7,7 @@ import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
-public class DanyaBot extends TelegramLongPollingBot {
+public class TelegramBot extends TelegramLongPollingBot {
 
     static {
         ApiContextInitializer.init();
@@ -61,7 +61,7 @@ public class DanyaBot extends TelegramLongPollingBot {
         }
     }
 
-    public DanyaBot init() {
+    public TelegramBot init() {
         TelegramBotsApi botsApi = new TelegramBotsApi();
 
 
@@ -74,7 +74,7 @@ public class DanyaBot extends TelegramLongPollingBot {
     }
 
     public static void main(String[] args) {
-        DanyaBot bot = new DanyaBot();
+        TelegramBot bot = new TelegramBot();
         bot.init();
         bot.sendToChat("Я посылаю сообщение из программы!");
 

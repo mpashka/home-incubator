@@ -1,0 +1,10 @@
+# All gitignores originally placed in one file because this is easier than many .gitignore files
+*.log
+*.iml
+.idea
+**/target/**
+dependency-reduced-pom.xml
+.DS_Store
+*~
+
+*.jar
