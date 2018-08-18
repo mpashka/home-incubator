@@ -70,8 +70,7 @@ public class SolveTest {
 
     @Test
     public void test1() {
-        Solve solve = new Solve();
-        Matrix[] figure = solve.getAllFigures()[0];
+        Matrix[] figure = new Figures().getAllFigures()[0];
         Matrix figureVariant = figure[2];
         log.info("Figure {}", figureVariant);
     }

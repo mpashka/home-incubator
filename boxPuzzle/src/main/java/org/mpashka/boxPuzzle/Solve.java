@@ -12,9 +12,8 @@ public class Solve {
 
 
     private static final int DIMENSIONS = 3;
-    private static final int SIZE = 3;
 
-    private boolean[][][] busy = new boolean[SIZE][SIZE][SIZE];
+    private boolean[][][] busy = new boolean[Figures.SIZE][Figures.SIZE][Figures.SIZE];
     private int iterations, failIterations, solutions;
 
     private Figures figures = new Figures();
@@ -134,7 +133,7 @@ public class Solve {
         private boolean incPosition(int position) {
             this.positions[position]++;
             Matrix matrix = figure[variant];
-            if (this.positions[position] >= SIZE - matrix.getSize(position)) {
+            if (this.positions[position] >= Figures.SIZE - matrix.getSize(position)) {
                 this.positions[position] = 0;
                 if (position == 0) return false;
                 return incPosition(position-1);
