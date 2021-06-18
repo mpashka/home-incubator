@@ -3,7 +3,7 @@ package org.home.incubator.photosorter;
 import com.drew.imaging.ImageMetadataReader;
 import com.drew.metadata.Directory;
 import com.drew.metadata.Metadata;
-import com.drew.metadata.exif.CanonMakernoteDirectory;
+import com.drew.metadata.exif.makernotes.CanonMakernoteDirectory;
 import com.drew.metadata.exif.ExifIFD0Directory;
 
 import java.io.File;
@@ -147,7 +147,7 @@ public class PhotosSorter {
         try {
             Metadata metadata = ImageMetadataReader.readMetadata(jpegFile);
 
-            Directory exifDirectory = metadata.getDirectory(ExifIFD0Directory.class);
+            Directory exifDirectory = metadata.getFirstDirectoryOfType(ExifIFD0Directory.class);
             Date lastModified = new Date(jpegFile.lastModified());
             Date date;
             if (exifDirectory.containsTag(ExifIFD0Directory.TAG_DATETIME)) {
@@ -162,15 +162,15 @@ public class PhotosSorter {
                 String mappedManufacture = manufactureMap.get(manufacture);
                 if (mappedManufacture != null) manufacture = mappedManufacture;
                 model = exifDirectory.getString(ExifIFD0Directory.TAG_MODEL);
-                if (model.indexOf(manufacture) == -1) {
+                if (!model.contains(manufacture)) {
                     model = manufacture + "-" + model;
                 }
             }
 
 
             String newFileName = null;
-            if (metadata.containsDirectory(CanonMakernoteDirectory.class)) {
-                Directory canonDirectory = metadata.getDirectory(CanonMakernoteDirectory.class);
+            if (metadata.containsDirectoryOfType(CanonMakernoteDirectory.class)) {
+                Directory canonDirectory = metadata.getFirstDirectoryOfType(CanonMakernoteDirectory.class);
                 String canonFileName = canonDirectory.getString(CanonMakernoteDirectory.TAG_CANON_IMAGE_NUMBER);
                 canonFileName = canonFileName.substring(3);
                 if (!fileNameNoExt.endsWith(canonFileName)) {
