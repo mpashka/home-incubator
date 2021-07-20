@@ -17,14 +17,42 @@ Drawer uiCreateDrawer() {
           child: Text('Drawer Header'),
         ),
         ListTile(
-          title: Text('Item 1'),
+          title: Text('Главная'),
           onTap: () {
 // Update the state of the app.
 // ...
           },
         ),
         ListTile(
-          title: Text('Item 2'),
+          title: Text('Абонементы'),
+          onTap: () {
+// Update the state of the app.
+// ...
+          },
+        ),
+        ListTile(
+          title: Text('Тренировки'),
+          onTap: () {
+// Update the state of the app.
+// ...
+          },
+        ),
+        ListTile(
+          title: Text('Покупки'),
+          onTap: () {
+// Update the state of the app.
+// ...
+          },
+        ),
+        ListTile(
+          title: Text('Расписание'),
+          onTap: () {
+// Update the state of the app.
+// ...
+          },
+        ),
+        ListTile(
+          title: Text('Связаться с нами'),
           onTap: () {
 // Update the state of the app.
 // ...
