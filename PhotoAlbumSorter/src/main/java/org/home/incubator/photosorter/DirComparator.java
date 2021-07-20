@@ -3,7 +3,6 @@ package org.home.incubator.photosorter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
@@ -17,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 /**
@@ -26,11 +26,22 @@ public class DirComparator {
 
     private static final Logger log = LogManager.getLogger();
 
-    public void findNotPresentInCloud(MyDir cloudRoot, MyDir localRoot) {
-        DirProcessor cloudFiles = new DirProcessor().process(cloudRoot);
-        DirProcessor localFiles = new DirProcessor().process(localRoot);
+    /**
+     * Show warn if files from folder were found in several folders
+     */
+    private static final boolean SHOW_MULTI_DEST = false;
 
-        for (MyDir localDir : localFiles.getDirsByName().values()) {
+    public void findNotPresentInCloud(MyDir cloudRoot, MyDir localRoot, Set<String> ignore) {
+        DirProcessor cloudFiles = new DirProcessor().process(cloudRoot, false);
+        DirProcessor localFiles = new DirProcessor().process(localRoot, true);
+
+        for (Map.Entry<String, MyDir> localDirEntry : localFiles.getDirsByName().entrySet()) {
+            String localDirName = localDirEntry.getKey();
+            if (ignore != null && !ignore.isEmpty() && ignore.stream().anyMatch(localDirName::contains)) {
+                // Ignore
+                continue;
+            }
+            MyDir localDir = localDirEntry.getValue();
             String dirName = localDir.getName();
             MyDir cloudDir = cloudFiles.getDirsByName().get(dirName);
             if (cloudDir == null) {
@@ -42,34 +53,43 @@ public class DirComparator {
     }
 
     static class DirFileFinder {
-        private Set<MyDir> found = new HashSet<>();
-        private List<MyFile> notFound = new ArrayList<>();
+        private Map<MyDir, AtomicInteger> foundDirs = new HashMap<>();
+        private List<MyFile> notFoundFiles = new ArrayList<>();
 
         public DirFileFinder(String message, DirProcessor cloudFiles, MyDir localDir) {
             localDir.getFiles().values().forEach(f -> findFile(cloudFiles, f));
-            if (notFound.isEmpty() && found.size() == 1) {
-                // Most probably just another dir name
-                return;
+            if (notFoundFiles.isEmpty()) {
+                if (!SHOW_MULTI_DEST) {
+                    return;
+                } else if (foundDirs.size() <= 1) {
+                    // Most probably just another dir name
+                    return;
+                } else {
+                    log.info("    Found files in {} different folders", foundDirs.size());
+                }
             }
-            log.warn(message, localDir.getFullName(), found.size(), notFound.size());
-            notFound.forEach(f -> log.info("    Not found in cloud: {}", f.getName()));
-            found.forEach(f -> log.info("    Found in cloud: {}", f.getFullName()));
+
+            log.warn(message, localDir.getFullName(), foundDirs.size(), notFoundFiles.size());
+            notFoundFiles.forEach(f -> log.info("    Not found in cloud: {}", f.getName()));
+            foundDirs.forEach((f, c) -> log.info("    Found {} files in cloud: {}", c, f.getFullName()));
         }
 
         private void findFile(DirProcessor cloudFiles, MyFile localFile) {
+/*
             if (localFile instanceof MyDir) {
                 MyDir localDir = (MyDir) localFile;
                 localDir.getFiles().values().forEach(f -> findFile(cloudFiles, f));
-            } else {
+            } else
+*/
+            if (!(localFile instanceof MyDir)) {
                 Collection<MyFile> myFiles = cloudFiles.getFilesBySize().get(localFile.getSize());
                 if (myFiles != null) {
-                    myFiles.forEach(f -> found.add(f.getDir()));
+                    myFiles.forEach(f -> foundDirs.computeIfAbsent(f.getDir(), d -> new AtomicInteger()).incrementAndGet());
                 } else {
-                    notFound.add(localFile);
+                    notFoundFiles.add(localFile);
                 }
             }
         }
-
     }
 
     static class MyFile {
@@ -151,7 +171,7 @@ public class DirComparator {
         public void addFile(MyFile file) {
             files.compute(file.getName(), (name, oldFile) -> {
                 if (oldFile != null) {
-                    log.warn("File already present {} in {}", name, getFullName());
+                    log.warn("File already present {} in {}, {}", name, getFullName(), oldFile.getDir().getFullName());
                 }
                 return file;
             });
@@ -214,11 +234,9 @@ public class DirComparator {
         }
 
         public MyDir read() {
-            log.debug("Reading ls file {}", fileName);
+            log.warn("Reading ls file {}", fileName);
             MyDir rootDir = new MyDir(null, "");
             MyDir dir = null;
-            // Generate path only for the first dir, other dirs must be already present
-            boolean firstDir = true;
             try (LineNumberReader in = new LineNumberReader(new FileReader(fileName))) {
                 String inLine;
                 while ((inLine = in.readLine()) != null) {
@@ -226,19 +244,7 @@ public class DirComparator {
                         if (inLine.endsWith(":")) {
                             String dirName = inLine.substring(0, inLine.length() - 1);
                             FileNameParser name = new FileNameParser(dirName);
-                            if (firstDir) {
-                                MyDir dir = rootDir.findDir(name.getPathParts(), true);
-                            } else {
-                                MyDir parent = rootDir.findDir(name.getPathParts(), false);
-                                firstDir = false;
-                                if (parent == null) {
-                                    log.error("Parent not found: {}", name.getPathName());
-                                }
-                                dir = (MyDir) parent.getFiles().computeIfAbsent(name.getName(), n -> {
-                                    log.warn("Dir was not found before: {}", n);
-                                    return new MyDir(parent, n);
-                                });
-                            }
+                            dir = rootDir.findDir(name.getParts(), true);
                         } else if (inLine.startsWith("total ")) {
                             // Ignore
                         } else if (inLine.isEmpty()) {
@@ -285,22 +291,23 @@ public class DirComparator {
         private Map<String, MyDir> dirsByName = new HashMap<>();
         private Map<Long, Collection<MyFile>> filesBySize = new HashMap<>();
 
-        public DirProcessor process(MyDir files) {
-            flat(files);
+        public DirProcessor process(MyDir files, boolean fullDirName) {
+            flat(files, fullDirName);
             return this;
         }
 
-        private void flat(MyDir rootDir) {
+        private void flat(MyDir rootDir, boolean fullDirName) {
             for (MyFile file : rootDir.getFiles().values()) {
                 if (file instanceof MyDir) {
                     MyDir dir = (MyDir) file;
-                    dirsByName.compute(dir.getName(), (name, old) -> {
+                    String dirName = fullDirName ? dir.getFullName() : dir.getName();
+                    dirsByName.compute(dirName, (name, old) -> {
                         if (old != null) {
-                            log.error("Dir name duplicate: {}", name);
+                            log.debug("Dir name duplicate {}: {},{}", name, dir.getFullName(), old.getFullName());
                         }
                         return dir;
                     });
-                    flat(dir);
+                    flat(dir, fullDirName);
                 } else {
                     filesBySize.computeIfAbsent(file.getSize(), s -> new ArrayList<>()).add(file);
                 }
@@ -350,6 +357,7 @@ public class DirComparator {
         DirReader cloud = new LsDirReader("/home/m_pashka/Documents/Backups/CloudMailRu/mail.ru_2021.06.18.txt");
         DirReader local = new LsDirReader("/home/m_pashka/Documents/Backups/MyBookLive/mbl.dir.txt");
 
-        new DirComparator().findNotPresentInCloud(cloud.read(), local.read());
+        new DirComparator().findNotPresentInCloud(cloud.read(), local.read(),
+                new HashSet<>(Arrays.asList("Shared Videos", "Shared Music")));
     }
 }
