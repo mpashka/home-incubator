@@ -87,3 +87,9 @@ iptables -t mangle -I POSTROUTING 1 -s 192.168.2.50/32 ! -d 192.168.2.0/24 -j LO
 
 [Tue Jun  8 15:24:02 2021] android nat prerouting: IN=enp1s0 OUT= MAC=18:c0:4d:ba:79:e7:f0:81:73:a2:81:ff:08:00 SRC=192.168.2.50 DST=149.154.167.51 LEN=60 TOS=0x00 PREC=0x00 TTL=64 ID=54389 DF PROTO=TCP SPT=51405 DPT=443 WINDOW=65535 RES=0x00 SYN URGP=0
 [Tue Jun  8 15:24:02 2021] android filter forward: IN=enp1s0 OUT=enp1s0 MAC=18:c0:4d:ba:79:e7:f0:81:73:a2:81:ff:08:00 SRC=192.168.2.50 DST=149.154.167.51 LEN=60 TOS=0x00 PREC=0x00 TTL=63 ID=54389 DF PROTO=TCP SPT=51405 DPT=443 WINDOW=65535 RES=0x00 SYN URGP=0 
+
+
+Советы
+net.ipv4.conf.all.send_redirects=0 и net.ipv4.conf.$IFNAME.send_redirects=0
+arp роутинг
+Пробей через ip rule на сервере
