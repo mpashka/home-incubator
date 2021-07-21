@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'dart:developer' as developer;
 
 // https://flutter.dev/docs/cookbook/effects/expandable-fab
 @immutable
@@ -34,7 +35,7 @@ class RoundedButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return ElevatedButton(
       onPressed: onPressed,
-      child: Text('Button'),
+      child: Text(text),
       style: ElevatedButton.styleFrom(shape: StadiumBorder()),
     );
   }
@@ -62,6 +63,10 @@ class _FabMultiState extends State<FabMulti> {
         alignment: Alignment.bottomRight,
         clipBehavior: Clip.none,
         children: [
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => developer.log("Tap..."),
+          ),
           _buildTap(),
           ..._buildActionButtons(),
         ],
@@ -87,11 +92,12 @@ class _FabMultiState extends State<FabMulti> {
         widget.distance,
       );
 
+      var button = widget.children[i];
       children.add(
         Positioned(
           right: 4.0 + offset.dx,
           bottom: 4.0 + offset.dy,
-          child: widget.children[i],
+          child: button,
         ),
       );
     }
