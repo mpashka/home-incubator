@@ -1,8 +1,8 @@
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'widgets/ui_attend.dart';
-import 'dart:developer' as developer;
 
 class AttendsWeekScreen extends StatelessWidget {
 

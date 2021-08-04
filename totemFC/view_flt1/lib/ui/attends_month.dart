@@ -1,11 +1,9 @@
-import 'dart:html';
+import 'dart:math';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'dart:math';
 
 import 'widgets/ui_attend.dart';
-import 'dart:developer' as developer;
 
 class AttendsMonthScreen extends StatelessWidget {
 
