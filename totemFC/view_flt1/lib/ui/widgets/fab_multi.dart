@@ -104,3 +104,24 @@ class _FabMultiState extends State<FabMulti> {
     return children;
   }
 }
+
+/*
+      floatingActionButton: FabMulti(
+        distance: 112.0,
+        children: [
+          RoundedButton(
+            onPressed: () => _showAction(context, 0),
+            text: 'Записаться',
+          ),
+          RoundedButton(
+            onPressed: () => _showAction(context, 1),
+            text: 'Отметиться',
+          ),
+          RoundedButton(
+            onPressed: () => _showAction(context, 1),
+            text: 'Купить еду',
+          ),
+        ],
+      ),
+
+ */

@@ -8,17 +8,24 @@ class UiAttend extends StatelessWidget {
   static final format = DateFormat('yyyy-MM-dd kk:mm');
 
   final String name;
-  final DateTime date;
+  final DateTime? date;
   final bool marked;
 
 
   UiAttend({
     required this.name,
-    required this.date,
+    this.date,
     required this.marked});
 
   @override
   Widget build(BuildContext context) {
+    var text;
+    if (date != null) {
+      text = '$name ${format.format(date!)}';
+    } else {
+      text = name;
+    }
+
     var listTile = ListTile(
         leading: Row(
             // mainAxisAlignment: MainAxisAlignment.start,
@@ -31,7 +38,7 @@ class UiAttend extends StatelessWidget {
                   color: Colors.red),
             ]
         ),
-        title: Text('Групповая тренировка ${format.format(date)}'),
+        title: Text(text),
         trailing: Icon(Icons.more_vert),
       );
 
@@ -77,11 +84,15 @@ class UiAttend extends StatelessWidget {
         ),
         PopupMenuItem(
           value: 2,
-          child: Text("Не был"),
+          child: Text("Не был (прошлая)"),
         ),
         PopupMenuItem(
           value: 3,
-          child: Text("Не приду"),
+          child: Text("Не приду (будущая)"),
+        ),
+        PopupMenuItem(
+          value: 3,
+          child: Text("Перенести"),
         ),
       ],
       elevation: 8.0,
