@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+
 import 'attends_month.dart';
 import 'attends_week.dart';
 import 'drawer.dart';
-import 'widgets/ui_attend.dart';
 
 class AttendsScreen extends StatelessWidget {
 

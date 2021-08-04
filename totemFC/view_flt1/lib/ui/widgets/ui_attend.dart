@@ -1,7 +1,8 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'dart:developer' as developer;
 
 @immutable
 class UiAttend extends StatelessWidget {

@@ -48,3 +48,14 @@ android {
 flutter {
     source '../..'
 }
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+    }
+}
+
+dependencies {
+    implementation 'com.google.android.material:material:1.4.0'
+}
