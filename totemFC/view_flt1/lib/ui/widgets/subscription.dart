@@ -24,7 +24,7 @@ class UiSubscription extends StatelessWidget {
         color: theme.accentColor,
         child: ListTile(
             leading: Icon(Icons.baby_changing_station_rounded),
-            title: Text('Групповая тренировка ${used}/${count}'),
+            title: Text('$name ${used}/${count}'),
             subtitle: Text('Покупка ${format.format(start)} - до ${format.format(start)}')
         )
     );
