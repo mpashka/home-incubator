@@ -1,0 +1,100 @@
+https://accounts.google.com/.well-known/openid-configuration
+https://datatracker.ietf.org/doc/html/rfc8628
+https://www.facebook.com/.well-known/openid-configuration
+https://developers.google.com/identity/protocols/oauth2
+https://developers.google.com/identity/protocols/oauth2/openid-connect
+https://developers.google.com/identity/protocols/oauth2/scopes
+https://github.com/google/google-api-java-client-samples/tree/master/plus-serviceaccount-cmdline-sample
+https://auth0.com/blog/get-started-with-flutter-authentication/
+https://auth0.com/docs/protocols/openid-connect-protocol
+https://auth0.com/docs/authorization/which-oauth-2-0-flow-should-i-use
+https://auth0.com/docs/flows/call-your-api-using-the-authorization-code-flow-with-pkce
+https://auth0.com/docs/quickstart/native/android
+https://googleapis.github.io/google-api-java-client/oauth-2.0.html
+https://developers.google.com/identity/protocols/oauth2/native-app
+https://console.cloud.google.com/apis/credentials/domainverification?project=totemftc
+
+https://pub.dev/packages/flutter_appauth (https://appauth.io/)
+https://pub.dev/packages/oauth2_client
+https://pub.dev/packages/oauth2
+https://pub.dev/packages/google_sign_in
+https://pub.dev/packages/url_launcher
+https://flutter.dev/docs/development/ui/navigation/deep-linking
+
+Facebook
+https://www.facebook.com/.well-known/openid-configuration
+https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow?locale=ru_RU
+https://developers.facebook.com/docs/permissions/reference
+https://developers.facebook.com/docs/development/build-and-test/test-users
+https://developers.facebook.com/docs/graph-api/reference/user/#default-public-profile-fields
+https://graph.facebook.com/me?fields=id&access_token="xxxxx" (https://stackoverflow.com/questions/3546677/how-to-get-the-facebook-user-id-using-the-access-token)
+https://developers.facebook.com/apps/558989508631164/roles/test-users/
+https://developers.facebook.com/support/
+
+me?fields=albums.fields(id,name,cover_photo,photos.fields(name,picture,source))
+<ALBUM-ID>/photos?fields=name,source,id
+
+https://accounts.google.com/o/oauth2/auth?client_id=393082269793-hd4l77vmr8eq8kdqgdl1edhjpc81vmiq.apps.googleusercontent.com&redirect_uri=http://localhost:40141/Callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email
+1) Receive code: LocalServerReceiver (CallbackHandler)
+    error:
+    code:
+
+2) Send request: com.google.api.client.auth.oauth2.TokenRequest.executeUnparsed:
+  Post(com.google.api.client.auth.oauth2.TokenRequest.executeUnparsed):
+    tokenServerUrl; MediaType: application/x-www-form-urlencoded; Charset: UTF_8
+    (AuthorizationCodeTokenRequest)
+      code:
+      redirect_uri:
+      scope:
+      grant_type: authorization_code
+  response (TokenResponse):
+    access_token:
+    token_type:
+    expires_in:
+    refresh_token:
+    scope:
+
+3) Check user
+    https://www.googleapis.com/oauth2/v2/tokeninfo?access_token=ya29.a0ARrdaM_Hr23np7uXxO3uSmKBFUNZWWLnay2BJjPu2Nr1Dz-22n2jNAaJn6jHjW984b9f6hUYRk96twNwZULFFfjx-ec9lZSiuaO0BwmLQ5aJCw8TCaT_QSm8ymIiWhEal0OZ4aVSO3EHwtg09XbU5IbGSQxT
+
+---
+oauth2_client
+Google:
+https://accounts.google.com/o/oauth2/v2/auth/oauthchooseaccount?response_type=code&client_id=393082269793-9nn5ujbio33b0u34be84s3shunojtkei.apps.googleusercontent.com&redirect_uri=org.mpashka.totemftc%3A%2Foauth2redirect_mine&scope=openid%20profile%20email&state=J8LRER4MCDMWK6U3PJO7M5XOX&code_challenge=J94zbFX5mCP4HI0OeAd0s-8v2RwVILjbCkJ6Dubvfic&code_challenge_method=S256&flowName=GeneralOAuthFlow
+https://accounts.google.com/o/oauth2/v2/auth/identifier?
+response_type=code&
+client_id=393082269793-9nn5ujbio33b0u34be84s3shunojtkei.apps.googleusercontent.com&
+redirect_uri=org.mpashka.totemftc%3A%2Foauth2redirect&
+scope=openid%20profile%20email&
+state=O33b581f125t1e17brQ21tq93&
+code_challenge=lLxSMwKiT9IgYsIdRD1Jxwc1HrkyXWqzCENchFJarBo&
+code_challenge_method=S256&
+flowName=GeneralOAuthFlow
+
+No PKCE
+https://accounts.google.com/o/oauth2/v2/auth/oauthchooseaccount?response_type=code&client_id=393082269793-9nn5ujbio33b0u34be84s3shunojtkei.apps.googleusercontent.com&redirect_uri=org.mpashka.totemftc%3A%2Foauth2redirect_mine&scope=openid%20profile%20email&state=Q6K8MpXu2Br1N9B5TUXe6PIGV&flowName=GeneralOAuthFlow
+
+
+Facebook
+https://m.facebook.com/v5.0/dialog/oauth?
+encrypted_query_string=AeBykoCABQzBami8SjPeI4BxG6SKoj7munkn_RV2GzsZyQ7jItUcxPgQR7Uc3T1Ee7CI19bfVqU1Q3fW0UaMywRB6JLxvkj2JXffQhuaJt3uC9KgtBJAsPt20N2RoDYd0IAjRfkX2LtPDP4qvWbN3Zuk98b1LIXj98LVe_h95yrf1mYBhp-eEt3tf8hrgxwcnBQ72vwCliXxniWsik16fcfz2cbMrvQpFl9iEYY2veoZPbPwtmm0wDcoctYURfZfvR9lIiUj3txokZLcInd2-_l1RaZ6fxs9hXDdAUw6WSTq2I0Y7Y4Sh703bZ2QNWaJW7--8UivXMc2fnpG8MaFxje-jVUuzjgDB7sAKEMvrFVDyrffxvPhKVPLlLFLJQ
+
+https://m.facebook.com/v8.0/dialog/oauth?cct_prefetching=0&client_id=558989508631164&cbt=1629311506519&e2e=%7B%22init%22%3A1629311506519%7D&ies=1&sdk=android-8.2.0&sso=chrome_custom_tab&scope=email&state=%7B%220_auth_logger_id%22%3A%22cb8619d5-f2a0-4675-a749-647aa187378d%22%2C%223_method%22%3A%22custom_tab%22%2C%227_challenge%22%3A%22llmbnkjkf4gboqrepnkp%22%7D&default_audience=friends&login_behavior=NATIVE_WITH_FALLBACK&redirect_uri=fbconnect%3A%2F%2Fcct.org.mpashka.totemftc&auth_type=rerequest&response_type=token%2Csigned_request%2Cgraph_domain&return_scopes=true
+https://m.facebook.com/v8.0/dialog/oauth?
+cct_prefetching=0&
+client_id=558989508631164&
+cbt=1629311506519&
+e2e=%7B%22init%22%3A1629311506519%7D&
+ies=1&
+sdk=android-8.2.0&
+sso=chrome_custom_tab&
+scope=email&
+state=%7B%220_auth_logger_id%22%3A%22cb8619d5-f2a0-4675-a749-647aa187378d%22%2C%223_method%22%3A%22custom_tab%22%2C%227_challenge%22%3A%22llmbnkjkf4gboqrepnkp%22%7D&
+default_audience=friends&
+login_behavior=NATIVE_WITH_FALLBACK&
+redirect_uri=fbconnect%3A%2F%2Fcct.org.mpashka.totemftc& (fbconnect://cct.org.mpashka.totemftc)
+auth_type=rerequest&
+response_type=token%2Csigned_request%2Cgraph_domain&
+return_scopes=true
+
+https://m.facebook.com/v11.0/dialog/oauth/confirm/
