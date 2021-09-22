@@ -12,25 +12,22 @@ import org.jboss.resteasy.reactive.RestPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
-import java.util.Date;
 import java.util.Optional;
-import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 
 @Path("/login")
-public class LoginResource {
+public class WebResourceLogin {
 
-    private static final Logger log = LoggerFactory.getLogger(LoginResource.class);
+    private static final Logger log = LoggerFactory.getLogger(WebResourceLogin.class);
 
     private static final String STATE_ATTR = "login:state";
     private static final String SESSION_ID_COOKIE = "sessionId";
@@ -44,10 +41,13 @@ public class LoginResource {
     Utils utils;
 
     @Inject
+    DBUser dbUser;
+
+    @Inject
     ManagedExecutor exec;
 
     @Inject
-    public LoginResource(Vertx vertx) {
+    public WebResourceLogin(Vertx vertx) {
         this.client = WebClient.create(vertx);
     }
 
@@ -60,7 +60,7 @@ public class LoginResource {
         SecurityService.Session session = securityService.createSession();
         SecurityService.OidcProvider provider = securityService.getOidcProvider(providerName);
         String state = provider.getName() + "_" + utils.generateRandomString(20);
-        session.setParameter(STATE_ATTR, state);
+        session.setParameter(STATE_ATTR, new LoginState(provider, state));
         log.debug("Session: {}", session);
         return Response.status(Response.Status.FOUND)
                 .location(URI.create(provider.getAuthorizationEndpoint(state)))
@@ -107,9 +107,9 @@ public class LoginResource {
         String code = uriInfo.getQueryParameters().getFirst("code");
         String callbackState = uriInfo.getQueryParameters().getFirst("state");
 
-        SecurityService.Session session = securityService.getSession(sessionId);
-        String originalState = session.getParameter(STATE_ATTR);
-        if (!callbackState.equals(originalState)) {
+        LoginState loginState = Optional.ofNullable(securityService.getSession(sessionId))
+                .map(s -> s.<LoginState>getParameter(STATE_ATTR)).orElse(null);
+        if (loginState == null || !callbackState.equals(loginState.getState())) {
             return Uni.createFrom().item(
                     Response
                             .status(Response.Status.BAD_REQUEST)
@@ -121,12 +121,12 @@ public class LoginResource {
         }
         securityService.removeSession(sessionId);
 
-
-        SecurityService.OidcProvider facebook = securityService.getOidcProvider("facebook");
-        return client.getAbs(facebook.getTokenEndpoint())
-                .setQueryParam("client_id", facebook.getClientId())
-                .setQueryParam("redirect_uri", facebook.getRedirectUri())
-                .setQueryParam("client_secret", facebook.getSecret())
+        AtomicReference
+        SecurityService.OidcProvider oidcProvider = loginState.getProvider();
+        return client.getAbs(oidcProvider.getTokenEndpoint())
+                .setQueryParam("client_id", oidcProvider.getClientId())
+                .setQueryParam("redirect_uri", oidcProvider.getRedirectUri())
+                .setQueryParam("client_secret", oidcProvider.getSecret())
                 .setQueryParam("code", code)
                         .send()
                 .onItem().transform(HttpResponse::bodyAsJsonObject)
@@ -138,12 +138,18 @@ public class LoginResource {
                         .bearerTokenAuthentication(token)
                         .send())
                 .onItem().transform(HttpResponse::bodyAsJsonObject)
-                .onItem().transform(userJson -> {
+                .onItem().transformToUni(userJson -> {
                     log.debug("Facebook user response received: {}", userJson);
 
-                    SecurityService.Session newSession = securityService.createSession();
-                    String userId = userJson.getString("id");
+                    String userProviderId = userJson.getString("id");
                     String email = userJson.getString("email");
+
+                    return dbUser.findById(oidcProvider.getName(), userProviderId, email, null);
+                })
+                .onItem().transformToUni(userJson -> {
+                    SecurityService.Session newSession = securityService.createSession();
+
+
 
 
                     String userName = userJson.getString("name");
@@ -152,7 +158,7 @@ public class LoginResource {
                             .map(d -> d.getString("url"))
                             .orElse(null);
 
-                    SecurityService.UserInfo userInfo = new SecurityService.UserInfo(userId, userName, imageUrl);
+                    SecurityService.UserInfo userInfo = new SecurityService.UserInfo(userProviderId, userName, imageUrl);
                     securityService.setUserInfo(userInfo);
                     if (imageUrl != null) {
                         exec.runAsync(() -> client.getAbs(imageUrl)
@@ -182,5 +188,23 @@ public class LoginResource {
     public Uni<SecurityService.UserInfo> userInfo() {
         SecurityService.UserInfo userInfo = securityService.getUserInfo();
         return Uni.createFrom().item(userInfo);
+    }
+
+    private static class LoginState {
+        private SecurityService.OidcProvider provider;
+        private String state;
+
+        public LoginState(SecurityService.OidcProvider provider, String state) {
+            this.state = state;
+            this.provider = provider;
+        }
+
+        public SecurityService.OidcProvider getProvider() {
+            return provider;
+        }
+
+        public String getState() {
+            return state;
+        }
     }
 }

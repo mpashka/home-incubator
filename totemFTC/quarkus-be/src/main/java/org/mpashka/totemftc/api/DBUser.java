@@ -124,5 +124,17 @@ public class DBUser {
         }
     }
 
+/*
+    private Uni<?> saveLocations(List<LocationEntity> locationEntities) {
+        if (locationEntities == null || locationEntities.isEmpty()) {
+            log.debug("No locations");
+            return Uni.createFrom().voidItem();
+        }
+        return Multi.createFrom().iterable(locationEntities).onItem()
+                .transformToUni(l -> l.save(client))
+                .merge().collect().asList()
+                .invoke(l -> log.debug("Locations saved"));
+    }
 
+ */
 }
