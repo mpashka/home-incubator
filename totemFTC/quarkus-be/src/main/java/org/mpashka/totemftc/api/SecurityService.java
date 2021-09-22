@@ -181,12 +181,12 @@ public class SecurityService {
             this.session = session;
         }
 
-        public UserInfo getUserInfo() {
-            return Optional.of(session).map(s -> s.<String>getParameter(USER_ID_ATTR)).orElse(null);
+        public Integer getUserId() {
+            return Optional.of(session).map(Session::getUserId).orElse(null);
         }
 
-        public void setUserInfo(UserInfo userInfo) {
-            session.setParameter(USER_ID_ATTR, userInfo);
+        public void setUserId(Integer userId) {
+            session.setUserId(userId);
         }
     }
 
@@ -209,6 +209,15 @@ public class SecurityService {
         public <T> void setParameter(String name, T value) {
             parameters.put(name, value);
         }
+
+        public Integer getUserId() {
+            return getParameter(USER_ID_ATTR);
+        }
+
+        public void setUserId(int userId) {
+            setParameter(USER_ID_ATTR, userId);
+        }
+
     }
 
 }

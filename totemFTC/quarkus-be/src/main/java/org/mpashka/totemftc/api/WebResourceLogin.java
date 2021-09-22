@@ -3,7 +3,9 @@ package org.mpashka.totemftc.api;
 import io.quarkus.security.Authenticated;
 import io.smallrye.common.annotation.Blocking;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.Vertx;
+import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import org.eclipse.microprofile.context.ManagedExecutor;
@@ -121,7 +123,7 @@ public class WebResourceLogin {
         }
         securityService.removeSession(sessionId);
 
-        AtomicReference
+        AtomicReference<JsonObject> userInfoJson = new AtomicReference<>();
         SecurityService.OidcProvider oidcProvider = loginState.getProvider();
         return client.getAbs(oidcProvider.getTokenEndpoint())
                 .setQueryParam("client_id", oidcProvider.getClientId())
@@ -140,30 +142,51 @@ public class WebResourceLogin {
                 .onItem().transform(HttpResponse::bodyAsJsonObject)
                 .onItem().transformToUni(userJson -> {
                     log.debug("Facebook user response received: {}", userJson);
+                    userInfoJson.set(userJson);
 
                     String userProviderId = userJson.getString("id");
                     String email = userJson.getString("email");
 
                     return dbUser.findById(oidcProvider.getName(), userProviderId, email, null);
                 })
-                .onItem().transformToUni(userJson -> {
+                .onItem().transformToUni(userId -> {
                     SecurityService.Session newSession = securityService.createSession();
+                    if (userId != null && userId.getType() == DBUser.UserSearchType.socialNetwork) {
+                        // Login by social network id
+                        newSession.setUserId(userId.getUserId());
+                        return Uni.createFrom().item(userId);
+                    }
 
-
-
-
-                    String userName = userJson.getString("name");
+                    JsonObject userJson = userInfoJson.get();
+                    String id = userJson.getString("id");
+                    String email = userJson.getString("email");
                     String imageUrl = Optional.ofNullable(userJson.getJsonObject("picture"))
                             .map(p -> p.getJsonObject("data"))
                             .map(d -> d.getString("url"))
                             .orElse(null);
 
-                    SecurityService.UserInfo userInfo = new SecurityService.UserInfo(userProviderId, userName, imageUrl);
+
+                    Uni<HttpResponse<Buffer>> image = Utils.notEmpty(imageUrl)
+                    ? client.getAbs(imageUrl).send()
+                            : Uni.createFrom().item(null);
+                    if (userId != null) {
+                        // Add social network info
+                        return dbUser.addSocialNetwork(userId.getUserId(), oidcProvider.getName(), id, email, null)
+                                .onItem().transform(u -> userId);
+                    } else {
+                        // Create user id
+                        return dbUser.
+                    }
+
+
+
+
+                    String userName = userJson.getString("name");
+
+                    SecurityService.UserInfo userInfo = new SecurityService.UserInfo(id, userName, imageUrl);
                     securityService.setUserInfo(userInfo);
                     if (imageUrl != null) {
-                        exec.runAsync(() -> client.getAbs(imageUrl)
-                                .send()
-                                .subscribe().with(r -> userInfo.setImage(r.body().getBytes())));
+                        exec.runAsync(() -> );
                     }
 
                     //                    return "<script>onLoginCompleted();</script>";
