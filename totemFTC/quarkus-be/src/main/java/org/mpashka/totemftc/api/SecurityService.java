@@ -1,6 +1,7 @@
 package org.mpashka.totemftc.api;
 
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.config.ConfigProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +39,6 @@ public class SecurityService {
      *    &client_secret={app-secret}
      *    &code={code-parameter}
      *
-     * code=AQBl7kRQjxmtm4vf50mHaZH3F_lAUvtxak-fkj2UgSgZUL5jnwAWTHXmd-6I7LpJg9K8EqSmyCEPsGCUWzrCxi977AIDWTamBXAEznjJLuqUntahCWM5d4AVFs60PbGeFuvUATfeO0b0RsKof2H5UqaiUZhJYNv2w6QL6P5DMQcSZmCiXkPdCzywETcuLyM4x_Tad7ph7CSlrWgQ_BGIqPz2L-eaWnxZqD5h0hkK-tb6271sDYcWobE25mrOrmLEkuF0wpgmLkmNy-9C_eCWmAUAVUP6N6b0kYoAGsChpl7VgHE5B5htFJVn2KF-zJuEy5AotxYYeGdMd9c7JlrtbGR_Wal8LTC89ikhoaGAacH64QuVqXG62tM_YrFyz7jDnHS90rbuIGe3SZqGba2z0_mS
      * Response: http://localhost:8080/login/callback?code=<code>&state=my_awsome_state
      *
      * "https://graph.facebook.com/oauth/access_token"
@@ -48,7 +48,7 @@ public class SecurityService {
      * https://developers.facebook.com/tools/explorer
      *
      */
-    private static final OidcProvider facebook = new OidcProvider("facebook", "558989508631164", "a97470242f3bc315fcc69494fc831601",
+    private static final OidcProvider facebook = new OidcProvider("facebook", "558989508631164", "",
             "openid+email+public_profile+user_gender+user_link+user_birthday+user_location",
             "https://www.facebook.com/dialog/oauth?client_id=<client_id>&redirect_uri=<redirect_uri>&state=<state>&response_type=code&scope=<scope>",
             "https://graph.facebook.com/oauth/access_token", "http://localhost:8080/login/callback");
@@ -63,6 +63,10 @@ public class SecurityService {
 
     @Inject
     SecurityService.RequestParameters requestParameters;
+
+    public SecurityService() {
+        ConfigProvider.getConfig().getValue("database.name", String.class);
+    }
 
     @Produces
     @RequestScoped
@@ -90,16 +94,16 @@ public class SecurityService {
         return session;
     }
 
-    public Uni<UserEntity> findUser(String provider, String id, String email, String phone) {
+    public Uni<EntityUser> findUser(String provider, String id, String email, String phone) {
 
     }
 
-    public String getUserId() {
-        return requestParameters.getUserInfo();
+    public Integer getUserId() {
+        return requestParameters.getUserId();
     }
 
-    public void setUserInfo(UserInfo userInfo) {
-        requestParameters.setUserInfo(userInfo);
+    public void setUserInfo(Integer userId) {
+        requestParameters.setUserId(userId);
     }
 
 
@@ -177,12 +181,12 @@ public class SecurityService {
             this.session = session;
         }
 
-        public UserInfo getUserInfo() {
-            return Optional.of(session).map(s -> s.<String>getParameter(USER_ID_ATTR)).orElse(null);
+        public Integer getUserId() {
+            return Optional.of(session).map(Session::getUserId).orElse(null);
         }
 
-        public void setUserInfo(UserInfo userInfo) {
-            session.setParameter(USER_ID_ATTR, userInfo);
+        public void setUserId(Integer userId) {
+            session.setUserId(userId);
         }
     }
 
@@ -205,6 +209,15 @@ public class SecurityService {
         public <T> void setParameter(String name, T value) {
             parameters.put(name, value);
         }
+
+        public Integer getUserId() {
+            return getParameter(USER_ID_ATTR);
+        }
+
+        public void setUserId(int userId) {
+            setParameter(USER_ID_ATTR, userId);
+        }
+
     }
 
 }
