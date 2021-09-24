@@ -52,8 +52,8 @@ export default defineComponent({
     const store = useStore()
 
     return {
-      authenticated: computed(() => store.state.login.authenticated),
-      userName: computed(() => store.state.login.userName),
+      authenticated: computed(() => store.getters['login/isAuthenticated']),
+      userName: computed(() => store.state.login.user?.),
       leftDrawerOpen,
       toggleLeftDrawer () {
         leftDrawerOpen.value = !leftDrawerOpen.value

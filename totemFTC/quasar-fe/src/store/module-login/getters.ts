@@ -3,8 +3,12 @@ import { StateInterface } from '../index';
 import { StateInterfaceLogin } from './state';
 
 const getters: GetterTree<StateInterfaceLogin, StateInterface> = {
-  authenticated(context) {
-    return context.authenticated
+  isAuthenticated(context) {
+    return context.sessionId.length > 0 && context.userId >= 0;
+  },
+
+  fullName(context) {
+    return context.user != null ? `${context.user.firstName} ${context.user.lastName}` : '';
   }
 };
 

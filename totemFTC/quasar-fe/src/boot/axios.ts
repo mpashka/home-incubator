@@ -32,7 +32,7 @@ export default boot(({ app }) => {
   // Add a request interceptor
   // https://stackoverflow.com/questions/43051291/attach-authorization-header-for-all-axios-requests
   api.interceptors.request.use(function (config) {
-    if (store.state.login.authenticated) {
+    if (store.getters['login/isAuthenticated']) {
       config.headers.Authorization = `Bearer ${store.state.login.sessionId}`
     }
     return config;

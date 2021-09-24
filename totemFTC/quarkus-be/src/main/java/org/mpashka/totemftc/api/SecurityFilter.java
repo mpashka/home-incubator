@@ -36,9 +36,9 @@ public class SecurityFilter /*implements ContainerRequestFilter*/ {
             return;
         }
         requestParameters.setSession(session);
-        SecurityService.UserInfo userInfo = requestParameters.getUserInfo();
-        log.debug("UserInfo: {}", userInfo);
-        if (userInfo == null) {
+        Integer userId = requestParameters.getUserId();
+        log.debug("UserId: {}", userId);
+        if (userId == null) {
             return;
         }
         requestContext.setSecurityContext(new SecurityContext() {

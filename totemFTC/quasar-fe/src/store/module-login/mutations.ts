@@ -1,6 +1,6 @@
 import { MutationTree } from 'vuex';
 import { StateInterfaceLogin } from './state';
-import { UserLogin } from './model';
+import { EntityUser } from './model';
 
 
 const mutation: MutationTree<StateInterfaceLogin> = {
@@ -8,9 +8,18 @@ const mutation: MutationTree<StateInterfaceLogin> = {
     state.sessionId = sessionId;
   },
 
-  authorize (state: StateInterfaceLogin, user: UserLogin) {
-    state.userName = user.userName;
-    state.authenticated = true;
+  setUser (state: StateInterfaceLogin, user: EntityUser) {
+    state.user = user;
+    state.userId = user.userId;
+  },
+
+  /**
+   * Used for user profile editor
+   * @param state
+   * @param user
+   */
+  setUserFull (state: StateInterfaceLogin, user: EntityUser) {
+    state.userFull = user;
   }
 };
 

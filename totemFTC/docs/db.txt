@@ -1,0 +1,15 @@
+quarkus.datasource.db-kind=postgresql
+quarkus.datasource.username=quarkus_test
+quarkus.datasource.password=quarkus_test
+quarkus.datasource.reactive.url=postgresql://localhost:5432/quarkus_test
+
+
+sudo -u postgres psql
+create database totemftc;
+create user totemftc with encrypted password 'totemftc';
+grant all privileges on database totemftc to totemftc;
+
+docker exec -it papa-postgresql psql
+\c papa_helper # connect to db
+\dt            # Show tables
+\dt+.

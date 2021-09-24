@@ -1,12 +1,12 @@
 package org.mpashka.totemftc.api;
 
-import io.netty.util.internal.StringUtil;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.PreparedQuery;
 import io.vertx.mutiny.sqlclient.Row;
+import io.vertx.mutiny.sqlclient.RowIterator;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -15,11 +15,9 @@ import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
+import java.util.stream.StreamSupport;
 
 /**
  *
@@ -30,6 +28,12 @@ public class DBUser {
 
     private final PgPool client;
     private final boolean schemaCreate;
+    private PreparedQuery<RowSet<Row>> selectUserShortById;
+    private PreparedQuery<RowSet<Row>> selectUserFullById;
+    private PreparedQuery<RowSet<Row>> selectSocialNetworkByUserId;
+    private PreparedQuery<RowSet<Row>> selectEmailByUserId;
+    private PreparedQuery<RowSet<Row>> selectPhoneByUserId;
+    private PreparedQuery<RowSet<Row>> selectImageByUserId;
     private PreparedQuery<RowSet<Row>> selectBySocialNetwork;
     private PreparedQuery<RowSet<Row>> selectByEmail;
     private PreparedQuery<RowSet<Row>> selectByPhone;
@@ -38,6 +42,8 @@ public class DBUser {
     private PreparedQuery<RowSet<Row>> insertEmail;
     private PreparedQuery<RowSet<Row>> insertPhone;
     private PreparedQuery<RowSet<Row>> insertImage;
+    private PreparedQuery<RowSet<Row>> updateMainImageIfAbsent;
+    private PreparedQuery<RowSet<Row>> updateMainImage;
 
     public DBUser(PgPool client, @ConfigProperty(name = "schema.create.user", defaultValue = "true") boolean schemaCreate) {
         log.debug("DBUser.new");
@@ -49,8 +55,25 @@ public class DBUser {
         if (schemaCreate) {
             initDb();
         }
+
+        selectUserShortById = client.preparedQuery("SELECT " +
+                " user.first_name AS first_name, " +
+                " user.last_name AS last_name, " +
+                " user.nick_name AS nick_name, " +
+                " user_image.image_id AS image_id, " +
+                " user_image.content_type AS content_type, " +
+                "FROM user " +
+                "LEFT OUTER JOIN user_image ON user.primary_image = user_image.image_id " +
+                "WHERE user.user_id = $1 " +
+                "    AND user_image.user_id = $1");
+        selectUserFullById = client.preparedQuery("SELECT * from user WHERE user_id = $1");
+        selectSocialNetworkByUserId = client.preparedQuery("SELECT * FROM user_social_network WHERE user_id = $1 ORDER BY network_id");
+        selectEmailByUserId = client.preparedQuery("SELECT * FROM user_email WHERE user_id = $1 ORDER BY email");
+        selectPhoneByUserId = client.preparedQuery("SELECT * FROM user_phone WHERE user_id = $1 ORDER BY phone");
+        selectImageByUserId = client.preparedQuery("SELECT image_id FROM user_image WHERE user_id = $1 ORDER BY image_id");
+
         selectBySocialNetwork = client.preparedQuery("SELECT user_id " +
-                "FROM social_network " +
+                "FROM user_social_network " +
                 "WHERE network_id = $1 and id = $2");
         selectByEmail = client.preparedQuery("SELECT user_id " +
                 "FROM user_email " +
@@ -60,22 +83,23 @@ public class DBUser {
                 "WHERE phone = $1");
 
         insertUser = client.preparedQuery("INSERT INTO user (first_name, last_name, nick_name) VALUES ($1, $2, $3) RETURNING user_id");
-        insertSocialNetwork = client.preparedQuery("INSERT INTO social_network (network_id, id, user_id) VALUES ($1, $2, $3)");
+        insertSocialNetwork = client.preparedQuery("INSERT INTO user_social_network (network_id, id, user_id, link) VALUES ($1, $2, $3, $4)");
         insertEmail = client.preparedQuery("INSERT INTO user_email (email, user_id, confirmed) VALUES ($1, $2, $3)");
         insertPhone = client.preparedQuery("INSERT INTO user_phone (phone, user_id, confirmed) VALUES ($1, $2, $3)");
         insertImage = client.preparedQuery("INSERT INTO user_image (user_id, image, content_type) VALUES ($1, $2, $3) RETURNING image_id");
+        updateMainImage = client.preparedQuery("UPDATE user SET primary_image = $1 WHERE user_id = $2");
+        updateMainImageIfAbsent = client.preparedQuery("UPDATE user SET primary_image = $1 WHERE user_id = $2 AND primary_image is NULL");
     }
 
     private void initDb() {
         log.debug("Init database...");
         try {
             Uni.createFrom().item(1)
-//                .flatMap(u -> client.query("DROP TABLE IF EXISTS location").execute())
                     .flatMap(r -> client.query("CREATE TABLE IF NOT EXISTS user (" +
                             "user_id SERIAL PRIMARY KEY, " +
-                            "first_name VARCHAR(30) NOT NULL, " +
-                            "last_name VARCHAR(30) NOT NULL, " +
-                            "nick_name VARCHAR(30) NOT NULL," +
+                            "first_name VARCHAR(30) NULLABLE, " +
+                            "last_name VARCHAR(30) NULLABLE, " +
+                            "nick_name VARCHAR(30) NULLABLE," +
                             "primary_image INTEGER NULLABLE REFERENCES user_umage(image_id)" +
                             ");" +
 
@@ -98,12 +122,14 @@ public class DBUser {
                             "content_type VARCHAR(20) NOT NULL" +
                             ");" +
 
-                            "CREATE TABLE IF NOT EXISTS social_network (" +
+                            "CREATE TABLE IF NOT EXISTS user_social_network (" +
                             "network_id VARCHAR(10) NOT NULL," +
                             "id VARCHAR(30) NOT NULL," +
                             "user_id INTEGER NOT NULL REFERENCES user (user_id)," +
-                            "PRIMARY KEY (network_name,network_id))" +
-                            "").execute())
+                            "link VARCHAR(40) NULLABLE," +
+                            "PRIMARY KEY (network_name,network_id)" +
+                            ");"
+                    ).execute())
                     .await().indefinitely();
         } catch (Exception e) {
             log.error("Db init error", e);
@@ -135,6 +161,85 @@ public class DBUser {
     }
 
     /**
+     *
+     * @return user id
+     */
+    public Uni<Integer> addUser(String firstName, String lastName, String nickName) {
+        return insertUser.execute(Tuple.of(firstName, lastName, nickName))
+                .onItem().transform(rows -> rows.iterator().next().getInteger(1));
+    }
+
+    public Uni<EntityUser> getUser(int userId) {
+        return selectUserFullById.execute(Tuple.of(userId))
+                .onItem().transform(rows -> {
+                    RowIterator<Row> rowIterator = rows.iterator();
+                    if (rowIterator.hasNext()) {
+                        Row row = rowIterator.next();
+                        EntityUser user = new EntityUser()
+                                .setUserId(userId)
+                                .loadFromDb(row);
+
+                        if (row.getInteger("image_id") != null) {
+                            EntityUser.EntityImage image = new EntityUser.EntityImage()
+                                    .loadFromDb(row);
+                            user.setPrimaryImage(image);
+                        }
+                        return user;
+                    } else {
+                        return null;
+                    }
+                });
+    }
+
+    public Uni<EntityUser> getUserFull(int userId) {
+        Tuple t = Tuple.of(userId);
+        return selectUserFullById.execute(t)
+                .onItem().transform(rows -> {
+                    RowIterator<Row> rowIterator = rows.iterator();
+                    return rowIterator.hasNext()
+                            ? new EntityUser().setUserId(userId).loadFromDb(rowIterator.next())
+                            : null;
+                })
+                .onItem().transformToUni(user ->
+                        selectSocialNetworkByUserId.execute(t)
+                                .onItem().invoke(rows -> {
+                                    EntityUser.EntitySocialNetwork[] socialNetworks = StreamSupport.stream(rows.spliterator(), false)
+                                            .map(row -> new EntityUser.EntitySocialNetwork().loadFromDb(row))
+                                            .toArray(EntityUser.EntitySocialNetwork[]::new);
+                                    user.setSocialNetworks(socialNetworks);
+                                }).onItem().transform(u -> user))
+                .onItem().transformToUni(user ->
+                        selectPhoneByUserId.execute(t)
+                                .onItem().invoke(phoneRows -> {
+                                    EntityUser.EntityPhone[] phones = StreamSupport.stream(phoneRows.spliterator(), false)
+                                            .map(phoneRow -> new EntityUser.EntityPhone().loadFromDb(phoneRow))
+                                            .toArray(EntityUser.EntityPhone[]::new);
+                                    user.setPhones(phones);
+                                }).onItem().transform(u -> user))
+                .onItem().transformToUni(user ->
+                        selectEmailByUserId.execute(t)
+                                .onItem().invoke(emailRows -> {
+                                    EntityUser.EntityEmail[] emails = StreamSupport.stream(emailRows.spliterator(), false)
+                                            .map(emailRow -> new EntityUser.EntityEmail().loadFromDb(emailRow))
+                                            .toArray(EntityUser.EntityEmail[]::new);
+                                    user.setEmails(emails);
+                                }).onItem().transform(u -> user))
+                .onItem().transformToUni(user ->
+                    selectImageByUserId.execute(t)
+                            .onItem().invoke(imageRows -> {
+                                List<EntityUser.EntityImage> images = new ArrayList<>();
+                                imageRows.forEach(imageRow -> {
+                                    EntityUser.EntityImage image = new EntityUser.EntityImage()
+                                            .loadFromDb(imageRow);
+                                    if (user.getPrimaryImageId() != null && image.getId() == user.getPrimaryImageId()) {
+                                        user.setPrimaryImage(image);
+                                    }
+                                });
+                                user.setImages(images.toArray(EntityUser.EntityImage[]::new));
+                            }).onItem().transform(u -> user));
+    }
+
+    /**
      * Add social network and probably email and phone
      *
      * @param userId
@@ -144,32 +249,51 @@ public class DBUser {
      * @param phone
      * @return
      */
-    public Uni<Void> addSocialNetwork(int userId, String provider, String id, String email, String phone) {
-        return insertSocialNetwork.execute(Tuple.of(provider, id, userId))
-                .onItem().transformToUni(u -> {
-                    return Utils.notEmpty(email)
-                            ? insertEmail.execute(Tuple.of(email, userId, true))
-                            : Uni.createFrom().item(null);
-                })
-                .onItemOrFailure().transformToUni((u, t) -> {
-                    return Utils.notEmpty(phone)
-                            ? insertPhone.execute(Tuple.of(phone, userId, true))
-                            : Uni.createFrom().item(null);
-                })
-                .onItemOrFailure().transform((u, t) -> null);
+    public Uni<Void> addSocialNetwork(int userId, String provider, String id, String link, String email, String phone) {
+        return insertSocialNetwork.execute(Tuple.of(provider, id, userId, link))
+                .onItem().transformToUni(u -> addEmail(userId, email))
+                .onItem().transformToUni(u -> addPhone(userId, phone))
+                .onItem().transform(u -> null);
     }
 
     /**
-     * Return image id
-     *
-     * @param userId
-     * @param image
-     * @param contentType
-     * @return
+     * @return true if email was added, false if it was already present
      */
-    public Uni<Integer> addImage(int userId, byte[] image, String contentType) {
-        return insertImage.execute(Tuple.of(userId, Buffer.buffer(image), contentType))
+    public Uni<Boolean> addEmail(int userId, String email) {
+        return (Utils.notEmpty(email)
+                ? insertEmail
+                .execute(Tuple.of(email, userId, true))
+                : Uni.createFrom().item(false)
+        ).onItemOrFailure().transform((r, e) -> e == null);
+    }
+
+    /**
+     * @return true if email was added, false if it was already present
+     */
+    public Uni<Boolean> addPhone(int userId, String phone) {
+        return (Utils.notEmpty(phone)
+                ? insertPhone
+                .execute(Tuple.of(phone, userId, true))
+                : Uni.createFrom().item(false)
+        ).onItemOrFailure().transform((r, e) -> e == null);
+    }
+
+    /**
+     * @return image id
+     */
+    public Uni<Integer> addImage(int userId, Buffer image, String contentType) {
+        return insertImage.execute(Tuple.of(userId, image, contentType))
                 .onItem().transform(rows -> rows.iterator().next().getInteger(1));
+    }
+
+    /**
+     *
+     * @param ifAbsent update main image if there was no main image
+     * @return true if image was set, false if {@param ifAbsent} was set and record already had main image
+     */
+    public Uni<Boolean> setMainImage(int userId, int imageId, boolean ifAbsent) {
+        return (ifAbsent ? updateMainImageIfAbsent : updateMainImage).execute(Tuple.of(userId, imageId))
+                .onItem().transform(r -> r.rowCount() > 0);
     }
 
     private UserSearchResult find(UserSearchType type, RowSet<Row> rows) {

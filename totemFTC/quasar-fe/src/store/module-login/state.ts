@@ -1,14 +1,18 @@
+import {EntityUser} from 'src/store/module-login/model';
+
 export interface StateInterfaceLogin {
-  authenticated: boolean;
   sessionId: string;
-  userName: string;
+  userId: number;
+  user: EntityUser | null;
+  userFull: EntityUser | null;
 }
 
 function state(): StateInterfaceLogin {
   return {
-    authenticated: false,
     sessionId: '',
-    userName: ''
+    userId: -1,
+    user: null,
+    userFull: null,
   }
 }
 

@@ -9,8 +9,9 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref } from 'vue';
+import { defineComponent } from 'vue';
 import { useStore } from 'src/store';
+import { useRouter } from 'vue-router'
 
 let windowObjectReference: Window | null = null;
 
@@ -20,6 +21,19 @@ function openLoginWindow(event: Event, type: string) {
   try {
     const url = `http://localhost:8080/login/init/${type}`;
 
+    /*
+https://stackoverflow.com/questions/3437786/get-the-size-of-the-screen-current-web-page-and-browser-window
+window.innerHeight 1174
+window.innerWidth 1158
+window.screenLeft 0
+window.screenTop 14
+window.screenX 0
+window.screenY 14
+window.screen.height 1291
+window.screen.width 2296
+window.screen.availWidth 2297
+window.screen.availHeight 1278
+     */
     if (windowObjectReference == null || windowObjectReference.closed) {
       console.log('New window');
       //,resizable,scrollbars,status
@@ -39,39 +53,29 @@ function openLoginWindow(event: Event, type: string) {
   return false;
 }
 
+type userType = 'new' | 'existing';
+
 declare global {
   interface Window {
-    onLoginCompleted(sessionId: string): void;
+    onLoginCompleted(sessionId: string, user: userType): void;
   }
 }
 
-
-export default {
-  name: 'PopupTest',
-  props: {
-    param1: {
-      type: String,
-      required: false
-    }
-  },
+export default defineComponent({
+  name: 'Login',
   setup() {
     const store = useStore();
+    const router = useRouter();
 
-    window.onLoginCompleted = async function (sessionId: string) {
+    window.onLoginCompleted = async function (sessionId: string, user: userType) {
       console.log(`Call parent from popup. SessionId: ${sessionId}`);
       windowObjectReference?.close();
 
-      localStorage.setItem('session_id', sessionId);
-      store.commit('login/sessionId', sessionId);
+      await store.dispatch('login/authenticate', sessionId);
 
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-
-/*
-      const userLogin = (
-        await api.get('/login/userInfo')
-      ).data as UserLogin;
-      store.commit('login/authorize', userLogin);
-*/
+      if (store.getters['login/isAuthenticated']) {
+        await router.replace({path: user === 'new' ? '/settings' : '/'});
+      }
     };
 
     return {
@@ -79,6 +83,5 @@ export default {
       openLoginWindow,
     }
   }
-}
-
+});
 </script>

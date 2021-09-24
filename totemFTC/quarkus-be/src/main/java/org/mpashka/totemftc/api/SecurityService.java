@@ -26,28 +26,8 @@ public class SecurityService {
 
 //    Executor executor = Infrastructure.getDefaultWorkerPool();
 
+//        ConfigProvider.getConfig().getValue("database.name", String.class);
 
-    /**
-     * /home/m_pashka/Projects/tests/google/google-api-java-client-samples/oauth2-cmdline-sample/description.txt
-     *
-     * https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow
-     * https://www.facebook.com/.well-known/openid-configuration
-     *
-     * https://graph.facebook.com/v12.0/oauth/access_token?
-     *    client_id={app-id}
-     *    &redirect_uri={redirect-uri}
-     *    &client_secret={app-secret}
-     *    &code={code-parameter}
-     *
-     * Response: http://localhost:8080/login/callback?code=<code>&state=my_awsome_state
-     *
-     * "https://graph.facebook.com/oauth/access_token"
-     * "https://graph.facebook.com/v12.0/oauth/access_token"
-     *
-     * https://developers.facebook.com/docs/permissions/reference
-     * https://developers.facebook.com/tools/explorer
-     *
-     */
     private static final OidcProvider facebook = new OidcProvider("facebook", "558989508631164", "",
             "openid+email+public_profile+user_gender+user_link+user_birthday+user_location",
             "https://www.facebook.com/dialog/oauth?client_id=<client_id>&redirect_uri=<redirect_uri>&state=<state>&response_type=code&scope=<scope>",
@@ -65,7 +45,6 @@ public class SecurityService {
     SecurityService.RequestParameters requestParameters;
 
     public SecurityService() {
-        ConfigProvider.getConfig().getValue("database.name", String.class);
     }
 
     @Produces
@@ -94,10 +73,6 @@ public class SecurityService {
         return session;
     }
 
-    public Uni<EntityUser> findUser(String provider, String id, String email, String phone) {
-
-    }
-
     public Integer getUserId() {
         return requestParameters.getUserId();
     }
@@ -106,21 +81,10 @@ public class SecurityService {
         requestParameters.setUserId(userId);
     }
 
-
-
-    /*
-            public void setUserInfo(UserInfo userInfo) {
-                session.s;
-            }
-    */
-
     public OidcProvider getOidcProvider(String name) {
         return providers.get(name);
     }
 
-    /*
-    Offline_access
-     */
     public static class OidcProvider {
         private String name;
         private String clientId;
@@ -204,6 +168,10 @@ public class SecurityService {
 
         public <T> T getParameter(String name) {
             return (T) parameters.get(name);
+        }
+
+        public <T> T removeParameter(String name) {
+            return (T) parameters.remove(name);
         }
 
         public <T> void setParameter(String name, T value) {

@@ -33,6 +33,32 @@ https://developers.facebook.com/support/
 
 me?fields=albums.fields(id,name,cover_photo,photos.fields(name,picture,source))
 <ALBUM-ID>/photos?fields=name,source,id
+        Facebook user response received: {"id":"4493174020705731","email":"m_pashka@mail.ru","first_name":"Павел","last_name":"Мухатаев","name":"Павел Мухатаев",
+        "picture":{"data":{"height":50,"is_silhouette":false,"url":"https://platform-lookaside.fbsbx.com/platform/profilepic/?asid=4493174020705731&height=50&width=50&ext=1634393350&hash=AeR_Nf_Xl2kF7_GVmdU","width":50}},"short_name":"Павел","gender":"male","name_format":"{first} {last}"}
+??    scope: Offline_access
+    /**
+     * /home/m_pashka/Projects/tests/google/google-api-java-client-samples/oauth2-cmdline-sample/description.txt
+     *
+     * https://developers.facebook.com/docs/facebook-login/manually-build-a-login-flow
+     * https://www.facebook.com/.well-known/openid-configuration
+     *
+     * https://graph.facebook.com/v12.0/oauth/access_token?
+     *    client_id={app-id}
+     *    &redirect_uri={redirect-uri}
+     *    &client_secret={app-secret}
+     *    &code={code-parameter}
+     *
+     * Response: http://localhost:8080/login/callback?code=<code>&state=my_awsome_state
+     *
+     * "https://graph.facebook.com/oauth/access_token"
+     * "https://graph.facebook.com/v12.0/oauth/access_token"
+     *
+     * https://developers.facebook.com/docs/graph-api/reference/user
+     * https://developers.facebook.com/docs/permissions/reference
+     * https://developers.facebook.com/tools/explorer
+     *
+     */
+
 
 https://accounts.google.com/o/oauth2/auth?client_id=393082269793-hd4l77vmr8eq8kdqgdl1edhjpc81vmiq.apps.googleusercontent.com&redirect_uri=http://localhost:40141/Callback&response_type=code&scope=https://www.googleapis.com/auth/userinfo.profile%20https://www.googleapis.com/auth/userinfo.email
 1) Receive code: LocalServerReceiver (CallbackHandler)
