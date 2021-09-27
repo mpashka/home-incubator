@@ -1,9 +1,11 @@
 import { RouteRecordRaw } from 'vue-router';
+import MainLayout from 'src/layouts/MainLayout.vue';
+import Login from 'src/pages/Login.vue';
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: () => import('layouts/MainLayout.vue'),
+    component: MainLayout,
     children: [
       { path: '', component: () => import('pages/Home.vue') },
       { path: 'settings', component: () => import('pages/Settings.vue') },
@@ -15,7 +17,8 @@ const routes: RouteRecordRaw[] = [
 
   {
     path: '/login',
-    component: () => import('layouts/Login.vue'),
+    name: 'login',
+    component: Login,
   },
 
   // Always leave this as last one,

@@ -1,6 +1,8 @@
 package org.mpashka.totemftc.api;
 
+//import io.quarkus.security.Authenticated;
 import io.quarkus.security.Authenticated;
+import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.Vertx;
@@ -44,9 +46,6 @@ public class WebResourceLogin {
 
     @Inject
     DBUser dbUser;
-
-    @Inject
-    ManagedExecutor exec;
 
     @Inject
     public WebResourceLogin(Vertx vertx) {

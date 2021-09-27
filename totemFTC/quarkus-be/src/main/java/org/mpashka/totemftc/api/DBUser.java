@@ -45,7 +45,7 @@ public class DBUser {
     private PreparedQuery<RowSet<Row>> updateMainImageIfAbsent;
     private PreparedQuery<RowSet<Row>> updateMainImage;
 
-    public DBUser(PgPool client, @ConfigProperty(name = "schema.create.user", defaultValue = "true") boolean schemaCreate) {
+    public DBUser(PgPool client, @ConfigProperty(name = "db.schema.create.user", defaultValue = "true") boolean schemaCreate) {
         log.debug("DBUser.new");
         this.client = client;
         this.schemaCreate = schemaCreate;
@@ -57,16 +57,16 @@ public class DBUser {
         }
 
         selectUserShortById = client.preparedQuery("SELECT " +
-                " user.first_name AS first_name, " +
-                " user.last_name AS last_name, " +
-                " user.nick_name AS nick_name, " +
+                " u.first_name AS first_name, " +
+                " u.last_name AS last_name, " +
+                " u.nick_name AS nick_name, " +
                 " user_image.image_id AS image_id, " +
                 " user_image.content_type AS content_type, " +
-                "FROM user " +
-                "LEFT OUTER JOIN user_image ON user.primary_image = user_image.image_id " +
-                "WHERE user.user_id = $1 " +
+                "FROM user_info u " +
+                "LEFT OUTER JOIN user_image ON u.primary_image = user_image.image_id " +
+                "WHERE u.user_id = $1 " +
                 "    AND user_image.user_id = $1");
-        selectUserFullById = client.preparedQuery("SELECT * from user WHERE user_id = $1");
+        selectUserFullById = client.preparedQuery("SELECT * from user_info WHERE user_id = $1");
         selectSocialNetworkByUserId = client.preparedQuery("SELECT * FROM user_social_network WHERE user_id = $1 ORDER BY network_id");
         selectEmailByUserId = client.preparedQuery("SELECT * FROM user_email WHERE user_id = $1 ORDER BY email");
         selectPhoneByUserId = client.preparedQuery("SELECT * FROM user_phone WHERE user_id = $1 ORDER BY phone");
@@ -82,42 +82,42 @@ public class DBUser {
                 "FROM user_phone " +
                 "WHERE phone = $1");
 
-        insertUser = client.preparedQuery("INSERT INTO user (first_name, last_name, nick_name) VALUES ($1, $2, $3) RETURNING user_id");
+        insertUser = client.preparedQuery("INSERT INTO user_info (first_name, last_name, nick_name) VALUES ($1, $2, $3) RETURNING user_id");
         insertSocialNetwork = client.preparedQuery("INSERT INTO user_social_network (network_id, id, user_id, link) VALUES ($1, $2, $3, $4)");
         insertEmail = client.preparedQuery("INSERT INTO user_email (email, user_id, confirmed) VALUES ($1, $2, $3)");
         insertPhone = client.preparedQuery("INSERT INTO user_phone (phone, user_id, confirmed) VALUES ($1, $2, $3)");
         insertImage = client.preparedQuery("INSERT INTO user_image (user_id, image, content_type) VALUES ($1, $2, $3) RETURNING image_id");
-        updateMainImage = client.preparedQuery("UPDATE user SET primary_image = $1 WHERE user_id = $2");
-        updateMainImageIfAbsent = client.preparedQuery("UPDATE user SET primary_image = $1 WHERE user_id = $2 AND primary_image is NULL");
+        updateMainImage = client.preparedQuery("UPDATE user_info SET primary_image = $1 WHERE user_id = $2");
+        updateMainImageIfAbsent = client.preparedQuery("UPDATE user_info SET primary_image = $1 WHERE user_id = $2 AND primary_image is NULL");
     }
 
     private void initDb() {
         log.debug("Init database...");
         try {
             Uni.createFrom().item(1)
-                    .flatMap(r -> client.query("CREATE TABLE IF NOT EXISTS user (" +
+                    .flatMap(r -> client.query("CREATE TABLE IF NOT EXISTS user_info (" +
                             "user_id SERIAL PRIMARY KEY, " +
-                            "first_name VARCHAR(30) NULLABLE, " +
-                            "last_name VARCHAR(30) NULLABLE, " +
-                            "nick_name VARCHAR(30) NULLABLE," +
-                            "primary_image INTEGER NULLABLE REFERENCES user_umage(image_id)" +
+                            "first_name VARCHAR(30) NULL, " +
+                            "last_name VARCHAR(30) NULL, " +
+                            "nick_name VARCHAR(30) NULL," +
+                            "primary_image INTEGER NULL" + /* REFERENCES user_umage(image_id) */
                             ");" +
 
                             "CREATE TABLE IF NOT EXISTS user_email (" +
                             "email VARCHAR(30) NOT NULL PRIMARY KEY," +
-                            "user_id INTEGER NOT NULL REFERENCES user (user_id)," +
+                            "user_id INTEGER NOT NULL REFERENCES user_info (user_id)," +
                             "confirmed boolean NOT NULL" +
                             ");" +
 
                             "CREATE TABLE IF NOT EXISTS user_phone (" +
                             "phone VARCHAR(14) NOT NULL PRIMARY KEY," +
-                            "user_id INTEGER NOT NULL REFERENCES user (user_id)" +
+                            "user_id INTEGER NOT NULL REFERENCES user_info (user_id), " +
                             "confirmed boolean NOT NULL" +
                             ");" +
 
                             "CREATE TABLE IF NOT EXISTS user_image (" +
                             "image_id SERIAL PRIMARY KEY," +
-                            "user_id INTEGER NOT NULL REFERENCES user (user_id)," +
+                            "user_id INTEGER NOT NULL REFERENCES user_info (user_id)," +
                             "image bytea," +
                             "content_type VARCHAR(20) NOT NULL" +
                             ");" +
@@ -125,9 +125,9 @@ public class DBUser {
                             "CREATE TABLE IF NOT EXISTS user_social_network (" +
                             "network_id VARCHAR(10) NOT NULL," +
                             "id VARCHAR(30) NOT NULL," +
-                            "user_id INTEGER NOT NULL REFERENCES user (user_id)," +
-                            "link VARCHAR(40) NULLABLE," +
-                            "PRIMARY KEY (network_name,network_id)" +
+                            "user_id INTEGER NOT NULL REFERENCES user_info (user_id)," +
+                            "link VARCHAR(400) NULL," +
+                            "PRIMARY KEY (network_id,id)" +
                             ");"
                     ).execute())
                     .await().indefinitely();
@@ -166,11 +166,11 @@ public class DBUser {
      */
     public Uni<Integer> addUser(String firstName, String lastName, String nickName) {
         return insertUser.execute(Tuple.of(firstName, lastName, nickName))
-                .onItem().transform(rows -> rows.iterator().next().getInteger(1));
+                .onItem().transform(rows -> rows.iterator().next().getInteger("user_id"));
     }
 
     public Uni<EntityUser> getUser(int userId) {
-        return selectUserFullById.execute(Tuple.of(userId))
+        return selectUserShortById.execute(Tuple.of(userId))
                 .onItem().transform(rows -> {
                     RowIterator<Row> rowIterator = rows.iterator();
                     if (rowIterator.hasNext()) {
@@ -241,19 +241,14 @@ public class DBUser {
 
     /**
      * Add social network and probably email and phone
-     *
-     * @param userId
-     * @param provider
-     * @param id
-     * @param email
-     * @param phone
-     * @return
      */
     public Uni<Void> addSocialNetwork(int userId, String provider, String id, String link, String email, String phone) {
         return insertSocialNetwork.execute(Tuple.of(provider, id, userId, link))
                 .onItem().transformToUni(u -> addEmail(userId, email))
                 .onItem().transformToUni(u -> addPhone(userId, phone))
-                .onItem().transform(u -> null);
+                .onFailure().transform(e -> new RuntimeException("Error addSocialNetwork", e))
+                .onItem().transform(u -> null)
+                ;
     }
 
     /**
@@ -282,8 +277,8 @@ public class DBUser {
      * @return image id
      */
     public Uni<Integer> addImage(int userId, Buffer image, String contentType) {
-        return insertImage.execute(Tuple.of(userId, image, contentType))
-                .onItem().transform(rows -> rows.iterator().next().getInteger(1));
+        return insertImage.execute(Tuple.of(userId, image.getDelegate(), contentType))
+                .onItem().transform(rows -> rows.iterator().next().getInteger("image_id"));
     }
 
     /**

@@ -1,7 +1,10 @@
 package org.mpashka.totemftc.api;
 
+import io.smallrye.config.PropertiesConfigSource;
 import io.smallrye.mutiny.Uni;
+import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
+import org.eclipse.microprofile.config.spi.ConfigSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,9 +29,7 @@ public class SecurityService {
 
 //    Executor executor = Infrastructure.getDefaultWorkerPool();
 
-//        ConfigProvider.getConfig().getValue("database.name", String.class);
-
-    private static final OidcProvider facebook = new OidcProvider("facebook", "558989508631164", "",
+    private final OidcProvider facebook = new OidcProvider("facebook", "558989508631164", "",
             "openid+email+public_profile+user_gender+user_link+user_birthday+user_location",
             "https://www.facebook.com/dialog/oauth?client_id=<client_id>&redirect_uri=<redirect_uri>&state=<state>&response_type=code&scope=<scope>",
             "https://graph.facebook.com/oauth/access_token", "http://localhost:8080/login/callback");
@@ -85,7 +86,7 @@ public class SecurityService {
         return providers.get(name);
     }
 
-    public static class OidcProvider {
+    public class OidcProvider {
         private String name;
         private String clientId;
         private String secret;
@@ -122,7 +123,19 @@ public class SecurityService {
         }
 
         public String getSecret() {
-            return secret;
+            Config config = ConfigProvider.getConfig();
+            for (ConfigSource configSource : config.getConfigSources()) {
+                log.info("Config source: {}", configSource);
+/*
+                if (configSource instanceof PropertiesConfigSource) {
+                    PropertiesConfigSource propertiesConfigSource = (PropertiesConfigSource) configSource;
+//                    propertiesConfigSource.
+                }
+*/
+            }
+
+            return ConfigProvider.getConfig().getValue("oidc.provider.facebook.secret", String.class);
+//            return secret;
         }
 
         public String getTokenEndpoint() {

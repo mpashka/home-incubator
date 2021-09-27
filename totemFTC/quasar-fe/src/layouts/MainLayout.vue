@@ -7,7 +7,7 @@
           Totem FTC
         </q-toolbar-title>
 
-        <div v-if="authenticated">{{ userName }}</div>
+        <div v-if="storeLogin.isAuthenticated">{{ storeLogin.fullName }}</div>
       </q-toolbar>
     </q-header>
 
@@ -41,19 +41,19 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, computed } from 'vue'
-import { useStore } from 'src/store'
+import { defineComponent, ref } from 'vue'
+import {useStoreLogin} from 'src/store/store_login';
+
 
 export default defineComponent({
   name: 'MainLayout',
 
   setup () {
     const leftDrawerOpen = ref(false)
-    const store = useStore()
+    const storeLogin = useStoreLogin();
 
     return {
-      authenticated: computed(() => store.getters['login/isAuthenticated']),
-      userName: computed(() => store.state.login.user?.),
+      storeLogin,
       leftDrawerOpen,
       toggleLeftDrawer () {
         leftDrawerOpen.value = !leftDrawerOpen.value

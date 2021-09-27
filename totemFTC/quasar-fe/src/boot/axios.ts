@@ -1,6 +1,6 @@
 import { boot } from 'quasar/wrappers';
 import axios, { AxiosInstance } from 'axios';
-import { useStore } from 'src/store';
+import {useStoreLogin} from 'src/store/store_login';
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
@@ -16,6 +16,7 @@ declare module '@vue/runtime-core' {
 // for each client)
 const api = axios.create({ baseURL: 'http://localhost:8080' });
 
+
 export default boot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
 
@@ -27,20 +28,22 @@ export default boot(({ app }) => {
   // ^ ^ ^ this will allow you to use this.$api (for Vue Options API form)
   //       so you can easily perform requests against your app's API
 
-  const store = useStore();
+  const storeLogin = useStoreLogin();
 
   // Add a request interceptor
   // https://stackoverflow.com/questions/43051291/attach-authorization-header-for-all-axios-requests
   api.interceptors.request.use(function (config) {
-    if (store.getters['login/isAuthenticated']) {
-      config.headers.Authorization = `Bearer ${store.state.login.sessionId}`
+      const authenticated = storeLogin.isAuthenticated;
+      console.log(`Check if request is authenticated ${String(authenticated)}. Session: ${storeLogin.sessionId}`)
+      if (authenticated) {
+        (config.headers as {[key: string]: string})['Authorization'] = `Bearer ${storeLogin.sessionId}`
+      }
+      return config;
     }
-    return config;
-  }
-  // , function (error) {
-  //   // Do something with request error
-  //   return Promise.reject(error);
-  // }
+    // , function (error) {
+    //   // Do something with request error
+    //   return Promise.reject(error);
+    // }
   );
   // api.defaults.headers.common['Authorization'] = `Bearer ${sessionId}`;
 

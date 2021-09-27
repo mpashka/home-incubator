@@ -10,7 +10,7 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import { useStore } from 'src/store';
+import { useStoreLogin } from 'src/store/store_login';
 import { useRouter } from 'vue-router'
 
 let windowObjectReference: Window | null = null;
@@ -64,16 +64,16 @@ declare global {
 export default defineComponent({
   name: 'Login',
   setup() {
-    const store = useStore();
+    const storeLogin = useStoreLogin();
     const router = useRouter();
 
     window.onLoginCompleted = async function (sessionId: string, user: userType) {
-      console.log(`Call parent from popup. SessionId: ${sessionId}`);
+      console.log(`Call parent from popup. SessionId: ${sessionId}. User type ${user}`);
       windowObjectReference?.close();
 
-      await store.dispatch('login/authenticate', sessionId);
+      await storeLogin.authenticate(sessionId);
 
-      if (store.getters['login/isAuthenticated']) {
+      if (storeLogin.isAuthenticated) {
         await router.replace({path: user === 'new' ? '/settings' : '/'});
       }
     };
