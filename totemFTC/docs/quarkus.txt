@@ -1,0 +1,8 @@
+https://quarkus.io/guides/resteasy-reactive - jax-rs context
+https://quarkus.io/guides/resteasy-reactive#json-serialisation
+https://quarkus.io/guides/resteasy-reactive#negotiation
+https://quarkus.io/guides/rest-json#jackson
+
+jackson serialization
+https://stackoverflow.com/questions/7105745/how-to-specify-jackson-to-only-use-fields-preferably-globally
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)

@@ -10,7 +10,7 @@ create user totemftc with encrypted password 'totemftc';
 grant all privileges on database totemftc to totemftc;
 
 docker exec -it papa-postgresql psql
-\c papa_helper  # connect to db
+\c totemftc  # connect to db
 \d <table_name> # describe table
 \dt             # Show tables
 \dt+
