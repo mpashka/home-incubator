@@ -1,6 +1,10 @@
 package org.mpashka.totemftc.api;
 
 //import io.quarkus.security.Authenticated;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import io.quarkus.resteasy.reactive.jackson.CustomSerialization;
 import io.quarkus.security.Authenticated;
 import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.smallrye.mutiny.Uni;
@@ -24,8 +28,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
+import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 @Path("/login")
 public class WebResourceLogin {
@@ -46,6 +52,9 @@ public class WebResourceLogin {
 
     @Inject
     DBUser dbUser;
+
+    @Inject
+    ObjectMapper objectMapper;
 
     @Inject
     public WebResourceLogin(Vertx vertx) {

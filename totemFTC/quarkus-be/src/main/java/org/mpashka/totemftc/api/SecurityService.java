@@ -54,13 +54,11 @@ public class SecurityService {
         return new RequestParameters();
     }
 
-    public Session getSession() {
-        return requestParameters.getSession();
-    }
-
     public Session getSession(String sessionId) {
         return sessions.get(sessionId);
     }
+
+//    public Uni<Session>
 
     public void removeSession(String sessionId) {
         sessions.remove(sessionId);

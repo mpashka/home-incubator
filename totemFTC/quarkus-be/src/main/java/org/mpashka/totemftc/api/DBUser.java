@@ -60,12 +60,12 @@ public class DBUser {
                 " u.first_name AS first_name, " +
                 " u.last_name AS last_name, " +
                 " u.nick_name AS nick_name, " +
+                " u.primary_image AS primary_image, " +
                 " user_image.image_id AS image_id, " +
-                " user_image.content_type AS content_type, " +
+                " user_image.content_type AS content_type " +
                 "FROM user_info u " +
                 "LEFT OUTER JOIN user_image ON u.primary_image = user_image.image_id " +
-                "WHERE u.user_id = $1 " +
-                "    AND user_image.user_id = $1");
+                "WHERE u.user_id = $1");
         selectUserFullById = client.preparedQuery("SELECT * from user_info WHERE user_id = $1");
         selectSocialNetworkByUserId = client.preparedQuery("SELECT * FROM user_social_network WHERE user_id = $1 ORDER BY network_id");
         selectEmailByUserId = client.preparedQuery("SELECT * FROM user_email WHERE user_id = $1 ORDER BY email");
@@ -174,6 +174,7 @@ public class DBUser {
                 .onItem().transform(rows -> {
                     RowIterator<Row> rowIterator = rows.iterator();
                     if (rowIterator.hasNext()) {
+                        log.debug("User [{}] found", userId);
                         Row row = rowIterator.next();
                         EntityUser user = new EntityUser()
                                 .setUserId(userId)
@@ -183,12 +184,16 @@ public class DBUser {
                             EntityUser.EntityImage image = new EntityUser.EntityImage()
                                     .loadFromDb(row);
                             user.setPrimaryImage(image);
+                            log.debug("     Image {}", image.getId());
                         }
                         return user;
                     } else {
+                        log.debug("User [{}] not found", userId);
                         return null;
                     }
-                });
+                })
+                .onFailure().transform(e -> new RuntimeException("Error getUser", e))
+                ;
     }
 
     public Uni<EntityUser> getUserFull(int userId) {
@@ -295,8 +300,10 @@ public class DBUser {
         if (rows.size() > 0) {
             Row row = rows.iterator().next();
             int userId = row.getInteger("user_id");
+            log.debug("User [{}] found by {}", userId, type);
             return new UserSearchResult(type, userId);
         } else {
+            log.debug("User not found by {}", type);
             return null;
         }
     }

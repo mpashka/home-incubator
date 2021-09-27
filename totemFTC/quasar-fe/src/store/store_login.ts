@@ -41,7 +41,6 @@ const emptyUser: EntityUser = {
 export const useStoreLogin = defineStore('login', {
   state: () => ({
     sessionId: '',
-    userId: -1,
     user: {...emptyUser} as EntityUser,
     userFull: {...emptyUser} as EntityUser,
   }),
@@ -62,18 +61,25 @@ export const useStoreLogin = defineStore('login', {
     async authenticate (sessionId?: string) {
       const SESSION_ID_STORAGE_KEY = 'session_id';
       if (sessionId === undefined) {
+        console.log('Authenticate from local storage')
         const newSessionId = localStorage.getItem(SESSION_ID_STORAGE_KEY);
-        if (newSessionId == null) {
+        if (!newSessionId) {
+          console.log('    Not found')
           return;
         }
         sessionId = newSessionId;
       } else {
+        console.log(`Authenticate new ${sessionId}`)
         localStorage.setItem(SESSION_ID_STORAGE_KEY, sessionId);
-        this.sessionId = sessionId;
       }
 
+      this.sessionId = sessionId;
+
       try {
-        this.user = (await api.get('/login/user')).data as EntityUser;
+        const axiosResponse = await api.get('/login/user');
+        console.log('User response', axiosResponse);
+        this.user = axiosResponse.data as EntityUser;
+        console.log('User received', this.user);
       } catch (e) {
         // todo handle error here - show table, e.t.c.
         if (axios.isAxiosError(e)) {

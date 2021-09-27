@@ -1,8 +1,10 @@
 package org.mpashka.totemftc.api;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vertx.mutiny.sqlclient.Row;
 
+//@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 public class EntityUser {
 //    @JsonProperty("work_time")
     private int userId;

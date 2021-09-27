@@ -1,11 +1,36 @@
 <template>
-  Settings
+  Settings.
+  <div>
+    <p>SessionId: {{ storeLogin.sessionId }}</p>
+    <div>
+    <p>User: {{ storeLogin.user }}</p>
+    <p>Name: {{ storeLogin.user.firstName }}</p>
+    <p>Last: {{ storeLogin.user.lastName }}</p>
+    <p>Nick: {{ storeLogin.user.nickName }}</p>
+    <div v-for="phone in storeLogin.user.phones">
+      <p>Phone: {{ phone.phone }} ({{ phone.confirmed }})</p>
+    </div>
+    <div v-for="email in storeLogin.user.emails">
+      <p>Phone: {{email.email }} ({{ email.confirmed }})</p>
+    </div>
+    </div>
+    <p>UserFull: {{ storeLogin.userFull }}</p>
+  </div>
 </template>
 
 <script lang="ts">
-export default {
-  name: 'Settings'
-}
+import { useStoreLogin } from 'src/store/store_login';
+import {defineComponent} from "vue";
+
+export default defineComponent({
+  name: 'Settings',
+  setup() {
+    const storeLogin = useStoreLogin();
+    return {
+      storeLogin,
+    };
+  }
+});
 </script>
 
 <style scoped>
