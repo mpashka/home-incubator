@@ -43,12 +43,8 @@ public class EntityUser {
         this.images = images;
     }
 
-    public EntityUser setUserId(int userId) {
-        this.userId = userId;
-        return this;
-    }
-
     public EntityUser loadFromDb(Row row) {
+        this.userId = row.getInteger("user_id");
         this.firstName = row.getString("first_name");
         this.lastName = row.getString("last_name");
         this.nickName = row.getString("nick_name");

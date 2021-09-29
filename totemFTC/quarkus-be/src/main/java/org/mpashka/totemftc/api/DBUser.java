@@ -57,6 +57,7 @@ public class DBUser {
         }
 
         selectUserShortById = client.preparedQuery("SELECT " +
+                " u.user_id AS user_id, " +
                 " u.first_name AS first_name, " +
                 " u.last_name AS last_name, " +
                 " u.nick_name AS nick_name, " +
@@ -177,7 +178,6 @@ public class DBUser {
                         log.debug("User [{}] found", userId);
                         Row row = rowIterator.next();
                         EntityUser user = new EntityUser()
-                                .setUserId(userId)
                                 .loadFromDb(row);
 
                         if (row.getInteger("image_id") != null) {
@@ -202,7 +202,7 @@ public class DBUser {
                 .onItem().transform(rows -> {
                     RowIterator<Row> rowIterator = rows.iterator();
                     return rowIterator.hasNext()
-                            ? new EntityUser().setUserId(userId).loadFromDb(rowIterator.next())
+                            ? new EntityUser().loadFromDb(rowIterator.next())
                             : null;
                 })
                 .onItem().transformToUni(user ->
@@ -241,7 +241,8 @@ public class DBUser {
                                     }
                                 });
                                 user.setImages(images.toArray(EntityUser.EntityImage[]::new));
-                            }).onItem().transform(u -> user));
+                            }).onItem().transform(u -> user))
+                .onFailure().transform(e -> new RuntimeException("Error getUserFull", e));
     }
 
     /**
@@ -329,23 +330,4 @@ public class DBUser {
             return userId;
         }
     }
-
-/*
-                .execute(Tuple.tuple(List.of(workTime, workProvider, time, provider, latitude, longitude, accuracy, battery,
-                        miBattery, miSteps, miHeart, accelerometerAverage, accelerometerMaximum, accelerometerCount, activity)))
-                .onFailure().invoke(e -> log.warn("Save location error", e))
-                .onFailure().recoverWithNull();
-
-    private Uni<?> saveLocations(List<LocationEntity> locationEntities) {
-        if (locationEntities == null || locationEntities.isEmpty()) {
-            log.debug("No locations");
-            return Uni.createFrom().voidItem();
-        }
-        return Multi.createFrom().iterable(locationEntities).onItem()
-                .transformToUni(l -> l.save(client))
-                .merge().collect().asList()
-                .invoke(l -> log.debug("Locations saved"));
-    }
-
- */
 }

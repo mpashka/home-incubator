@@ -54,9 +54,6 @@ public class WebResourceLogin {
     DBUser dbUser;
 
     @Inject
-    ObjectMapper objectMapper;
-
-    @Inject
     public WebResourceLogin(Vertx vertx) {
         this.client = WebClient.create(vertx);
     }
@@ -213,9 +210,10 @@ public class WebResourceLogin {
                     // return "<script>onLoginCompleted();</script>";
                     // probably temporary solution to avoid cross browser issue
                     return Response.status(Response.Status.FOUND)
-                            .location(URI.create("http://localhost:8081/callback/login-ok.html?session_id=<session_id>&user=<new_user>"
+//                            .location(URI.create("http://localhost:8081/callback/login-ok.html?session_id=<session_id>&user_type=<user_type>"
+                            .location(URI.create("http://localhost:8081/login-ok?session_id=<session_id>&user_type=<user_type>"
                                     .replaceAll("<session_id>", session.getSessionId())
-                                    .replaceAll("<new_user>", Boolean.TRUE.equals(newUser) ? "new" : "existing")
+                                    .replaceAll("<user_type>", Boolean.TRUE.equals(newUser) ? "new" : "existing")
                             ))
                             .cookie(new NewCookie(SESSION_ID_COOKIE,  null, "/", null, null, 0, false, false))
                             .build();

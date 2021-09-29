@@ -32,6 +32,21 @@
           </q-item>
         </router-link>
 
+        <router-link to="/tableTrainers">
+          <q-item clickable>
+            <q-item-section avatar>
+              <q-icon name="tools" />
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label>Тренеры</q-item-label>
+              <q-item-label caption>
+
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </router-link>
+
         <router-link to="/settings">
           <q-item clickable>
             <q-item-section avatar>

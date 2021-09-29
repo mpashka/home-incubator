@@ -6,7 +6,7 @@ import java.util.Random;
 @ApplicationScoped
 public class Utils {
 
-    private final char[] RANDOM_CHARS = "0123456789qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM".toCharArray();
+    private final char[] RANDOM_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
     private final Random random = new Random();
 
     public String generateRandomString(int length) {
