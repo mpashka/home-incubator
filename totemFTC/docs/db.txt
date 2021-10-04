@@ -14,3 +14,6 @@ docker exec -it papa-postgresql psql
 \d <table_name> # describe table
 \dt             # Show tables
 \dt+
+\ds             # Show sequences
+\d <sequence_name>
+select currval('user_info_user_id_seq'); - doesn't work without inserts

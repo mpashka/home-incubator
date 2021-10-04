@@ -1,6 +1,6 @@
 import {defineStore} from 'pinia'
 import {api} from 'boot/axios';
-import axios from 'axios';
+import {processLoadError, SESSION_ID_STORAGE_KEY} from "src/store/store_utils";
 
 export interface EntityUserEmail {
   email: string,
@@ -59,7 +59,6 @@ export const useStoreLogin = defineStore('login', {
 
   actions: {
     async authenticate (sessionId?: string) {
-      const SESSION_ID_STORAGE_KEY = 'session_id';
       if (sessionId === undefined) {
         console.log('Authenticate from local storage')
         const newSessionId = localStorage.getItem(SESSION_ID_STORAGE_KEY);
@@ -81,16 +80,7 @@ export const useStoreLogin = defineStore('login', {
         this.user = axiosResponse.data as EntityUser;
         console.log('User received', this.user);
       } catch (e) {
-        // todo handle error here - show table, e.t.c.
-        if (axios.isAxiosError(e)) {
-          if (e.response?.status === 403) {
-            // This is ok - server reports there is no appropriate session - e.g. it was restarted
-            localStorage.removeItem(SESSION_ID_STORAGE_KEY)
-          }
-        } else {
-          console.log('Unexpected Http Error', e);
-          throw e;
-        }
+        processLoadError('login.authenticate', e);
       }
     },
 

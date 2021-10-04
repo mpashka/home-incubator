@@ -78,7 +78,10 @@ module.exports = {
     'prefer-promise-reject-errors': 'off',
 
     // TypeScript
-    quotes: ['warn', 'single', { avoidEscape: true }],
+
+    // Disable quotes check
+    // quotes: ['warn', 'single', { avoidEscape: true }],
+
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
 

@@ -1,18 +1,19 @@
 import {defineStore} from 'pinia'
 import {api} from 'boot/axios';
 import {randomString} from 'src/components/utils';
+import {processLoadError} from 'src/store/store_utils';
 
 export interface EntityCrudTrainer {
   trainerId: number,
   trainerName: string,
 }
 
-/*
 const emptyTrainer: EntityCrudTrainer = {
   trainerId: -1,
   trainerName: '',
 };
-*/
+
+export {emptyTrainer};
 
 export const useStoreCrudTrainer = defineStore('crudTrainer', {
   state: () => ({
@@ -45,8 +46,7 @@ export const useStoreCrudTrainer = defineStore('crudTrainer', {
         this.rows = axiosResponse.data as EntityCrudTrainer[];
         console.log('Rows received', this.rows);
       } catch (e) {
-        console.log('Unexpected Http load Error', e);
-        throw e;
+        processLoadError('trainers.load', e);
       } finally {
         this.stopLoading(loadId);
       }
@@ -58,8 +58,7 @@ export const useStoreCrudTrainer = defineStore('crudTrainer', {
         await api.delete(`/api/trainer/${id}`)
         this.rows = this.rows.filter(r => r.trainerId !== id);
       } catch (e) {
-        console.log('Unexpected Http delete Error', e);
-        throw e;
+        processLoadError('trainers.delete', e);
       } finally {
         this.stopLoading(loadId);
       }
@@ -71,8 +70,7 @@ export const useStoreCrudTrainer = defineStore('crudTrainer', {
         trainer.trainerId = (await api.post('/api/trainer', trainer)).data as number;
         this.rows.push(trainer);
       } catch (e) {
-        console.log('Unexpected Http create Error', e);
-        throw e;
+        processLoadError('trainers.create', e);
       } finally {
         this.stopLoading(loadId);
       }
@@ -82,17 +80,15 @@ export const useStoreCrudTrainer = defineStore('crudTrainer', {
       const loadId = this.startLoading('update');
       try {
         await api.put('/api/trainer', trainer);
-        const index = this.rows.findIndex(r => r.trainerId == trainer.trainerId);
+        const index = this.rows.findIndex(r => r.trainerId === trainer.trainerId);
         if (index > 0) {
           this.rows[index] = trainer;
         }
       } catch (e) {
-        console.log('Unexpected Http update Error', e);
-        throw e;
+        processLoadError('trainers.update', e);
       } finally {
         this.stopLoading(loadId);
       }
     },
-
   },
 });

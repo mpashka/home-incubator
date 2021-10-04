@@ -19,6 +19,9 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.util.stream.StreamSupport;
 
+/**
+ * todo [!] This must be removed
+ */
 @Singleton
 public class DbCrudTrainer {
     private static final Logger log = LoggerFactory.getLogger(DbCrudTrainer.class);
@@ -110,6 +113,10 @@ public class DbCrudTrainer {
     public static class EntityTrainer {
         private int trainerId;
         private String trainerName;
+
+        public int getTrainerId() {
+            return trainerId;
+        }
 
         public EntityTrainer loadFromDb(Row row) {
             this.trainerId = row.getInteger("trainer_id");

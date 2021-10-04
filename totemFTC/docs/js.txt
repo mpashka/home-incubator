@@ -1,0 +1,11 @@
+Date:
+js - 2021-09-15 18:35 - be error
+js: new Date() -> 2021-09-30T13:16:10.360Z - be ok
+java:LocalDateTime - [2021,9,30,11,43,24,37000000]
+
+
+  const $q = useQuasar()
+  $q.notify({
+    message: `Clicked on menu item #${index} and closed QMenu`,
+    color: 'primary'
+  })

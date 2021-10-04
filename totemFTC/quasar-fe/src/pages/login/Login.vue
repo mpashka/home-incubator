@@ -63,7 +63,13 @@ declare global {
 
 export default defineComponent({
   name: 'Login',
-  setup() {
+  props: {
+    inProgress: {
+      type: Boolean,
+      default: false,
+    }
+  },
+  setup(props) {
     const storeLogin = useStoreLogin();
     const router = useRouter();
 
@@ -74,7 +80,11 @@ export default defineComponent({
       await storeLogin.authenticate(sessionId);
 
       if (storeLogin.isAuthenticated) {
-        await router.replace({path: user === 'new' ? '/settings' : '/'});
+        if (props.inProgress) {
+          router.back();
+        } else {
+          await router.replace({path: user === 'new' ? '/settings' : '/'});
+        }
       }
     };
 

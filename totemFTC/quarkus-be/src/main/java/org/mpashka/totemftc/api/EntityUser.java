@@ -19,6 +19,10 @@ public class EntityUser {
     private EntityEmail[] emails;
     private EntityImage[] images;
 
+    public int getUserId() {
+        return userId;
+    }
+
     public Integer getPrimaryImageId() {
         return primaryImageId;
     }

@@ -12,7 +12,7 @@
     </q-header>
 
     <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
-      <q-list>
+      <q-list class="my-menu">
         <q-item-label header>
           Essential Links
         </q-item-label>
@@ -40,6 +40,21 @@
 
             <q-item-section>
               <q-item-label>Тренеры</q-item-label>
+              <q-item-label caption>
+
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </router-link>
+
+        <router-link to="/tableVisits">
+          <q-item clickable>
+            <q-item-section avatar>
+              <q-icon name="tools" />
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label>Посещения</q-item-label>
               <q-item-label caption>
 
               </q-item-label>

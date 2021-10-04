@@ -22,6 +22,7 @@ const routes: RouteRecordRaw[] = [
     path: '/login',
     name: 'login',
     component: Login,
+    props: (route) => ({ inProgress: (route.query.inProgress === 'true') }),
   },
 
   {
