@@ -1,6 +1,7 @@
 import {defineStore} from 'pinia'
 import {api} from 'boot/axios';
-import {processLoadError, SESSION_ID_STORAGE_KEY} from "src/store/store_utils";
+
+const SESSION_ID_STORAGE_KEY = 'session_id';
 
 export interface EntityUserEmail {
   email: string,
@@ -74,21 +75,16 @@ export const useStoreLogin = defineStore('login', {
 
       this.sessionId = sessionId;
 
-      try {
-        const axiosResponse = await api.get('/login/user');
-        console.log('User response', axiosResponse);
-        this.user = axiosResponse.data as EntityUser;
-        console.log('User received', this.user);
-      } catch (e) {
-        processLoadError('login.authenticate', e);
-      }
+      this.user = (await api.get<EntityUser>('/login/user')).data;
+      console.log('User received', this.user);
+    },
+
+    clearSession() {
+      localStorage.removeItem(SESSION_ID_STORAGE_KEY);
     },
 
     async loadUserFull () {
-      const user = (
-        await api.get('/login/userFull')
-      ).data as EntityUser;
-      this.userFull = user;
+      this.userFull = (await api.get<EntityUser>('/login/userFull')).data;
     }
   },
 });

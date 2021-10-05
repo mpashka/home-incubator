@@ -9,7 +9,8 @@ const routes: RouteRecordRaw[] = [
     component: MainLayout,
     children: [
       { path: '', component: () => import('pages/Home.vue') },
-      { path: 'tableTrainers', component: () => import('pages/TableTrainers.vue') },
+      { path: 'schedule', component: () => import('pages/TableSchedule.vue') },
+      { path: 'tableUsers', component: () => import('pages/TableUsers.vue') },
       { path: 'tableVisits', component: () => import('pages/TableVisits.vue') },
       { path: 'settings', component: () => import('pages/Settings.vue') },
     ],

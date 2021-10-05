@@ -17,3 +17,8 @@ docker exec -it papa-postgresql psql
 \ds             # Show sequences
 \d <sequence_name>
 select currval('user_info_user_id_seq'); - doesn't work without inserts
+
+
+SELECT grantee, privilege_type
+FROM information_schema.role_table_grants
+WHERE table_name='training_type';

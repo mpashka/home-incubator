@@ -1,10 +1,11 @@
-import { boot } from 'quasar/wrappers';
+import {boot} from 'quasar/wrappers';
 import axios, { AxiosInstance } from 'axios';
 import {useStoreLogin} from 'src/store/store_login';
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
     $axios: AxiosInstance;
+    $api: AxiosInstance;
   }
 }
 
@@ -16,8 +17,13 @@ declare module '@vue/runtime-core' {
 // for each client)
 const api = axios.create({ baseURL: 'http://localhost:8080' });
 
+let loading = false;
 
-export default boot(({ app }) => {
+function isLoading() {
+  return loading;
+}
+
+export default boot(({ app, router }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
 
   app.config.globalProperties.$axios = axios;
@@ -40,13 +46,23 @@ export default boot(({ app }) => {
       }
       return config;
     }
-    // , function (error) {
-    //   // Do something with request error
-    //   return Promise.reject(error);
-    // }
   );
   // api.defaults.headers.common['Authorization'] = `Bearer ${sessionId}`;
 
+  api.interceptors.response.use(response => {return response},
+    error => {
+      // todo handle error here - show message, add to table, e.t.c.
+      if (axios.isAxiosError(error) && error.response?.status === 403) {
+        // This is ok - server reports there is no appropriate session - e.g. it was restarted
+        storeLogin.clearSession();
+        router.push({ name: 'login', params: { inProgress: 'true' } })
+          .catch(e => console.log('Error push to login page', e));
+      }
+      return Promise.reject(error);
+    });
+
+  api.interceptors.request.use(config => {loading = true; return config;});
+  api.interceptors.response.use(response => {loading = false; return response;}, error => {loading = false; return Promise.reject(error);});
 });
 
-export { api };
+export { api,isLoading };

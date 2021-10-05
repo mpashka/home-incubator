@@ -1,27 +1,30 @@
 <template>
-  <q-table title="Тренер" :rows="store.rows" :columns="columns" :filter="filter" :loading="store.isLoading" row-key="id">
-    <template v-slot:top-right>
-      <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
-        <template v-slot:append>
-          <q-icon name="search" />
+  <div class="row">
+  <q-card v-for="day in 7" v-bind:key="'day-card-' + day">
+    <q-card-section>
+      <div class="text-h6">{{ weekDayName(day) }}</div>
+    </q-card-section>
+    <q-card-section>
+      <q-table hide-header hide-bottom :columns="columns" :rows="selectSchedule(day)">
+        <template v-slot:body-cell-actions="props">
+          <q-td :props="props">
+            <q-btn round flat size="sm" icon="edit" @click="editRowStart(day, props.row)"/>
+            <q-btn round flat size="sm" icon="delete" @click="deleteRowStart(props.row)"/>
+          </q-td>
         </template>
-      </q-input>
-      <q-btn round icon="plus" @click="editRowStart(defaultRow)"/>
-    </template>
-
-    <template v-slot:body-cell-actions="props">
-      <q-td :props="props">
-        <q-btn round flat size="sm" icon="edit" @click="editRowStart(props.row)"/>
-        <q-btn round flat size="sm" icon="delete" @click="deleteRowStart(props.row)"/>
-      </q-td>
-    </template>
-  </q-table>
+      </q-table>
+    </q-card-section>
+    <q-card-actions align="right">
+      <q-btn round icon="plus" @click="editRowStart(day, defaultRow)" />
+    </q-card-actions>
+  </q-card>
+  </div>
 
   <q-dialog v-model="confirmDelete">
     <q-card>
       <q-card-section class="row items-center">
         <q-avatar icon="signal_wifi_off" color="primary" text-color="white" />
-        <span class="q-ml-sm">Удалить тренера {{ deleteRowObj.trainerName }}</span>
+        <span class="q-ml-sm">Удалить запись?</span>
       </q-card-section>
 
       <q-card-actions align="right">
@@ -38,11 +41,42 @@
       </q-card-section>
 
       <q-card-section>
-        <div class="row">
-          <q-input filled v-model="editRowObj.trainerName" label="ФИО" hint="Name and surname"
-                   lazy-rules
-                   :rules="[ val => val && val.length > 0 || 'Please type something']"
-          />
+        <div class="row q-gutter-md">
+        <q-input class="col-1" filled v-model="editRowObj.time" label="Время">
+          <template v-slot:append>
+            <q-icon name="access_time" class="cursor-pointer">
+              <q-popup-proxy transition-show="scale" transition-hide="scale" ref="timePopup">
+                <q-time v-model="editRowObj.time" mask="HH:mm" :minute-options="[0, 15, 30, 45]" format24h @update:model-value="onTimeUpdate">
+                  <div class="row items-center justify-end">
+                    <q-btn v-close-popup label="Close" color="primary" flat />
+                  </div>
+                </q-time>
+              </q-popup-proxy>
+            </q-icon>
+          </template>
+        </q-input>
+
+          <q-select class="col-2" filled v-model="editRowObj.trainingType" label="Тренировка"
+                    :options="store.trainingTypes" option-label="trainingName" @update:model-value="onTrainingTypeChange">
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  Пожалуйста выберите тип тренировки
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
+
+          <q-select class="col-4" filled v-model="editRowObj.trainer" label="Тренер"
+                    :options="trainers" option-label="nickName">
+            <template v-slot:no-option>
+              <q-item>
+                <q-item-section class="text-grey">
+                  Пожалуйста выберите тренера
+                </q-item-section>
+              </q-item>
+            </template>
+          </q-select>
         </div>
       </q-card-section>
 
@@ -56,26 +90,35 @@
 
 <script lang="ts">
 import { ref, computed, Ref } from 'vue';
-import {EntityCrudTrainer, useStoreCrudTrainer, emptyTrainer} from 'src/store/store_crud_trainers'
+import {
+  emptySchedule,
+  EntityCrudSchedule, EntityCrudTrainer,
+  EntityCrudTrainingType,
+  useStoreCrudSchedule
+} from 'src/store/store_crud_schedule';
+import {QPopupProxy} from "quasar";
 
 export default {
-  name: 'TableTrainers',
+  name: 'TableSchedule',
   setup () {
-    let filter = ref('');
-    const store = useStoreCrudTrainer();
-    store.load()
-      .then(() => console.log('Loaded successfully'), e => console.log('Load error', e));
+    const store = useStoreCrudSchedule();
+    const trainers = ref(store.trainers);
+    store.load().catch(e => console.log('Load error', e));
+    store.loadTrainers()
+      .then(() => trainers.value = store.trainers)
+      .catch(e => console.log('Load error', e));
+    store.loadTrainingTypes().catch(e => console.log('Load error', e));
 
     async function deleteRowCommit() {
       console.log('Delete row ', deleteRowObj);
-      deleteRowObj.value && await store.delete(deleteRowObj.value.trainerId);
+      deleteRowObj.value && await store.delete(deleteRowObj.value?.id);
       deleteRowObj.value = null;
     }
 
     async function editRowCommit() {
       console.log('Add row', editRowObj.value);
-      const newValue = editRowObj.value as EntityCrudTrainer;
-      if (newValue.trainerId === -1) {
+      const newValue = editRowObj.value as EntityCrudSchedule;
+      if (newValue.id === -1) {
         await store.create(newValue);
       } else {
         await store.update(newValue);
@@ -84,38 +127,64 @@ export default {
     }
 
     const columns = [
-      { name: 'trainerName', required: true, label: 'ФИО', align: 'left', field: 'trainerName', sortable: true },
+      { name: 'time', required: true, label: 'Время', align: 'left', field: 'time' },
+      { name: 'type', required: true, label: 'Тренировка', align: 'left', field: 'trainingType', format: (val: EntityCrudTrainingType) => `${val.trainingName}`,},
+      { name: 'trainer', required: true, label: 'Тренер', align: 'left', field: 'trainer', format: (val: EntityCrudTrainer) => `${val.nickName}`},
       { name: 'actions', label: 'Actions'}
     ]
 
-    const deleteRowObj :Ref<EntityCrudTrainer | null> = ref(null);
+    const deleteRowObj :Ref<EntityCrudSchedule | null> = ref(null);
 
-    function deleteRowStart(row: EntityCrudTrainer) {
+    function deleteRowStart(row: EntityCrudSchedule) {
       deleteRowObj.value = row;
       console.log('Confirm delete row', row);
     }
 
-    const editRowObj :Ref<EntityCrudTrainer | null> = ref(null);
+    const editRowObj :Ref<EntityCrudSchedule | null> = ref(null);
 
-    function editRowStart(row: EntityCrudTrainer) {
+    function editRowStart(day: number, row: EntityCrudSchedule) {
       console.log('Start edit row', row);
       editRowObj.value = Object.assign({}, row);
+      editRowObj.value.day = day;
+    }
+
+    function weekDayName(weekDay: number) {
+      return new Date(1971, 1, weekDay).toLocaleDateString("ru-RU", { weekday: 'long' });
+    }
+
+    function selectSchedule(weekDay: number): EntityCrudSchedule[] {
+      return store.schedule.filter(s => s.day == weekDay);
+    }
+
+    function onTrainingTypeChange(type: EntityCrudTrainingType) {
+      trainers.value = store.trainers.filter(v => v.trainingTypes.indexOf(type.trainingType) > -1);
+    }
+
+    const timePopup = ref(null);
+    function onTimeUpdate(value:string) {
+      console.log(`Time updated: ${value}`);
+      (timePopup.value as unknown as QPopupProxy).hide();
     }
 
     return {
       columns,
       store,
-      filter,
+      weekDayName,
+      selectSchedule,
       deleteRowStart,
       deleteRowCommit,
       deleteRowObj,
       editRowStart,
       editRowCommit,
       editRowObj,
-      defaultRow: emptyTrainer,
+      trainers,
+      onTrainingTypeChange,
+      timePopup,
+      onTimeUpdate,
+      defaultRow: emptySchedule,
       confirmDelete: computed({get: () => deleteRowObj.value !== null, set: () => deleteRowObj.value = null}),
       confirmAdd: computed({get: () => editRowObj.value !== null, set: () => editRowObj.value = null}),
-      isRowAddOrEdit: computed(() => editRowObj.value?.trainerId === -1),
+      isRowAddOrEdit: computed(() => editRowObj.value?.id === -1),
     }
   }
 }

@@ -32,7 +32,22 @@
           </q-item>
         </router-link>
 
-        <router-link to="/tableTrainers">
+        <router-link to="/schedule">
+          <q-item clickable>
+            <q-item-section avatar>
+              <q-icon name="tools" />
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label>Расписание</q-item-label>
+              <q-item-label caption>
+
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </router-link>
+
+        <router-link to="/tableUsers">
           <q-item clickable>
             <q-item-section avatar>
               <q-icon name="tools" />
