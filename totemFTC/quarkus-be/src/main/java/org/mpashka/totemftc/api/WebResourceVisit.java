@@ -17,7 +17,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 
 /**
- * todo [!] This must be removed
  */
 @Path("/api/visit")
 @Authenticated
@@ -28,26 +27,17 @@ public class WebResourceVisit {
     @Inject
     DbCrudVisit dbVisit;
 
-/*
     @GET
-    @Path("{visitId}")
+    @Path("byTraining/{trainingId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<DbCrudTrainer.Entity> get(@PathParam("visitId") int trainerId) {
-        return dbTrainer.getById(trainerId);
-    }
-*/
-
-    @GET
-    @Path("list")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Uni<DbCrudVisit.EntityVisit[]> list() {
-        return dbVisit.getAll();
+    public Uni<DbCrudVisit.EntityVisit[]> list(@PathParam("trainingId") int trainingId) {
+        return dbVisit.getByTraining(trainingId);
     }
 
-    @DELETE
-    @Path("{visitId}")
-    public Uni<Void> delete(@PathParam("visitId") int visitId) {
-        return dbVisit.delete(visitId);
+    @PUT
+    @Path("delete")
+    public Uni<Void> delete(DbCrudVisit.EntityVisit visit) {
+        return dbVisit.delete(visit);
     }
 
     @POST
@@ -60,6 +50,27 @@ public class WebResourceVisit {
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     public Uni<Void> update(DbCrudVisit.EntityVisit visit) {
-        return dbVisit.update(visit);
+        return dbVisit.updateComment(visit);
+    }
+
+    @PUT
+    @Path("/markSchedule/{markSchedule}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Uni<Void> updateMarkSchedule(DbCrudVisit.EntityVisit visit, @PathParam("markSchedule") boolean markSchedule) {
+        return dbVisit.updateMarkSchedule(visit, markSchedule);
+    }
+
+    @PUT
+    @Path("/markSelf/{markSelf}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Uni<Void> updateMarkSelf(DbCrudVisit.EntityVisit visit, @PathParam("markSelf") boolean markSelf) {
+        return dbVisit.updateMarkSelf(visit, markSelf);
+    }
+
+    @PUT
+    @Path("/markMaster/{markMaster}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Uni<Void> updateMarkMaster(DbCrudVisit.EntityVisit visit, @PathParam("markMaster") boolean markMaster) {
+        return dbVisit.updateMarkMaster(visit, markMaster);
     }
 }

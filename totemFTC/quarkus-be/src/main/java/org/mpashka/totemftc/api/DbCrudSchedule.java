@@ -17,7 +17,6 @@ import javax.inject.Singleton;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Singleton
@@ -58,42 +57,13 @@ public class DbCrudSchedule {
                 ;
     }
 
-    public Uni<EntityTrainingType[]> getTrainingTypes() {
-        return selectTrainingTypes
-                .execute()
-                .onItem().transform(set ->
-                    StreamSupport.stream(set.spliterator(), false)
-                            .map(r -> new EntityTrainingType().loadFromDb(r))
-                            .toArray(EntityTrainingType[]::new)
-                )
-                .onFailure().transform(e -> new RuntimeException("Error getTrainers", e))
-                ;
-    }
-
-    public Uni<EntityTrainer[]> getTrainers() {
-        return selectTrainers
-                .execute()
-                .onItem().transform(set -> StreamSupport.stream(set.spliterator(), false)
-                            .map(r -> new EntityTrainer().loadFromDb(r))
-                            .collect(Collectors.groupingBy(EntityUser::getUserId))
-                            .values().stream().map(l -> {
-                                EntityTrainer t = l.get(0);
-                                t.trainingTypes = l.stream().map(t0 -> t0.trainingTypes[0]).toArray(String[]::new);
-                                return t;
-                            })
-                            .toArray(EntityTrainer[]::new)
-                )
-                .onFailure().transform(e -> new RuntimeException("Error getTrainers", e))
-                ;
-    }
-
     /**
      *
      * @return training id
      */
     public Uni<Integer> add(Entity training) {
         LocalDateTime time = LocalDateTime.of(LocalDate.of(1970, 1, training.day), training.time);
-        return insert.execute(Tuple.of(time, training.trainer.getUserId(), training.trainingType.trainingType))
+        return insert.execute(Tuple.of(time, training.trainer.getUserId(), training.trainingType.getTrainingType()))
                 .onItem().transform(rows -> rows.iterator().next().getInteger("training_schedule_id"))
                 .onFailure().transform(e -> new RuntimeException("Error add", e))
                 ;
@@ -101,7 +71,7 @@ public class DbCrudSchedule {
 
     public Uni<Void> update(Entity training) {
         LocalDateTime time = LocalDateTime.of(LocalDate.of(1970, 1, training.day), training.time);
-        return update.execute(Tuple.of(training.id, time, training.trainer.getUserId(), training.trainingType.trainingType))
+        return update.execute(Tuple.of(training.id, time, training.trainer.getUserId(), training.trainingType.getTrainingType()))
                 .onFailure().transform(e -> new RuntimeException("Error update", e))
                 .onItem().transform(u -> null)
                 ;
@@ -120,8 +90,8 @@ public class DbCrudSchedule {
         private LocalTime time;
         private int day;
 //        private int trainerId;
-        private EntityUser trainer;
-        private EntityTrainingType trainingType;
+        private DbUser.EntityUser trainer;
+        private DbCrudTraining.EntityTrainingType trainingType;
 
         public Entity loadFromDb(Row row) {
             this.id = row.getInteger("training_schedule_id");
@@ -129,29 +99,8 @@ public class DbCrudSchedule {
             this.time = trainingTime.toLocalTime();
             this.day = trainingTime.getDayOfMonth();
 //            this.trainerId = row.getInteger("trainer");
-            this.trainer = new EntityUser().loadFromDb(row);
-            this.trainingType = new EntityTrainingType().loadFromDb(row);
-            return this;
-        }
-    }
-
-    public static class EntityTrainer extends EntityUser {
-        private String[] trainingTypes;
-
-        public EntityTrainer loadFromDb(Row row) {
-            super.loadFromDb(row);
-            this.trainingTypes = new String[]{row.getString("training_type")};
-            return this;
-        }
-    }
-
-    public static class EntityTrainingType {
-        private String trainingType;
-        private String trainingName;
-
-        public EntityTrainingType loadFromDb(Row row) {
-            this.trainingType = row.getString("training_type");
-            this.trainingName = row.getString("name");
+            this.trainer = new DbUser.EntityUser().loadFromDb(row);
+            this.trainingType = new DbCrudTraining.EntityTrainingType().loadFromDb(row);
             return this;
         }
     }

@@ -41,20 +41,6 @@ public class WebResourceSchedule {
         return dbSchedule.getAll();
     }
 
-    @GET
-    @Path("trainers/list")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Uni<DbCrudSchedule.EntityTrainer[]> listTrainers() {
-        return dbSchedule.getTrainers();
-    }
-
-    @GET
-    @Path("trainers/trainingTypes")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Uni<DbCrudSchedule.EntityTrainingType[]> listTrainingTypes() {
-        return dbSchedule.getTrainingTypes();
-    }
-
     @DELETE
     @Path("schedule/{scheduleId}")
     public Uni<Void> delete(@PathParam("scheduleId") int scheduleId) {

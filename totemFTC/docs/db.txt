@@ -10,15 +10,33 @@ create user totemftc with encrypted password 'totemftc';
 grant all privileges on database totemftc to totemftc;
 
 docker exec -it papa-postgresql psql
-\c totemftc  # connect to db
+\c totemftc- totemftc  # connect to db
+\c[onnect] {[DBNAME|- USER|- HOST|- PORT|-] | conninfo}
 \d <table_name> # describe table
 \dt             # Show tables
 \dt+
 \ds             # Show sequences
 \d <sequence_name>
+\z training_type;
+
 select currval('user_info_user_id_seq'); - doesn't work without inserts
 
 
 SELECT grantee, privilege_type
 FROM information_schema.role_table_grants
 WHERE table_name='training_type';
+
+SELECT grantee,object_name, object_type, privilege_type
+FROM information_schema.role_usage_grants
+;
+
+SELECT * FROM pg_tables
+WHERE schemaname = 'public'
+AND tableowner != 'totemftc';
+
+ALTER TABLE training_visit OWNER TO totemftc;
+ALTER TABLE IF EXISTS training_visit ADD PRIMARY KEY (training_id, user_id);
+
+
+PLPGSQL example
+https://stackoverflow.com/questions/129265/cascade-delete-just-once

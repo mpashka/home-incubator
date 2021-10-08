@@ -1,0 +1,15 @@
+-- Create schedule for the next 7 days if there are no records for appropriate day in training table
+-- Using not in
+insert into training (training_schedule_id, training_time, trainer, training_type)
+select
+       ts.training_schedule_id,
+       ts.training_time::time + current_date + make_interval(days => s1.day+1)
+       --ts.training_time /*+ s1.day + date '1970-01-01'*/
+     , ts.trainer, ts.training_type
+from training_schedule ts,
+     lateral ( select cast(extract(isodow from current_date) + extract(day from ts.training_time) as integer) % 7 as day ) as s1(day)
+where day not in (
+    select cast(extract(day from age(t.training_time, current_date)) as integer)-1 as day
+    from training t
+    where t.training_time > current_date and t.training_time < current_date + 7
+);

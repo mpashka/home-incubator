@@ -1,6 +1,7 @@
 import {boot} from 'quasar/wrappers';
 import axios, { AxiosInstance } from 'axios';
 import {useStoreLogin} from 'src/store/store_login';
+import {useStoreUtils} from "src/store/store_utils";
 
 declare module '@vue/runtime-core' {
   interface ComponentCustomProperties {
@@ -17,12 +18,6 @@ declare module '@vue/runtime-core' {
 // for each client)
 const api = axios.create({ baseURL: 'http://localhost:8080' });
 
-let loading = false;
-
-function isLoading() {
-  return loading;
-}
-
 export default boot(({ app, router }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api
 
@@ -35,6 +30,7 @@ export default boot(({ app, router }) => {
   //       so you can easily perform requests against your app's API
 
   const storeLogin = useStoreLogin();
+  const storeUtils = useStoreUtils();
 
   // Add a request interceptor
   // https://stackoverflow.com/questions/43051291/attach-authorization-header-for-all-axios-requests
@@ -61,8 +57,9 @@ export default boot(({ app, router }) => {
       return Promise.reject(error);
     });
 
-  api.interceptors.request.use(config => {loading = true; return config;});
-  api.interceptors.response.use(response => {loading = false; return response;}, error => {loading = false; return Promise.reject(error);});
+  // todo [3] probably use config.url or even request to track parallel requests
+  api.interceptors.request.use(config => {storeUtils.loading = true; return config;});
+  api.interceptors.response.use(response => {storeUtils.loading = false; return response;}, error => {storeUtils.loading = false; return Promise.reject(error);});
 });
 
-export { api,isLoading };
+export { api };

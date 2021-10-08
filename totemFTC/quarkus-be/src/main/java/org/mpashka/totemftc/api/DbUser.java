@@ -1,6 +1,6 @@
 package org.mpashka.totemftc.api;
 
-import io.quarkus.runtime.StartupEvent;
+import com.fasterxml.jackson.annotation.JsonIgnore;import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.pgclient.PgPool;
@@ -23,11 +23,12 @@ import java.util.stream.StreamSupport;
  *
  */
 @ApplicationScoped
-public class DBUser {
-    private static final Logger log = LoggerFactory.getLogger(DBUser.class);
+public class DbUser {
+    private static final Logger log = LoggerFactory.getLogger(DbUser.class);
 
     private final PgPool client;
     private final boolean schemaCreate;
+    private PreparedQuery<RowSet<Row>> selectUsers;
     private PreparedQuery<RowSet<Row>> selectUserShortById;
     private PreparedQuery<RowSet<Row>> selectUserFullById;
     private PreparedQuery<RowSet<Row>> selectSocialNetworkByUserId;
@@ -42,11 +43,13 @@ public class DBUser {
     private PreparedQuery<RowSet<Row>> insertEmail;
     private PreparedQuery<RowSet<Row>> insertPhone;
     private PreparedQuery<RowSet<Row>> insertImage;
+    private PreparedQuery<RowSet<Row>> updateUser;
     private PreparedQuery<RowSet<Row>> updateMainImageIfAbsent;
     private PreparedQuery<RowSet<Row>> updateMainImage;
+    private PreparedQuery<RowSet<Row>> deleteUser;
 
-    public DBUser(PgPool client, @ConfigProperty(name = "db.schema.create.user", defaultValue = "true") boolean schemaCreate) {
-        log.debug("DBUser.new");
+    public DbUser(PgPool client, @ConfigProperty(name = "db.schema.create.user", defaultValue = "true") boolean schemaCreate) {
+        log.debug("DbUser.new");
         this.client = client;
         this.schemaCreate = schemaCreate;
     }
@@ -56,17 +59,10 @@ public class DBUser {
             initDb();
         }
 
-        selectUserShortById = client.preparedQuery("SELECT " +
-                " u.user_id AS user_id, " +
-                " u.first_name AS first_name, " +
-                " u.last_name AS last_name, " +
-                " u.nick_name AS nick_name, " +
-                " u.primary_image AS primary_image, " +
-                " user_image.image_id AS image_id, " +
-                " user_image.content_type AS content_type " +
-                "FROM user_info u " +
-                "LEFT OUTER JOIN user_image ON u.primary_image = user_image.image_id " +
-                "WHERE u.user_id = $1");
+        String selectUserSql = "SELECT * FROM user_info u " +
+                "LEFT OUTER JOIN user_image ON u.primary_image = user_image.image_id ";
+        selectUsers = client.preparedQuery(selectUserSql);
+        selectUserShortById = client.preparedQuery(selectUserSql + "WHERE u.user_id = $1");
         selectUserFullById = client.preparedQuery("SELECT * from user_info WHERE user_id = $1");
         selectSocialNetworkByUserId = client.preparedQuery("SELECT * FROM user_social_network WHERE user_id = $1 ORDER BY network_id");
         selectEmailByUserId = client.preparedQuery("SELECT * FROM user_email WHERE user_id = $1 ORDER BY email");
@@ -83,13 +79,20 @@ public class DBUser {
                 "FROM user_phone " +
                 "WHERE phone = $1");
 
-        insertUser = client.preparedQuery("INSERT INTO user_info (first_name, last_name, nick_name) VALUES ($1, $2, $3) RETURNING user_id");
+        insertUser = client.preparedQuery("INSERT INTO user_info (first_name, last_name, nick_name, user_type) VALUES ($1, $2, $3, $4) RETURNING user_id");
         insertSocialNetwork = client.preparedQuery("INSERT INTO user_social_network (network_id, id, user_id, link) VALUES ($1, $2, $3, $4)");
         insertEmail = client.preparedQuery("INSERT INTO user_email (email, user_id, confirmed) VALUES ($1, $2, $3)");
         insertPhone = client.preparedQuery("INSERT INTO user_phone (phone, user_id, confirmed) VALUES ($1, $2, $3)");
         insertImage = client.preparedQuery("INSERT INTO user_image (user_id, image, content_type) VALUES ($1, $2, $3) RETURNING image_id");
-        updateMainImage = client.preparedQuery("UPDATE user_info SET primary_image = $1 WHERE user_id = $2");
-        updateMainImageIfAbsent = client.preparedQuery("UPDATE user_info SET primary_image = $1 WHERE user_id = $2 AND primary_image is NULL");
+        updateUser = client.preparedQuery("UPDATE user_info SET first_name=$2, last_name=$3, nick_name=$4, primary_image=$5, user_type=$6  WHERE user_id=$1");
+        updateMainImage = client.preparedQuery("UPDATE user_info SET primary_image=$2 WHERE user_id = $1");
+        updateMainImageIfAbsent = client.preparedQuery("UPDATE user_info SET primary_image=$2 WHERE user_id=$1 AND primary_image is NULL");
+        deleteUser = client.preparedQuery("DELETE FROM user_email WHERE user_id=$1;" +
+                "DELETE FROM user_phone WHERE user_id=$1;" +
+                "DELETE FROM user_image WHERE user_id=$1;" +
+                "DELETE FROM user_social_network WHERE user_id=$1;" +
+                "DELETE FROM user_info WHERE user_id=$1"
+                );
     }
 
     private void initDb() {
@@ -165,8 +168,8 @@ public class DBUser {
      *
      * @return user id
      */
-    public Uni<Integer> addUser(String firstName, String lastName, String nickName) {
-        return insertUser.execute(Tuple.of(firstName, lastName, nickName))
+    public Uni<Integer> addUser(EntityUser user) {
+        return insertUser.execute(Tuple.of(user.firstName, user.lastName, user.nickName, user.type.name()))
                 .onItem().transform(rows -> rows.iterator().next().getInteger("user_id"));
     }
 
@@ -177,16 +180,7 @@ public class DBUser {
                     if (rowIterator.hasNext()) {
                         log.debug("User [{}] found", userId);
                         Row row = rowIterator.next();
-                        EntityUser user = new EntityUser()
-                                .loadFromDb(row);
-
-                        if (row.getInteger("image_id") != null) {
-                            EntityUser.EntityImage image = new EntityUser.EntityImage()
-                                    .loadFromDb(row);
-                            user.setPrimaryImage(image);
-                            log.debug("     Image {}", image.getId());
-                        }
-                        return user;
+                        return loadUserSimple(row);
                     } else {
                         log.debug("User [{}] not found", userId);
                         return null;
@@ -194,6 +188,27 @@ public class DBUser {
                 })
                 .onFailure().transform(e -> new RuntimeException("Error getUser", e))
                 ;
+    }
+
+    public Uni<EntityUser[]> getAllUsers() {
+        return selectUsers.execute()
+                .onItem().transform(set -> StreamSupport.stream(set.spliterator(), false)
+                        .map(this::loadUserSimple)
+                        .toArray(EntityUser[]::new)
+                )
+                .onFailure().transform(e -> new RuntimeException("Error getAllUsers", e))
+                ;
+    }
+
+    private EntityUser loadUserSimple(Row row) {
+        EntityUser user = new EntityUser().loadFromDb(row);
+        if (row.getInteger("image_id") != null) {
+            EntityUser.EntityImage image = new EntityUser.EntityImage()
+                    .loadFromDb(row);
+            user.setPrimaryImage(image);
+            log.debug("     Image {}", image.getId());
+        }
+        return user;
     }
 
     public Uni<EntityUser> getUserFull(int userId) {
@@ -239,10 +254,26 @@ public class DBUser {
                                     if (user.getPrimaryImageId() != null && image.getId() == user.getPrimaryImageId()) {
                                         user.setPrimaryImage(image);
                                     }
+                                    images.add(image);
                                 });
                                 user.setImages(images.toArray(EntityUser.EntityImage[]::new));
                             }).onItem().transform(u -> user))
                 .onFailure().transform(e -> new RuntimeException("Error getUserFull", e));
+    }
+
+    public Uni<Void> updateUser(EntityUser user) {
+        return updateUser.execute(Tuple.of(user.userId, user.firstName, user.lastName, user.nickName,
+                        user.primaryImage != null ? user.primaryImage.id : null, user.type.name()))
+                .onFailure().transform(e -> new RuntimeException("Error update", e))
+                .onItem().transform(u -> null)
+                ;
+    }
+
+    public Uni<Void> deleteUser(int userId) {
+        return deleteUser.execute(Tuple.of(userId))
+                .onFailure().transform(e -> new RuntimeException("Error delete", e))
+                .onItem().transform(u -> null)
+                ;
     }
 
     /**
@@ -329,5 +360,141 @@ public class DBUser {
         public int getUserId() {
             return userId;
         }
+    }
+
+
+    //@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
+    public static class EntityUser {
+    //    @JsonProperty("work_time")
+        private int userId;
+        private String firstName;
+        private String lastName;
+        private String nickName;
+        @JsonIgnore
+        private Integer primaryImageId;
+        private EntityImage primaryImage;
+        private EntitySocialNetwork[] socialNetworks;
+        private EntityPhone[] phones;
+        private EntityEmail[] emails;
+        private EntityImage[] images;
+        private UserType type;
+
+        public EntityUser setFirstName(String firstName) {
+            this.firstName = firstName;
+            return this;
+        }
+
+        public EntityUser setLastName(String lastName) {
+            this.lastName = lastName;
+            return this;
+        }
+
+        public EntityUser setNickName(String nickName) {
+            this.nickName = nickName;
+            return this;
+        }
+
+        public EntityUser setType(UserType type) {
+            this.type = type;
+            return this;
+        }
+
+        public int getUserId() {
+            return userId;
+        }
+
+        public Integer getPrimaryImageId() {
+            return primaryImageId;
+        }
+
+        public void setPrimaryImage(EntityImage primaryImage) {
+            this.primaryImage = primaryImage;
+        }
+
+        public void setSocialNetworks(EntitySocialNetwork[] socialNetworks) {
+            this.socialNetworks = socialNetworks;
+        }
+
+        public void setPhones(EntityPhone[] phones) {
+            this.phones = phones;
+        }
+
+        public void setEmails(EntityEmail[] emails) {
+            this.emails = emails;
+        }
+
+        public void setImages(EntityImage[] images) {
+            this.images = images;
+        }
+
+        public EntityUser loadFromDb(Row row) {
+            this.userId = row.getInteger("user_id");
+            this.firstName = row.getString("first_name");
+            this.lastName = row.getString("last_name");
+            this.nickName = row.getString("nick_name");
+            this.primaryImageId = row.getInteger("primary_image");
+            String userType = row.getString("user_type");
+            try {
+                this.type = UserType.valueOf(userType);
+            } catch (IllegalArgumentException e) {
+                log.warn("Unknown user type {}", userType, e);
+                this.type = UserType.guest;
+            }
+            return this;
+        }
+
+        public static class EntitySocialNetwork {
+            private String networkId;
+            private String id;
+            private String link;
+
+            public EntitySocialNetwork loadFromDb(Row row) {
+                this.networkId = row.getString("network_id");
+                this.id = row.getString("id");
+                this.link = row.getString("link");
+                return this;
+            }
+        }
+        public static class EntityPhone {
+            private String phone;
+            private boolean confirmed;
+
+            public EntityPhone loadFromDb(Row row) {
+                this.phone = row.getString("phone");
+                this.confirmed = row.getBoolean("confirmed");
+                return this;
+            }
+        }
+
+        public static class EntityEmail {
+            private String email;
+            private boolean confirmed;
+
+            public EntityEmail loadFromDb(Row row) {
+                this.email = row.getString("email");
+                this.confirmed = row.getBoolean("confirmed");
+                return this;
+            }
+        }
+
+        public static class EntityImage {
+            private int id;
+            private String contentType;
+
+            public EntityImage loadFromDb(Row row) {
+                this.id = row.getInteger("image_id");
+                this.contentType = row.getString("content_type");
+                return this;
+            }
+
+            public int getId() {
+                return id;
+            }
+        }
+
+    }
+
+    public enum UserType {
+        guest, user, trainer, admin
     }
 }

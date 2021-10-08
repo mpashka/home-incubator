@@ -1,19 +1,13 @@
 package org.mpashka.totemftc.api;
 
 //import io.quarkus.security.Authenticated;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import io.quarkus.resteasy.reactive.jackson.CustomSerialization;
 import io.quarkus.security.Authenticated;
-import io.quarkus.security.identity.CurrentIdentityAssociation;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.ext.web.client.HttpResponse;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import io.vertx.mutiny.sqlclient.Tuple;
-import org.eclipse.microprofile.context.ManagedExecutor;
 import org.jboss.resteasy.reactive.RestCookie;
 import org.jboss.resteasy.reactive.RestPath;
 import org.slf4j.Logger;
@@ -28,10 +22,8 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
-import java.lang.reflect.Type;
 import java.net.URI;
 import java.util.Optional;
-import java.util.function.BiFunction;
 
 @Path("/login")
 public class WebResourceLogin {
@@ -51,7 +43,7 @@ public class WebResourceLogin {
     Utils utils;
 
     @Inject
-    DBUser dbUser;
+    DbUser dbUser;
 
     @Inject
     public WebResourceLogin(Vertx vertx) {
@@ -155,10 +147,10 @@ public class WebResourceLogin {
                             .onItem().transform(searchResult -> Tuple.of(searchResult, userJson));
                 })
                 .onItem().transformToUni(info -> {
-                    DBUser.UserSearchResult searchResult = info.get(DBUser.UserSearchResult.class, 0);
+                    DbUser.UserSearchResult searchResult = info.get(DbUser.UserSearchResult.class, 0);
                     JsonObject userJson = info.get(JsonObject.class, 1);
                     SecurityService.Session newSession = securityService.createSession();
-                    if (searchResult != null && searchResult.getType() == DBUser.UserSearchType.socialNetwork) {
+                    if (searchResult != null && searchResult.getType() == DbUser.UserSearchType.socialNetwork) {
                         // Login by social network id
                         newSession.setUserId(searchResult.getUserId());
                         return Uni.createFrom().item(newSession);
@@ -177,8 +169,11 @@ public class WebResourceLogin {
                         // Create user id
                         String firstName = userJson.getString("first_name");
                         String lastName = userJson.getString("last_name");
-                        userIdUni = dbUser.addUser(firstName, lastName, null)
-                                .onItem().transformToUni(userId ->
+                        userIdUni = dbUser.addUser(new DbUser.EntityUser()
+                                        .setFirstName(firstName)
+                                        .setLastName(lastName)
+                                        .setType(DbUser.UserType.guest)
+                                ).onItem().transformToUni(userId ->
                                         dbUser.addEmail(userId, email)
                                                 .onItem().transform(u -> userId)
                                 );
@@ -224,7 +219,7 @@ public class WebResourceLogin {
     @Path("user")
     @Produces(MediaType.APPLICATION_JSON)
     @Authenticated
-    public Uni<EntityUser> user() {
+    public Uni<DbUser.EntityUser> user() {
         int userId = securityService.getUserId();
         return dbUser.getUser(userId);
     }
@@ -233,7 +228,7 @@ public class WebResourceLogin {
     @Path("userFull")
     @Produces(MediaType.APPLICATION_JSON)
     @Authenticated
-    public Uni<EntityUser> userFull() {
+    public Uni<DbUser.EntityUser> userFull() {
         int userId = securityService.getUserId();
         return dbUser.getUserFull(userId);
     }

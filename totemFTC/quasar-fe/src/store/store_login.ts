@@ -1,43 +1,8 @@
 import {defineStore} from 'pinia'
 import {api} from 'boot/axios';
+import {EntityUser, emptyUser} from "src/store/store_crud_user";
 
 const SESSION_ID_STORAGE_KEY = 'session_id';
-
-export interface EntityUserEmail {
-  email: string,
-  confirmed: boolean,
-}
-
-export interface EntityUserPhone {
-  phone: string,
-  confirmed: boolean,
-}
-
-export interface EntityUserImage {
-  id: number,
-  contentType: string|null,
-}
-
-export interface EntityUser {
-  userId: number,
-  firstName: string,
-  lastName: string,
-  nickName: string,
-  primaryImage?: EntityUserImage,
-  phones: Array<EntityUserPhone>,
-  emails: Array<EntityUserEmail>,
-  images: Array<EntityUserImage>,
-}
-
-const emptyUser: EntityUser = {
-  userId: 0,
-  firstName: '',
-  lastName: '',
-  nickName: '',
-  phones: [],
-  emails: [],
-  images: [],
-};
 
 export const useStoreLogin = defineStore('login', {
   state: () => ({

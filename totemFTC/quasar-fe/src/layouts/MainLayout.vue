@@ -54,7 +54,7 @@
             </q-item-section>
 
             <q-item-section>
-              <q-item-label>Тренеры</q-item-label>
+              <q-item-label>Пользователи</q-item-label>
               <q-item-label caption>
 
               </q-item-label>
@@ -95,7 +95,15 @@
     </q-drawer>
 
     <q-page-container>
-      <router-view />
+      <Suspense>
+        <template #default>
+          <router-view />
+        </template>
+        <template #fallback>
+          <q-spinner color="primary" size="3em"/>
+          <div>Loading...</div>
+        </template>
+      </Suspense>
     </q-page-container>
   </q-layout>
 </template>

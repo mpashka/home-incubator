@@ -45,7 +45,7 @@
         <q-input class="col-1" filled v-model="editRowObj.time" label="Время">
           <template v-slot:append>
             <q-icon name="access_time" class="cursor-pointer">
-              <q-popup-proxy transition-show="scale" transition-hide="scale" ref="timePopup">
+              <q-popup-proxy transition-show="scale" transition-hide="scale" ref="uiTimePopup">
                 <q-time v-model="editRowObj.time" mask="HH:mm" :minute-options="[0, 15, 30, 45]" format24h @update:model-value="onTimeUpdate">
                   <div class="row items-center justify-end">
                     <q-btn v-close-popup label="Close" color="primary" flat />
@@ -57,7 +57,7 @@
         </q-input>
 
           <q-select class="col-2" filled v-model="editRowObj.trainingType" label="Тренировка"
-                    :options="store.trainingTypes" option-label="trainingName" @update:model-value="onTrainingTypeChange">
+                    :options="storeTraining.trainingTypes" option-label="trainingName" @update:model-value="onTrainingTypeChange">
             <template v-slot:no-option>
               <q-item>
                 <q-item-section class="text-grey">
@@ -92,26 +92,27 @@
 import { ref, computed, Ref } from 'vue';
 import {
   emptySchedule,
-  EntityCrudSchedule, EntityCrudTrainer,
-  EntityCrudTrainingType,
+  EntityCrudSchedule,
   useStoreCrudSchedule
 } from 'src/store/store_crud_schedule';
+import {EntityCrudTrainer, EntityCrudTrainingType, useStoreCrudTraining} from 'src/store/store_crud_training';
 import {QPopupProxy} from "quasar";
 
 export default {
   name: 'TableSchedule',
   setup () {
-    const store = useStoreCrudSchedule();
-    const trainers = ref(store.trainers);
-    store.load().catch(e => console.log('Load error', e));
-    store.loadTrainers()
-      .then(() => trainers.value = store.trainers)
+    const storeSchedule = useStoreCrudSchedule();
+    const storeTraining = useStoreCrudTraining();
+    const trainers = ref(storeTraining.trainers);
+    storeSchedule.load().catch(e => console.log('Load error', e));
+    storeTraining.loadTrainers()
+      .then(() => trainers.value = storeTraining.trainers)
       .catch(e => console.log('Load error', e));
-    store.loadTrainingTypes().catch(e => console.log('Load error', e));
+    storeTraining.loadTrainingTypes().catch(e => console.log('Load error', e));
 
     async function deleteRowCommit() {
       console.log('Delete row ', deleteRowObj);
-      deleteRowObj.value && await store.delete(deleteRowObj.value?.id);
+      deleteRowObj.value && await storeSchedule.delete(deleteRowObj.value?.id);
       deleteRowObj.value = null;
     }
 
@@ -119,9 +120,9 @@ export default {
       console.log('Add row', editRowObj.value);
       const newValue = editRowObj.value as EntityCrudSchedule;
       if (newValue.id === -1) {
-        await store.create(newValue);
+        await storeSchedule.create(newValue);
       } else {
-        await store.update(newValue);
+        await storeSchedule.update(newValue);
       }
       editRowObj.value = null;
     }
@@ -153,22 +154,22 @@ export default {
     }
 
     function selectSchedule(weekDay: number): EntityCrudSchedule[] {
-      return store.schedule.filter(s => s.day == weekDay);
+      return storeSchedule.schedule.filter(s => s.day == weekDay);
     }
 
     function onTrainingTypeChange(type: EntityCrudTrainingType) {
-      trainers.value = store.trainers.filter(v => v.trainingTypes.indexOf(type.trainingType) > -1);
+      trainers.value = storeTraining.trainers.filter(v => v.trainingTypes.indexOf(type.trainingType) > -1);
     }
 
-    const timePopup = ref(null);
+    const uiTimePopup = ref(null);
     function onTimeUpdate(value:string) {
       console.log(`Time updated: ${value}`);
-      (timePopup.value as unknown as QPopupProxy).hide();
+      (uiTimePopup.value as unknown as QPopupProxy).hide();
     }
 
     return {
       columns,
-      store,
+      storeTraining,
       weekDayName,
       selectSchedule,
       deleteRowStart,
@@ -179,7 +180,7 @@ export default {
       editRowObj,
       trainers,
       onTrainingTypeChange,
-      timePopup,
+      uiTimePopup,
       onTimeUpdate,
       defaultRow: emptySchedule,
       confirmDelete: computed({get: () => deleteRowObj.value !== null, set: () => deleteRowObj.value = null}),

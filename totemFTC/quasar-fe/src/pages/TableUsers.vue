@@ -1,5 +1,5 @@
 <template>
-  <q-table title="Тренер" :rows="store.rows" :columns="columns" :filter="filter" :loading="store.isLoading" row-key="id">
+  <q-table title="Пользователи" :rows="storeUser.rows" :columns="columns" :filter="filter" :loading="storeUtils.loading" row-key="id">
     <template v-slot:top-right>
       <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
         <template v-slot:append>
@@ -38,11 +38,15 @@
       </q-card-section>
 
       <q-card-section>
-        <div class="row">
-          <q-input filled v-model="editRowObj.trainerName" label="ФИО" hint="Name and surname"
-                   lazy-rules
+        <div class="column">
+          <q-input filled v-model="editRowObj.firstName" label="Имя"
                    :rules="[ val => val && val.length > 0 || 'Please type something']"
           />
+          <q-input filled v-model="editRowObj.lastName" label="Фамилия"
+                   :rules="[ val => val && val.length > 0 || 'Please type something']"
+          />
+          <q-input filled v-model="editRowObj.nickName" label="Ник"/>
+          <q-select v-model="editRowObj.type" :options="userTypes" option-label="label" option-value="type"/>
         </div>
       </q-card-section>
 
@@ -56,55 +60,75 @@
 
 <script lang="ts">
 import { ref, computed, Ref } from 'vue';
-import {EntityCrudTrainer, useStoreCrudTrainer, emptyTrainer} from 'src/store/store_crud_trainers'
+import {useStoreCrudUser, EntityUser, EntityUserType, emptyUser} from 'src/store/store_crud_user'
+import {useStoreUtils} from "src/store/store_utils";
+
+const columns = [
+  { name: 'firstName', required: true, label: 'Имя', align: 'left', field: 'firstName', sortable: true },
+  { name: 'lastName', required: true, label: 'Фамилия', align: 'left', field: 'lastName', sortable: true },
+  { name: 'nickName', required: true, label: 'Ник', align: 'left', field: 'nickName', sortable: true },
+  // { name: 'images', required: false, label: 'картинка', align: 'left', field: 'images', sortable: false },
+  // { name: 'phones', required: false, label: 'телефон', align: 'left', field: 'phones', sortable: false },
+  // { name: 'emails', required: false, label: 'e-mail', align: 'left', field: 'emails', sortable: false },
+  // { name: 'emails', required: false, label: 'e-mail', align: 'left', field: 'emails', sortable: false },
+  { name: 'type', required: true, label: 'Тип', align: 'left', field: 'type', sortable: false },
+  { name: 'actions', label: 'Actions'}
+]
+
+interface UserType {
+  type: EntityUserType,
+  label: string,
+}
+
+const userTypes: UserType[] = [
+  {type: 'guest'   , label: 'Гость'},
+  {type: 'user'    , label: 'Посетитель'},
+  {type: 'trainer' , label: 'Тренер'},
+  {type: 'admin'   , label: 'Администратор'},
+]
 
 export default {
-  name: 'TableTrainers',
+  name: 'TableUsers',
   setup () {
     let filter = ref('');
-    const store = useStoreCrudTrainer();
-    store.load()
-      .then(() => console.log('Loaded successfully'), e => console.log('Load error', e));
+    const storeUtils = useStoreUtils();
+    const storeUser = useStoreCrudUser();
+    const deleteRowObj :Ref<EntityUser | null> = ref(null);
+    const editRowObj :Ref<EntityUser | null> = ref(null);
+
+    storeUser.load().catch(e => console.log('Load error', e));
 
     async function deleteRowCommit() {
       console.log('Delete row ', deleteRowObj);
-      deleteRowObj.value && await store.delete(deleteRowObj.value.trainerId);
+      deleteRowObj.value && await storeUser.delete(deleteRowObj.value);
       deleteRowObj.value = null;
     }
 
     async function editRowCommit() {
       console.log('Add row', editRowObj.value);
-      const newValue = editRowObj.value as EntityCrudTrainer;
-      if (newValue.trainerId === -1) {
-        await store.create(newValue);
+      const newValue = editRowObj.value as EntityUser;
+      if (newValue.userId === -1) {
+        await storeUser.create(newValue);
       } else {
-        await store.update(newValue);
+        await storeUser.update(newValue);
       }
       editRowObj.value = null;
     }
 
-    const columns = [
-      { name: 'trainerName', required: true, label: 'ФИО', align: 'left', field: 'trainerName', sortable: true },
-      { name: 'actions', label: 'Actions'}
-    ]
-
-    const deleteRowObj :Ref<EntityCrudTrainer | null> = ref(null);
-
-    function deleteRowStart(row: EntityCrudTrainer) {
+    function deleteRowStart(row: EntityUser) {
       deleteRowObj.value = row;
       console.log('Confirm delete row', row);
     }
 
-    const editRowObj :Ref<EntityCrudTrainer | null> = ref(null);
-
-    function editRowStart(row: EntityCrudTrainer) {
+    function editRowStart(row: EntityUser) {
       console.log('Start edit row', row);
       editRowObj.value = Object.assign({}, row);
     }
 
     return {
       columns,
-      store,
+      storeUser,
+      storeUtils,
       filter,
       deleteRowStart,
       deleteRowCommit,
@@ -112,10 +136,11 @@ export default {
       editRowStart,
       editRowCommit,
       editRowObj,
-      defaultRow: emptyTrainer,
+      defaultRow: emptyUser,
       confirmDelete: computed({get: () => deleteRowObj.value !== null, set: () => deleteRowObj.value = null}),
       confirmAdd: computed({get: () => editRowObj.value !== null, set: () => editRowObj.value = null}),
-      isRowAddOrEdit: computed(() => editRowObj.value?.trainerId === -1),
+      isRowAddOrEdit: computed(() => editRowObj.value?.userId === -1),
+      userTypes,
     }
   }
 }

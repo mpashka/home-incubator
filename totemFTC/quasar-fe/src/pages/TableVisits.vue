@@ -1,27 +1,74 @@
 <template>
-  <q-table title="Посещения" :rows="store.rows" :columns="columns" :filter="filter" :loading="store.isLoading" row-key="id">
-    <template v-slot:top-right>
-      <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
-        <template v-slot:append>
-          <q-icon name="search" />
-        </template>
-      </q-input>
-      <q-btn round icon="plus" @click="editRowStart(defaultRow)"/>
-    </template>
+  <div class="row">
+    <div class="row">
+      <q-btn icon="caret-circle-left"/>
+      <q-btn class="column">
+        <div class="column">
+          <q-chip dense size="xs" class="self-end" :label="visitDateLabel()"/>
+          <p>{{storeVisit.date}}</p>
+        </div>
+
+        <q-popup-proxy transition-show="scale" transition-hide="scale" ref="datePopup">
+          <q-date v-model="storeVisit.date" :mask="dateFormat" @update:model-value="onVisitDateUpdate" ref="uiDatePopup">
+            <div class="row items-center justify-end">
+              <q-btn label="Сегодня" color="primary" flat @click="onVisitDateUpdate(date.formatDate(new Date(), dateFormat))"/>
+              <q-btn label="Вчера" color="primary" flat @click="onVisitDateUpdate(date.formatDate(date.subtractFromDate(new Date(), {days: 1}), dateFormat))"/>
+            </div>
+          </q-date>
+        </q-popup-proxy>
+      </q-btn>
+      <q-btn icon="caret-circle-right"/>
+    </div>
+
+    <q-list v-model="storeVisit.training" :options="storeVisit.trainings" @update:model-value="storeVisit.reloadVisits()"
+            filled >
+
+      <template v-slot:before-options>
+        Тренировки ...
+      </template>
+
+      <template v-slot:option="props">
+        <div class="row">
+          <div class="col-1">
+            {{props.opt.time}}
+          </div>
+          <div class="col-2">
+            {{props.opt.trainer.nickName}}
+          </div>
+          <div class="col-1">
+            {{props.opt.trainingType.trainingName}}
+          </div>
+          <div class="col-1">
+            {{props.opt.comment}}
+          </div>
+        </div>
+      </template>
+
+    </q-list>
+
+  </div>
+
+  <q-table :rows="storeVisit.visits" :columns="visitColumns"
+           :loading="storeUtils.loading" :row-key="visitId"
+    title="Посещения">
 
     <template v-slot:body-cell-actions="props">
       <q-td :props="props">
+        <q-btn round flat size="sm" @click="editRowStart(props.row)">
+          <q-icon name="check" :class="props.row.markMaster ? 'text-green' : null"/>
+        </q-btn>
         <q-btn round flat size="sm" icon="edit" @click="editRowStart(props.row)"/>
         <q-btn round flat size="sm" icon="delete" @click="deleteRowStart(props.row)"/>
       </q-td>
     </template>
+
   </q-table>
 
   <q-dialog v-model="confirmDelete">
     <q-card>
       <q-card-section class="row items-center">
         <q-avatar icon="signal_wifi_off" color="primary" text-color="white" />
-        <span class="q-ml-sm">Удалить посещение </span>
+        <span class="q-ml-sm">Удалить посещение {{ displayUserName(deleteRowObj.user) }}</span>
       </q-card-section>
 
       <q-card-actions align="right">
@@ -38,51 +85,19 @@
       </q-card-section>
 
       <q-card-section>
-        <div class="row">
-          <q-input filled v-model="editRowObj.visitDate" label="Дата" hint="Дата посещения">
-            <template v-slot:prepend>
-              <q-icon name="event" class="cursor-pointer">
-                <q-popup-proxy transition-show="scale" transition-hide="scale" ref="datePopup">
-                  <q-date v-model="editRowObj.visitDate" mask="YYYY-MM-DD HH:mm" @update:model-value="onDateUpdate">
-                    <!--div class="row items-center justify-end">
-                      <q-btn v-close-popup label="Close" color="primary" flat />
-                    </div-->
-                  </q-date>
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-
-            <template v-slot:append>
-              <q-icon name="access_time" class="cursor-pointer">
-                <q-popup-proxy transition-show="scale" transition-hide="scale">
-                  <q-time v-model="editRowObj.visitDate" mask="YYYY-MM-DD HH:mm" format24h>
-                    <div class="row items-center justify-end">
-                      <q-btn v-close-popup label="Close" color="primary" flat />
-                    </div>
-                  </q-time>
-                </q-popup-proxy>
-              </q-icon>
-            </template>
-          </q-input>
-        </div>
-        <div class="row">
-          <q-input filled v-model="editRowObj.visitComment" label="Примечание"/>
-        </div>
-        <div class="row">
-          <q-select filled v-model="editRowObj.trainer" use-input
-                    input-debounce="0" label="Тренер" hint="Тренер"
-                    :options="trainers" option-label="trainerName"
-                    @filter="trainerFilter"
-          >
-            <template v-slot:no-option>
-              <q-item>
-                <q-item-section class="text-grey">
-                  Пожалуйста выберите тренера
-                </q-item-section>
-              </q-item>
-            </template>
-          </q-select>
-        </div>
+        <q-select filled v-model="editRowObj.user" use-input
+                  input-debounce="0" label="Работяга"
+                  :options="users" option-label="displayUserName"
+                  @filter="userFilter"
+        >
+          <template v-slot:no-option>
+            <q-item>
+              <q-item-section class="text-grey">
+                Пожалуйста выберите жертву
+              </q-item-section>
+            </q-item>
+          </template>
+        </q-select>
       </q-card-section>
 
       <q-card-actions align="right">
@@ -91,45 +106,35 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+
 </template>
 
 <script lang="ts">
 import { ref, computed, Ref } from 'vue';
-import {EntityCrudTrainer, useStoreCrudTrainer} from 'src/store/store_crud_trainers'
+import {dateFormat, useStoreCrudTraining} from 'src/store/store_crud_training'
 import {EntityCrudVisit, useStoreCrudVisit, emptyVisit} from 'src/store/store_crud_visits';
-import {QPopupProxy} from "quasar";
+import {useStoreUtils} from 'src/store/store_utils';
+import {date, QPopupProxy} from 'quasar'
+import {useStoreCrudUser, EntityUser} from "src/store/store_crud_user";
+
+const visitColumns = [
+  { name: 'userFirstName', required: true, label: 'Ф', align: 'left', field: 'user', format: (val: EntityUser) => val.firstName, sortable: true },
+  { name: 'userLastName', required: true, label: 'И', align: 'left', field: 'user', format: (val: EntityUser) => val.lastName, sortable: true },
+  { name: 'userNickName', required: true, label: 'Имя', align: 'left', field: 'user', format: (val: EntityUser) => val.nickName, sortable: true },
+  { name: 'comment', required: false, label: 'Примечание', align: 'left', field: 'comment', sortable: false },
+  { name: 'actions', label: 'Actions'},
+]
 
 export default {
   name: 'TableVisits',
-  setup () {
-    let filter = ref('');
-    const store = useStoreCrudVisit();
-    store.load()
-      .then(() => console.log('Loaded successfully'), e => console.log('Load error', e));
+  async setup () {
 
-    async function deleteRowCommit() {
-      console.log('Delete row ', deleteRowObj);
-      deleteRowObj.value && await store.delete(deleteRowObj.value.visitId);
-      deleteRowObj.value = null;
-    }
-
-    async function editRowCommit() {
-      console.log('Add row', editRowObj);
-      const newValue = editRowObj.value as EntityCrudVisit;
-      if (newValue.visitId === -1) {
-        await store.create(newValue);
-      } else {
-        await store.update(newValue);
-      }
-      editRowObj.value = null;
-    }
-
-    const columns = [
-      { name: 'date', required: true, label: 'Дата', align: 'left', field: 'visitDate', sortable: true },
-      { name: 'trainer', required: true, label: 'Тренер', align: 'left', field: 'trainer', format: (val: EntityCrudTrainer) => val.trainerName, sortable: true },
-      { name: 'comment', required: false, label: 'Примечание', align: 'left', field: 'visitComment', sortable: false },
-      { name: 'actions', label: 'Actions'}
-    ]
+    const storeVisit = useStoreCrudVisit();
+    const storeTraining = useStoreCrudTraining();
+    const storeUser = useStoreCrudUser();
+    const storeUtils = useStoreUtils();
+    storeTraining.loadTrainers().catch(e => console.log('Load error', e));
+    storeTraining.loadTrainingTypes().catch(e => console.log('Load error', e));
 
     const deleteRowObj :Ref<EntityCrudVisit | null> = ref(null);
 
@@ -138,6 +143,13 @@ export default {
       console.log('Confirm delete row', row);
     }
 
+    async function deleteRowCommit() {
+      console.log('Delete row ', deleteRowObj);
+      deleteRowObj.value && await storeVisit.deleteVisit(deleteRowObj.value);
+      deleteRowObj.value = null;
+    }
+
+
     const editRowObj :Ref<EntityCrudVisit | null> = ref(null);
 
     function editRowStart(row: EntityCrudVisit) {
@@ -145,51 +157,123 @@ export default {
       editRowObj.value = Object.assign({}, row);
     }
 
-    const storeTrainers = useStoreCrudTrainer();
-    const trainers = ref(storeTrainers.rows);
-    storeTrainers.load()
-      .then(() => {
-        console.log('Loaded successfully');
-        trainers.value = storeTrainers.rows;
-      }, e => console.log('Load error', e));
-
-    function trainerFilter(val: string, update: (fn: () => void) => void) {
-      if (!val || val.length === 0) {
-        update(() => {
-          trainers.value = storeTrainers.rows;
-        });
+    async function editRowCommit() {
+      console.log('Add row', editRowObj);
+      const newValue = editRowObj.value as EntityCrudVisit;
+      if (newValue.trainingId === -1) {
+        newValue.trainingId = storeVisit.training.id;
+        newValue.markMaster = true;
+        await storeVisit.createVisit(newValue);
       } else {
-        const valL = val.toLowerCase();
+        await storeVisit.updateComment(newValue);
+      }
+      editRowObj.value = null;
+    }
+
+    function displayUserName(user: EntityUser) {
+      let result: string = '';
+      const name = user.firstName || user.lastName;
+
+      function addName() {
+        if (user.firstName) {
+          result += user.firstName;
+        }
+        if (user.lastName) {
+          result += user.lastName;
+        }
+      }
+
+      if (user.nickName) {
+        result = user.nickName
+        if (name) {
+          result += ' ('
+          addName();
+          result += ')';
+        }
+      } else {
+        addName();
+      }
+      return result;
+    }
+
+
+    const users = ref(storeUser.rows);
+    function userFilter(filter: string, update: (fn: () => void) => void) {
+      if (!filter) {
+        update(() => users.value = storeUser.rows)
+      } else {
+        /** Returns true if all filters are present in some user parts */
+        function contains(user: EntityUser, filters: string[]): boolean {
+          const userStrings = [user.firstName.toLowerCase(), user.lastName.toLowerCase(), user.nickName.toLowerCase()];
+          for (let i = 0; i < filters.length; i++) {
+            let notPresent = true;
+            for (let j = 0; j < userStrings.length; j++) {
+              if (userStrings[j].includes(filters[i])) {
+                notPresent = false;
+                break;
+              }
+            }
+            if (notPresent) {
+              return false;
+            }
+          }
+          return true;
+        }
+
         update(() => {
-          trainers.value = storeTrainers.rows.filter(v => v.trainerName.toLowerCase().indexOf(valL) > -1);
-        });
+          const filters = filter.toLowerCase().split(/ +/);
+          users.value = storeUser.rows.filter(u => contains(u, filters))
+        })
       }
     }
 
-    const datePopup = ref(null);
-    function onDateUpdate(value:string, reason:string, details: any) {
+    const uiDatePopup = ref(null);
+    async function onVisitDateUpdate(value:string) {
       console.log(`Date updated: ${value}`);
-      (datePopup.value as unknown as QPopupProxy).hide();
+      (uiDatePopup.value as unknown as QPopupProxy).hide();
+      await storeVisit.setDate(value);
+    }
+
+    function visitId(visit: EntityCrudVisit): string {
+      return visit.trainingId + '_' + visit.user.userId;
+    }
+
+    function visitDateLabel(): string {
+      switch (date.getDateDiff(storeVisit.date, new Date().toDateString(), 'days')) {
+        case 0: return 'Сегодня';
+        case 1: return 'Завтра';
+        case 2: return 'Послезавтра';
+        case 7: return 'Через неделю';
+        case -1: return 'Вчера';
+        case -2: return 'Позавчера';
+        case -7: return 'Неделю назад';
+      }
+      return '';
     }
 
     return {
-      columns,
-      store,
-      filter,
-      trainers,
-      trainerFilter,
-      deleteRowStart,
-      deleteRowCommit,
-      deleteRowObj,
-      editRowStart,
-      editRowCommit,
-      editRowObj,
-      defaultRow: emptyVisit,
+      visitColumns,
+      storeVisit,
+      storeUtils,
+      storeUser,
+      emptyVisit,
+      visitDateLabel,
+      visitId,
+      dateFormat,
+      uiDatePopup,
+      onVisitDateUpdate,
       confirmDelete: computed({get: () => deleteRowObj.value !== null, set: () => deleteRowObj.value = null}),
       confirmAdd: computed({get: () => editRowObj.value !== null, set: () => editRowObj.value = null}),
-      isRowAddOrEdit: computed(() => editRowObj.value?.visitId === -1),
-      datePopup,
-      onDateUpdate,
+      isRowAddOrEdit: computed(() => editRowObj.value?.trainingId === -1),
+      deleteRowObj,
+      deleteRowStart,
+      deleteRowCommit,
+      editRowObj,
+      editRowStart,
+      editRowCommit,
+      displayUserName,
+      users,
+      userFilter,
     }
   }
 }

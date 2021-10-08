@@ -1,7 +1,5 @@
 package org.mpashka.totemftc.api;
 
-import io.smallrye.config.PropertiesConfigSource;
-import io.smallrye.mutiny.Uni;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.eclipse.microprofile.config.spi.ConfigSource;
@@ -40,7 +38,7 @@ public class SecurityService {
     Utils utils;
 
     @Inject
-    DBUser dbUser;
+    DbUser dbUser;
 
     @Inject
     SecurityService.RequestParameters requestParameters;
