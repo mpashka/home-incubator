@@ -8,7 +8,6 @@ export const useStoreLogin = defineStore('login', {
   state: () => ({
     sessionId: '',
     user: {...emptyUser} as EntityUser,
-    userFull: {...emptyUser} as EntityUser,
   }),
 
   getters: {
@@ -47,9 +46,5 @@ export const useStoreLogin = defineStore('login', {
     clearSession() {
       localStorage.removeItem(SESSION_ID_STORAGE_KEY);
     },
-
-    async loadUserFull () {
-      this.userFull = (await api.get<EntityUser>('/login/userFull')).data;
-    }
   },
 });

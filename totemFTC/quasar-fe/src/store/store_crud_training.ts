@@ -1,26 +1,10 @@
-import {EntityUser} from "src/store/store_crud_user";
+import {emptyUser, EntityUser} from "src/store/store_crud_user";
 import {defineStore} from "pinia";
 import {api} from "boot/axios";
 
 export interface EntityCrudTrainingType {
   trainingType: string,
   trainingName: string,
-}
-
-export interface EntityCrudTrainer extends EntityUser {
-  trainingTypes: string[],
-}
-
-export const emptyTrainer: EntityCrudTrainer = {
-  userId: 0,
-  firstName: '',
-  lastName: '',
-  nickName: '',
-  phones: [],
-  emails: [],
-  images: [],
-  trainingTypes: [],
-  type: 'trainer',
 }
 
 export const emptyTrainingType: EntityCrudTrainingType = {
@@ -31,7 +15,7 @@ export const emptyTrainingType: EntityCrudTrainingType = {
 export interface EntityCrudTraining {
   id: number,
   time: string,
-  trainer: EntityCrudTrainer,
+  trainer: EntityUser,
   trainingType: EntityCrudTrainingType,
   comment: string,
 }
@@ -39,7 +23,7 @@ export interface EntityCrudTraining {
 export const emptyTraining: EntityCrudTraining = {
   id: -1,
   time: '',
-  trainer: emptyTrainer,
+  trainer: emptyUser,
   trainingType: emptyTrainingType,
   comment: '',
 }
@@ -50,18 +34,18 @@ export const dateTimeFormat = 'YYYY-MM-DD HH:mm';
 
 export const useStoreCrudTraining = defineStore('crudTraining', {
   state: () => ({
-    trainers: [] as EntityCrudTrainer[],
+    trainers: [] as EntityUser[],
     trainingTypes: [] as EntityCrudTrainingType[],
   }),
 
   actions: {
     async loadTrainers() {
-      this.trainers = (await api.get<EntityCrudTrainer[]>('/api/trainers/list')).data;
+      this.trainers = (await api.get<EntityUser[]>('/api/trainers/list')).data;
       console.log('Trainers received', this.trainers);
     },
 
     async loadTrainingTypes() {
-      this.trainingTypes = (await api.get<EntityCrudTrainingType[]>('/api/trainers/trainingTypes')).data;
+      this.trainingTypes = (await api.get<EntityCrudTrainingType[]>('/api/training/types')).data;
       console.log('TrainingTypes received', this.trainingTypes);
     },
 

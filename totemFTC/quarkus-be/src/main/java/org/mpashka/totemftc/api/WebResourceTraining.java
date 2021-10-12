@@ -24,17 +24,20 @@ public class WebResourceTraining {
     private static final Logger log = LoggerFactory.getLogger(WebResourceTraining.class);
 
     @Inject
+    DbUser dbUser;
+
+    @Inject
     DbCrudTraining dbTraining;
 
     @GET
     @Path("trainers/list")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<DbCrudTraining.EntityTrainer[]> listTrainers() {
-        return dbTraining.getTrainers();
+    public Uni<DbUser.EntityUser[]> listTrainers() {
+        return dbUser.getTrainers();
     }
 
     @GET
-    @Path("trainers/trainingTypes")
+    @Path("training/types")
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<DbCrudTraining.EntityTrainingType[]> listTrainingTypes() {
         return dbTraining.getTrainingTypes();

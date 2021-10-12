@@ -52,7 +52,13 @@
                     :options="userTypes" option-label="label" option-value="type" emit-value
                     :display-value="userTypesMap.get(editRowObj.type)"
           />
-
+          <div class="column" v-if="editRowObj.type === 'trainer' || editRowObj.type === 'admin'">
+            <div class="text-h4">Тренер по</div>
+            <q-checkbox v-for="training in storeCrudTraining.trainingTypes"
+              v-model="editRowObj.trainingTypes" :val="training.trainingType" label="training.trainingName"
+                        :key="'training-type-' + training.trainingType"
+            />
+          </div>
         </div>
       </q-card-section>
 
@@ -68,7 +74,7 @@
 import { ref, computed, Ref } from 'vue';
 import {useStoreCrudUser, EntityUser, EntityUserType, emptyUser} from 'src/store/store_crud_user'
 import {useStoreUtils} from "src/store/store_utils";
-import {EntityCrudTrainer} from "src/store/store_crud_training";
+import {useStoreCrudTraining} from "src/store/store_crud_training";
 
 interface UserType {
   type: EntityUserType,
@@ -82,7 +88,7 @@ const userTypes: UserType[] = [
   {type: 'admin'   , label: 'Администратор'},
 ]
 
-const userTypesMap = new Map<String, String>();
+const userTypesMap = new Map<string, string>();
 userTypes.forEach(e => userTypesMap.set(e.type, e.label));
 
 const columns = [
@@ -94,7 +100,7 @@ const columns = [
   // { name: 'phones', required: false, label: 'телефон', align: 'left', field: 'phones', sortable: false },
   // { name: 'emails', required: false, label: 'e-mail', align: 'left', field: 'emails', sortable: false },
   // { name: 'emails', required: false, label: 'e-mail', align: 'left', field: 'emails', sortable: false },
-  { name: 'type', required: true, label: 'Тип', align: 'left', field: 'type', format: (val: EntityUserType) => `${userTypesMap.get(val)}`, sortable: false, },
+  { name: 'type', required: true, label: 'Тип', align: 'left', field: 'type', format: (val: EntityUserType) => `${String(userTypesMap.get(val))}`, sortable: false, },
   { name: 'actions', label: 'Actions'}
 ]
 
@@ -105,8 +111,10 @@ export default {
     let filter = ref('');
     const storeUtils = useStoreUtils();
     const storeUser = useStoreCrudUser();
+    const storeCrudTraining = useStoreCrudTraining();
     storeUser.disableFilter();
 
+    storeCrudTraining.loadTrainingTypes().catch(e => console.log('Load error', e));
     storeUser.load().catch(e => console.log('Load error', e));
 
 
@@ -145,6 +153,7 @@ export default {
       columns,
       storeUser,
       storeUtils,
+      storeCrudTraining,
       filter,
       editRowObj,
       editRowStart,

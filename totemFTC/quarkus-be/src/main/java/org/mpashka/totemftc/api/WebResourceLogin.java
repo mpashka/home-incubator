@@ -173,6 +173,7 @@ public class WebResourceLogin {
                                         .setFirstName(firstName)
                                         .setLastName(lastName)
                                         .setType(DbUser.UserType.guest)
+                                        .setTrainingTypes(new String[0])
                                 ).onItem().transformToUni(userId ->
                                         dbUser.addEmail(userId, email)
                                                 .onItem().transform(u -> userId)
@@ -222,15 +223,6 @@ public class WebResourceLogin {
     public Uni<DbUser.EntityUser> user() {
         int userId = securityService.getUserId();
         return dbUser.getUser(userId);
-    }
-
-    @GET
-    @Path("userFull")
-    @Produces(MediaType.APPLICATION_JSON)
-    @Authenticated
-    public Uni<DbUser.EntityUser> userFull() {
-        int userId = securityService.getUserId();
-        return dbUser.getUserFull(userId);
     }
 
     private static class LoginState {

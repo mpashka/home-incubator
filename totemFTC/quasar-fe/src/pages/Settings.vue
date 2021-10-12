@@ -2,7 +2,6 @@
   Settings.
   <div>
     <p>SessionId: {{ storeLogin.sessionId }}</p>
-    <div>
     <p>User: {{ storeLogin.user }}</p>
     <p>Name: {{ storeLogin.user.firstName }}</p>
     <p>Last: {{ storeLogin.user.lastName }}</p>
@@ -13,8 +12,6 @@
     <div v-for="email in storeLogin.user.emails" :key="email.email">
       <p>Phone: {{email.email }} ({{ email.confirmed }})</p>
     </div>
-    </div>
-    <p>UserFull: {{ storeLogin.userFull }}</p>
   </div>
 </template>
 

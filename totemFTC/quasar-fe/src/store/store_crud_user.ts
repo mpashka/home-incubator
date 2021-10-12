@@ -7,10 +7,12 @@ export const emptyUser: EntityUser = {
   firstName: '',
   lastName: '',
   nickName: '',
+  type: 'guest',
+  trainingTypes: [],
   phones: [],
   emails: [],
   images: [],
-  type: 'guest',
+  socialNetworks: [],
 };
 
 export interface EntityUserEmail {
@@ -28,6 +30,12 @@ export interface EntityUserImage {
   contentType: string|null,
 }
 
+export interface EntityUserSocialNetwork {
+  networkId: string,
+  id: string,
+  link: string,
+}
+
 export type EntityUserType = 'guest' | 'user' | 'trainer' | 'admin';
 
 export interface EntityUser {
@@ -36,10 +44,12 @@ export interface EntityUser {
   lastName: string,
   nickName: string,
   primaryImage?: EntityUserImage,
-  phones: Array<EntityUserPhone>,
-  emails: Array<EntityUserEmail>,
-  images: Array<EntityUserImage>,
   type: EntityUserType,
+  trainingTypes: string[],
+  phones: EntityUserPhone[],
+  emails: EntityUserEmail[],
+  images: EntityUserImage[],
+  socialNetworks: EntityUserSocialNetwork[],
 }
 
 export const useStoreCrudUser = defineStore('crudUser', {

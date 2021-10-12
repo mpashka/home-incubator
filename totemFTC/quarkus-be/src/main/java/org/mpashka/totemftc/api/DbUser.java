@@ -1,7 +1,7 @@
 package org.mpashka.totemftc.api;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.PreparedQuery;
@@ -9,14 +9,13 @@ import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowIterator;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import javax.enterprise.event.Observes;
-import java.util.ArrayList;
-import java.util.List;
+import javax.inject.Inject;
+import java.util.Arrays;
 import java.util.stream.StreamSupport;
 
 /**
@@ -26,10 +25,12 @@ import java.util.stream.StreamSupport;
 public class DbUser {
     private static final Logger log = LoggerFactory.getLogger(DbUser.class);
 
-    private final PgPool client;
-    private final boolean schemaCreate;
+    @Inject
+    PgPool client;
+
     private PreparedQuery<RowSet<Row>> selectUser;
     private PreparedQuery<RowSet<Row>> selectUsers;
+    private PreparedQuery<RowSet<Row>> selectTrainers;
     private PreparedQuery<RowSet<Row>> selectBySocialNetwork;
     private PreparedQuery<RowSet<Row>> selectByEmail;
     private PreparedQuery<RowSet<Row>> selectByPhone;
@@ -43,29 +44,24 @@ public class DbUser {
     private PreparedQuery<RowSet<Row>> updateMainImage;
     private PreparedQuery<RowSet<Row>> deleteUser;
 
-    public DbUser(PgPool client, @ConfigProperty(name = "db.schema.create.user", defaultValue = "true") boolean schemaCreate) {
-        log.debug("DbUser.new");
-        this.client = client;
-        this.schemaCreate = schemaCreate;
-    }
-
-    void onStart(@Observes StartupEvent ev) {
-        if (schemaCreate) {
-            initDb();
-        }
-
-        String selectUserSql = "SELECT * FROM user_info u " +
-                "array_agg(row_to_json(ue.*)) AS emails " +
-                "LEFT OUTER JOIN user_email ue ON user_info.user_id = ue.user_id" +
-                "LEFT OUTER JOIN user_email ue ON user_info.user_id = ue.user_id" +
-                " ";
-        selectUsers = client.preparedQuery(selectUserSql);
-        selectUserShortById = client.preparedQuery(selectUserSql + "WHERE u.user_id = $1");
-        selectUserFullById = client.preparedQuery("SELECT * from user_info WHERE user_id = $1");
-        selectSocialNetworkByUserId = client.preparedQuery("SELECT * FROM user_social_network WHERE user_id = $1 ORDER BY network_id");
-        selectEmailByUserId = client.preparedQuery("SELECT * FROM user_email WHERE user_id = $1 ORDER BY email");
-        selectPhoneByUserId = client.preparedQuery("SELECT * FROM user_phone WHERE user_id = $1 ORDER BY phone");
-        selectImageByUserId = client.preparedQuery("SELECT image_id FROM user_image WHERE user_id = $1 ORDER BY image_id");
+    @PostConstruct
+    void init() {
+        String selectUserSql = "SELECT u.*, " +
+                "   array_agg(row_to_json(sn.*)) AS social_networks, " +
+                "   array_agg(row_to_json(e.*)) AS emails, " +
+                "   array_agg(row_to_json(p.*)) AS phones, " +
+                "   array_agg(json_build_object('image_id', i.image_id, 'content_type', i.content_type)) AS images " +
+                "FROM user_info u " +
+                "LEFT OUTER JOIN user_social_network sn ON u.user_id = sn.user_id " +
+                "LEFT OUTER JOIN user_email e ON u.user_id = e.user_id " +
+                "LEFT OUTER JOIN user_phone p ON u.user_id = p.user_id " +
+                "LEFT OUTER JOIN user_image i ON u.user_id = i.user_id "
+                ;
+        String selectUserGroupBy = "GROUP BY u.user_id";
+        selectUsers = client.preparedQuery(selectUserSql + selectUserGroupBy);
+        selectTrainers = client.preparedQuery(selectUserSql + " WHERE cardinality(u.training_types) > 0 AND " +
+                "u.user_type IN ('trainer', 'admin') " + selectUserGroupBy);
+        selectUser = client.preparedQuery(selectUserSql + " WHERE u.user_id = $1 " + selectUserGroupBy);
 
         selectBySocialNetwork = client.preparedQuery("SELECT user_id " +
                 "FROM user_social_network " +
@@ -82,7 +78,9 @@ public class DbUser {
         insertEmail = client.preparedQuery("INSERT INTO user_email (email, user_id, confirmed) VALUES ($1, $2, $3)");
         insertPhone = client.preparedQuery("INSERT INTO user_phone (phone, user_id, confirmed) VALUES ($1, $2, $3)");
         insertImage = client.preparedQuery("INSERT INTO user_image (user_id, image, content_type) VALUES ($1, $2, $3) RETURNING image_id");
-        updateUser = client.preparedQuery("UPDATE user_info SET first_name=$2, last_name=$3, nick_name=$4, primary_image=$5, user_type=$6  WHERE user_id=$1");
+        updateUser = client.preparedQuery("UPDATE user_info " +
+                "SET first_name=$2, last_name=$3, nick_name=$4, primary_image=$5, user_type=$6, training_types=$7 " +
+                "WHERE user_id=$1");
         updateMainImage = client.preparedQuery("UPDATE user_info SET primary_image=$2 WHERE user_id = $1");
         updateMainImageIfAbsent = client.preparedQuery("UPDATE user_info SET primary_image=$2 WHERE user_id=$1 AND primary_image is NULL");
         deleteUser = client.preparedQuery("DELETE FROM user_email WHERE user_id=$1;" +
@@ -93,54 +91,9 @@ public class DbUser {
                 );
     }
 
-    private void initDb() {
-        log.debug("Init database...");
-        try {
-            Uni.createFrom().item(1)
-                    .flatMap(r -> client.query("CREATE TABLE IF NOT EXISTS user_info (" +
-                            "user_id SERIAL PRIMARY KEY, " +
-                            "first_name VARCHAR(30) NULL, " +
-                            "last_name VARCHAR(30) NULL, " +
-                            "nick_name VARCHAR(30) NULL," +
-                            "primary_image INTEGER NULL" + /* REFERENCES user_umage(image_id) */
-                            ");" +
-
-                            "CREATE TABLE IF NOT EXISTS user_email (" +
-                            "email VARCHAR(30) NOT NULL PRIMARY KEY," +
-                            "user_id INTEGER NOT NULL REFERENCES user_info (user_id)," +
-                            "confirmed boolean NOT NULL" +
-                            ");" +
-
-                            "CREATE TABLE IF NOT EXISTS user_phone (" +
-                            "phone VARCHAR(14) NOT NULL PRIMARY KEY," +
-                            "user_id INTEGER NOT NULL REFERENCES user_info (user_id), " +
-                            "confirmed boolean NOT NULL" +
-                            ");" +
-
-                            "CREATE TABLE IF NOT EXISTS user_image (" +
-                            "image_id SERIAL PRIMARY KEY," +
-                            "user_id INTEGER NOT NULL REFERENCES user_info (user_id)," +
-                            "image bytea," +
-                            "content_type VARCHAR(20) NOT NULL" +
-                            ");" +
-
-                            "CREATE TABLE IF NOT EXISTS user_social_network (" +
-                            "network_id VARCHAR(10) NOT NULL," +
-                            "id VARCHAR(30) NOT NULL," +
-                            "user_id INTEGER NOT NULL REFERENCES user_info (user_id)," +
-                            "link VARCHAR(400) NULL," +
-                            "PRIMARY KEY (network_id,id)" +
-                            ");"
-                    ).execute())
-                    .await().indefinitely();
-        } catch (Exception e) {
-            log.error("Db init error", e);
-        }
-    }
-
-    public Uni<UserSearchResult> findById(String provider, String id, String email, String phone) {
+    public Uni<UserSearchResult> findById(String socialNetworkProvider, String socialNetworkId, String email, String phone) {
         return selectBySocialNetwork
-                .execute(Tuple.of(provider, id))
+                .execute(Tuple.of(socialNetworkProvider, socialNetworkId))
                 .onItem().transform(r -> find(UserSearchType.socialNetwork, r))
                 .onItem().transformToUni(userId -> {
                     if (userId == null && Utils.notEmpty(email)) {
@@ -172,13 +125,13 @@ public class DbUser {
     }
 
     public Uni<EntityUser> getUser(int userId) {
-        return selectUserShortById.execute(Tuple.of(userId))
+        return selectUser.execute(Tuple.of(userId))
                 .onItem().transform(rows -> {
                     RowIterator<Row> rowIterator = rows.iterator();
                     if (rowIterator.hasNext()) {
                         log.debug("User [{}] found", userId);
                         Row row = rowIterator.next();
-                        return loadUserSimple(row);
+                        return new EntityUser().loadFromDbFull(row);
                     } else {
                         log.debug("User [{}] not found", userId);
                         return null;
@@ -189,79 +142,26 @@ public class DbUser {
     }
 
     public Uni<EntityUser[]> getAllUsers() {
-        return selectUsers.execute()
+        return getUsers(selectUsers);
+    }
+
+    public Uni<EntityUser[]> getTrainers() {
+        return getUsers(selectTrainers);
+    }
+
+    private Uni<EntityUser[]> getUsers(PreparedQuery<RowSet<Row>> sql) {
+        return sql.execute()
                 .onItem().transform(set -> StreamSupport.stream(set.spliterator(), false)
-                        .map(this::loadUserSimple)
+                        .map(row -> new EntityUser().loadFromDbFull(row))
                         .toArray(EntityUser[]::new)
                 )
                 .onFailure().transform(e -> new RuntimeException("Error getAllUsers", e))
                 ;
     }
 
-    private EntityUser loadUserSimple(Row row) {
-        EntityUser user = new EntityUser().loadFromDb(row);
-        if (row.getInteger("image_id") != null) {
-            EntityUser.EntityImage image = new EntityUser.EntityImage()
-                    .loadFromDb(row);
-            user.setPrimaryImage(image);
-            log.debug("     Image {}", image.getId());
-        }
-        return user;
-    }
-
-    public Uni<EntityUser> getUserFull(int userId) {
-        Tuple t = Tuple.of(userId);
-        return selectUserFullById.execute(t)
-                .onItem().transform(rows -> {
-                    RowIterator<Row> rowIterator = rows.iterator();
-                    return rowIterator.hasNext()
-                            ? new EntityUser().loadFromDb(rowIterator.next())
-                            : null;
-                })
-                .onItem().transformToUni(user ->
-                        selectSocialNetworkByUserId.execute(t)
-                                .onItem().invoke(rows -> {
-                                    EntityUser.EntitySocialNetwork[] socialNetworks = StreamSupport.stream(rows.spliterator(), false)
-                                            .map(row -> new EntityUser.EntitySocialNetwork().loadFromDb(row))
-                                            .toArray(EntityUser.EntitySocialNetwork[]::new);
-                                    user.setSocialNetworks(socialNetworks);
-                                }).onItem().transform(u -> user))
-                .onItem().transformToUni(user ->
-                        selectPhoneByUserId.execute(t)
-                                .onItem().invoke(phoneRows -> {
-                                    EntityUser.EntityPhone[] phones = StreamSupport.stream(phoneRows.spliterator(), false)
-                                            .map(phoneRow -> new EntityUser.EntityPhone().loadFromDb(phoneRow))
-                                            .toArray(EntityUser.EntityPhone[]::new);
-                                    user.setPhones(phones);
-                                }).onItem().transform(u -> user))
-                .onItem().transformToUni(user ->
-                        selectEmailByUserId.execute(t)
-                                .onItem().invoke(emailRows -> {
-                                    EntityUser.EntityEmail[] emails = StreamSupport.stream(emailRows.spliterator(), false)
-                                            .map(emailRow -> new EntityUser.EntityEmail().loadFromDb(emailRow))
-                                            .toArray(EntityUser.EntityEmail[]::new);
-                                    user.setEmails(emails);
-                                }).onItem().transform(u -> user))
-                .onItem().transformToUni(user ->
-                    selectImageByUserId.execute(t)
-                            .onItem().invoke(imageRows -> {
-                                List<EntityUser.EntityImage> images = new ArrayList<>();
-                                imageRows.forEach(imageRow -> {
-                                    EntityUser.EntityImage image = new EntityUser.EntityImage()
-                                            .loadFromDb(imageRow);
-                                    if (user.getPrimaryImageId() != null && image.getId() == user.getPrimaryImageId()) {
-                                        user.setPrimaryImage(image);
-                                    }
-                                    images.add(image);
-                                });
-                                user.setImages(images.toArray(EntityUser.EntityImage[]::new));
-                            }).onItem().transform(u -> user))
-                .onFailure().transform(e -> new RuntimeException("Error getUserFull", e));
-    }
-
     public Uni<Void> updateUser(EntityUser user) {
-        return updateUser.execute(Tuple.of(user.userId, user.firstName, user.lastName, user.nickName,
-                        user.primaryImage != null ? user.primaryImage.id : null, user.type.name()))
+        return updateUser.execute(Tuple.from(Arrays.asList(user.userId, user.firstName, user.lastName, user.nickName,
+                        user.primaryImage != null ? user.primaryImage.id : null, user.type.name(), user.trainingTypes)))
                 .onFailure().transform(e -> new RuntimeException("Error update", e))
                 .onItem().transform(u -> null)
                 ;
@@ -368,14 +268,14 @@ public class DbUser {
         private String firstName;
         private String lastName;
         private String nickName;
-        @JsonIgnore
-        private Integer primaryImageId;
         private EntityImage primaryImage;
+        private UserType type;
+        private String[] trainingTypes;
         private EntitySocialNetwork[] socialNetworks;
         private EntityPhone[] phones;
         private EntityEmail[] emails;
         private EntityImage[] images;
-        private UserType type;
+
 
         public EntityUser setFirstName(String firstName) {
             this.firstName = firstName;
@@ -397,32 +297,13 @@ public class DbUser {
             return this;
         }
 
+        public EntityUser setTrainingTypes(String[] trainingTypes) {
+            this.trainingTypes = trainingTypes;
+            return this;
+        }
+
         public int getUserId() {
             return userId;
-        }
-
-        public Integer getPrimaryImageId() {
-            return primaryImageId;
-        }
-
-        public void setPrimaryImage(EntityImage primaryImage) {
-            this.primaryImage = primaryImage;
-        }
-
-        public void setSocialNetworks(EntitySocialNetwork[] socialNetworks) {
-            this.socialNetworks = socialNetworks;
-        }
-
-        public void setPhones(EntityPhone[] phones) {
-            this.phones = phones;
-        }
-
-        public void setEmails(EntityEmail[] emails) {
-            this.emails = emails;
-        }
-
-        public void setImages(EntityImage[] images) {
-            this.images = images;
         }
 
         public EntityUser loadFromDb(Row row) {
@@ -430,7 +311,6 @@ public class DbUser {
             this.firstName = row.getString("first_name");
             this.lastName = row.getString("last_name");
             this.nickName = row.getString("nick_name");
-            this.primaryImageId = row.getInteger("primary_image");
             String userType = row.getString("user_type");
             try {
                 this.type = UserType.valueOf(userType);
@@ -438,6 +318,31 @@ public class DbUser {
                 log.warn("Unknown user type {}", userType, e);
                 this.type = UserType.guest;
             }
+            this.trainingTypes = row.getArrayOfStrings("training_types");
+            return this;
+        }
+
+        public EntityUser loadFromDbFull(Row row) {
+            loadFromDb(row);
+            Integer primaryImageId = row.getInteger("primary_image");
+            this.images = Arrays.stream(row.getArrayOfJsons("images"))
+                    .map(ij -> {
+                        EntityImage image = new EntityImage().loadFromDb((JsonObject) ij);
+                        if (primaryImageId != null && image.getId() == primaryImageId) {
+                            primaryImage = image;
+                        }
+                        return image;
+                    })
+                    .toArray(EntityImage[]::new);
+            this.emails = Arrays.stream(row.getArrayOfJsons("emails"))
+                    .map(ej -> new EntityEmail().loadFromDb((JsonObject) ej))
+                    .toArray(EntityEmail[]::new);
+            this.phones = Arrays.stream(row.getArrayOfJsons("phones"))
+                    .map(pj -> new EntityPhone().loadFromDb((JsonObject) pj))
+                    .toArray(EntityPhone[]::new);
+            this.socialNetworks = Arrays.stream(row.getArrayOfJsons("social_networks"))
+                    .map(pj -> new EntitySocialNetwork().loadFromDb((JsonObject) pj))
+                    .toArray(EntitySocialNetwork[]::new);
             return this;
         }
 
@@ -446,7 +351,7 @@ public class DbUser {
             private String id;
             private String link;
 
-            public EntitySocialNetwork loadFromDb(Row row) {
+            public EntitySocialNetwork loadFromDb(JsonObject row) {
                 this.networkId = row.getString("network_id");
                 this.id = row.getString("id");
                 this.link = row.getString("link");
@@ -457,7 +362,7 @@ public class DbUser {
             private String phone;
             private boolean confirmed;
 
-            public EntityPhone loadFromDb(Row row) {
+            public EntityPhone loadFromDb(JsonObject row) {
                 this.phone = row.getString("phone");
                 this.confirmed = row.getBoolean("confirmed");
                 return this;
@@ -468,7 +373,7 @@ public class DbUser {
             private String email;
             private boolean confirmed;
 
-            public EntityEmail loadFromDb(Row row) {
+            public EntityEmail loadFromDb(JsonObject row) {
                 this.email = row.getString("email");
                 this.confirmed = row.getBoolean("confirmed");
                 return this;
@@ -479,7 +384,7 @@ public class DbUser {
             private int id;
             private String contentType;
 
-            public EntityImage loadFromDb(Row row) {
+            public EntityImage loadFromDb(JsonObject row) {
                 this.id = row.getInteger("image_id");
                 this.contentType = row.getString("content_type");
                 return this;

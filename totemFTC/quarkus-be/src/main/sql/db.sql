@@ -1,6 +1,8 @@
 -- Users
-CREATE TABLE IF NOT EXISTS user_type (
-    user_type VARCHAR(10) NOT NULL PRIMARY KEY,
+CREATE TYPE user_type_enum AS ENUM ('guest', 'user', 'trainer', 'admin');
+
+CREATE TABLE IF NOT EXISTS user_type_description (
+    user_type user_type_enum NOT NULL PRIMARY KEY,
     name VARCHAR(20)
 );
 
@@ -10,7 +12,9 @@ CREATE TABLE IF NOT EXISTS user_info (
     last_name VARCHAR(30) NULL,
     nick_name VARCHAR(30) NULL,
     primary_image INTEGER NULL,
-    user_type VARCHAR(10) NOT NULL REFERENCES user_type(user_type) DEFAULT 'guest');
+    user_type user_type_enum NOT NULL DEFAULT 'guest',
+    training_types VARCHAR(10)[]);
+-- FOREIGN KEY (EACH ELEMENT OF training_types) REFERENCES training_type,
 CREATE TABLE IF NOT EXISTS user_email (
     email VARCHAR(30) NOT NULL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES user_info (user_id),
@@ -37,12 +41,6 @@ CREATE TABLE IF NOT EXISTS user_social_network (
 CREATE TABLE IF NOT EXISTS training_type (
     training_type VARCHAR(10) NOT NULL PRIMARY KEY,
     name VARCHAR(20)
-);
-
-CREATE TABLE IF NOT EXISTS trainer_type (
-    user_id INTEGER NOT NULL REFERENCES user_info (user_id),
-    training_type VARCHAR(10) NOT NULL REFERENCES training_type (training_type),
-    PRIMARY KEY (user_id, training_type)
 );
 
 ---

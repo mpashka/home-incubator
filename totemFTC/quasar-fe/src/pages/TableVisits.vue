@@ -116,7 +116,7 @@
 
 <script lang="ts">
 import {ref, computed, Ref, defineComponent} from 'vue';
-import {dateFormat, EntityCrudTraining, useStoreCrudTraining} from 'src/store/store_crud_training'
+import {dateFormat} from 'src/store/store_crud_training'
 import {EntityCrudVisit, useStoreCrudVisit, emptyVisit} from 'src/store/store_crud_visits';
 import {useStoreUtils} from 'src/store/store_utils';
 import {date, QPopupProxy} from 'quasar'

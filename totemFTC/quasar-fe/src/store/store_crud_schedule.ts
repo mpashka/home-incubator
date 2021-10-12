@@ -2,17 +2,16 @@ import {defineStore} from 'pinia'
 import {api} from 'boot/axios';
 import { date } from 'quasar';
 import {
-  emptyTrainer,
   emptyTrainingType,
-  EntityCrudTrainer,
   EntityCrudTrainingType, timeFormat
 } from "src/store/store_crud_training";
+import {emptyUser, EntityUser} from "src/store/store_crud_user";
 
 export interface EntityCrudSchedule {
   id: number,
   time: string,
   day: number,
-  trainer: EntityCrudTrainer,
+  trainer: EntityUser,
   trainingType: EntityCrudTrainingType,
 }
 
@@ -20,7 +19,7 @@ const emptySchedule: EntityCrudSchedule = {
   id: -1,
   time: date.formatDate(new Date(), timeFormat),
   day: 0,
-  trainer: emptyTrainer,
+  trainer: emptyUser,
   trainingType: emptyTrainingType,
 };
 

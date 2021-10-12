@@ -95,8 +95,9 @@ import {
   EntityCrudSchedule,
   useStoreCrudSchedule
 } from 'src/store/store_crud_schedule';
-import {EntityCrudTrainer, EntityCrudTrainingType, useStoreCrudTraining} from 'src/store/store_crud_training';
+import {EntityCrudTrainingType, useStoreCrudTraining} from 'src/store/store_crud_training';
 import {QPopupProxy} from "quasar";
+import {EntityUser} from "src/store/store_crud_user";
 
 export default {
   name: 'TableSchedule',
@@ -130,7 +131,7 @@ export default {
     const columns = [
       { name: 'time', required: true, label: 'Время', align: 'left', field: 'time' },
       { name: 'type', required: true, label: 'Тренировка', align: 'left', field: 'trainingType', format: (val: EntityCrudTrainingType) => `${val.trainingName}`,},
-      { name: 'trainer', required: true, label: 'Тренер', align: 'left', field: 'trainer', format: (val: EntityCrudTrainer) => `${val.nickName}`},
+      { name: 'trainer', required: true, label: 'Тренер', align: 'left', field: 'trainer', format: (val: EntityUser) => `${val.nickName}`},
       { name: 'actions', label: 'Actions'}
     ]
 
