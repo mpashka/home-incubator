@@ -42,7 +42,7 @@ public class WebResourceVisit {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Uni<Integer> create(DbCrudVisit.EntityVisit visit) {
+    public Uni<Void> create(DbCrudVisit.EntityVisit visit) {
         log.debug("Add visit {}", visit);
         return dbVisit.add(visit);
     }

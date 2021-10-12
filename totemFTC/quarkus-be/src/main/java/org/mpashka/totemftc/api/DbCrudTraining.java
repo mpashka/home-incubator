@@ -29,9 +29,11 @@ public class DbCrudTraining {
     private PreparedQuery<RowSet<Row>> select;
     private PreparedQuery<RowSet<Row>> selectByDate;
     private PreparedQuery<RowSet<Row>> selectTrainingTypes;
+    private PreparedQuery<RowSet<Row>> selectTrainerTypes;
     private PreparedQuery<RowSet<Row>> selectTrainers;
     private PreparedQuery<RowSet<Row>> insert;
     private PreparedQuery<RowSet<Row>> update;
+    private PreparedQuery<RowSet<Row>> updateTrainerTypes;
     private PreparedQuery<RowSet<Row>> delete;
 
     void onStart(@Observes StartupEvent ev) {
@@ -44,10 +46,13 @@ public class DbCrudTraining {
                 "JOIN training_type tt on t.training_type = tt.training_type " +
                 "WHERE date(t.training_time) = $1 " +
                 "ORDER BY t.training_time");
-        selectTrainingTypes = client.preparedQuery("SELECT * from training_type");
-        selectTrainers = client.preparedQuery("SELECT * from trainer_type tt JOIN user_info u on u.user_id = tt.user_id");
+        selectTrainingTypes = client.preparedQuery("SELECT * FROM training_type");
+        selectTrainerTypes = client.preparedQuery("SELECT * FROM trainer_type WHERE user_id = $1");
+        selectTrainers = client.preparedQuery("SELECT * FROM trainer_type tt JOIN user_info u on u.user_id = tt.user_id");
         insert = client.preparedQuery("INSERT INTO training (training_time, trainer, training_type) VALUES ($1, $2, $3) RETURNING training_id");
         update = client.preparedQuery("UPDATE training SET training_time=$2, trainer=$3, training_type=$4 WHERE training_id=$1");
+        updateTrainerTypes = client.preparedQuery("INSERT INTO trainer_type (user_id, training_type) " +
+                "SELECT $1 AS user_id, ");
         delete = client.preparedQuery("DELETE FROM training WHERE training_id=$1");
     }
 
@@ -144,7 +149,7 @@ public class DbCrudTraining {
 //            this.trainerId = row.getInteger("trainer");
             this.trainer = new DbUser.EntityUser().loadFromDb(row);
             this.trainingType = new EntityTrainingType().loadFromDb(row);
-            this.comment = row.getString("comment");
+            this.comment = row.getString("training_comment");
             return this;
         }
     }

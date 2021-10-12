@@ -51,7 +51,7 @@ export const useStoreCrudSchedule = defineStore('crudSchedule', {
     async update(schedule: EntityCrudSchedule) {
       await api.put('/api/schedule', schedule);
       const index = this.schedule.findIndex(r => r.id === schedule.id);
-      if (index > 0) {
+      if (index >= 0) {
         this.schedule[index] = schedule;
       }
     },

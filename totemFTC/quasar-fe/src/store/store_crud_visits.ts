@@ -37,6 +37,8 @@ export const useStoreCrudVisit = defineStore('crudVisit', {
   actions: {
     async setDate(date: string) {
       this.date = date;
+      this.training = emptyTraining;
+      this.visits = [];
       await this.reloadTrainings();
     },
 
@@ -44,7 +46,7 @@ export const useStoreCrudVisit = defineStore('crudVisit', {
       this.trainings = (await api.get<EntityCrudTraining[]>(`/api/training/byDate/${this.date}`)).data;
     },
 
-    async seTraining(training: EntityCrudTraining) {
+    async setTraining(training: EntityCrudTraining) {
       this.training = training;
       await this.reloadVisits();
     },
@@ -66,13 +68,13 @@ export const useStoreCrudVisit = defineStore('crudVisit', {
     async updateComment(visit: EntityCrudVisit) {
         await api.put('/api/visit', visit);
         const index = this.visits.findIndex(r => r.trainingId === visit.trainingId && r.user.userId === visit.user.userId);
-        if (index > 0) {
+        if (index >= 0) {
           this.visits[index] = visit;
         }
     },
 
     async update(visit: EntityCrudVisit, type: 'Schedule' | 'Self' | 'Master', value: boolean) {
-      await api.put(`/api/mark${type}/${String(value)}`, visit);
+      await api.put(`/api/visit/mark${type}/${String(value)}`, visit);
       switch (type) {
         case "Schedule": visit.markMaster = value; break;
         case "Self": visit.markSelf = value; break;

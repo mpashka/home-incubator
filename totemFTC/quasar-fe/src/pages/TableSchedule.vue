@@ -183,8 +183,8 @@ export default {
       uiTimePopup,
       onTimeUpdate,
       defaultRow: emptySchedule,
-      confirmDelete: computed({get: () => deleteRowObj.value !== null, set: () => deleteRowObj.value = null}),
-      confirmAdd: computed({get: () => editRowObj.value !== null, set: () => editRowObj.value = null}),
+      isConfirmDelete: computed({get: () => deleteRowObj.value !== null, set: () => deleteRowObj.value = null}),
+      isConfirmAdd: computed({get: () => editRowObj.value !== null, set: () => editRowObj.value = null}),
       isRowAddOrEdit: computed(() => editRowObj.value?.id === -1),
     }
   }

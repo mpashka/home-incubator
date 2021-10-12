@@ -1,15 +1,12 @@
 <template>
   <div class="row">
-    <div class="row">
-      <q-btn icon="caret-circle-left"/>
-      <q-btn class="column">
-        <div class="column">
-          <q-chip dense size="xs" class="self-end" :label="visitDateLabel()"/>
-          <p>{{storeVisit.date}}</p>
-        </div>
+    <div style="display: contents">
+      <q-btn icon="fas fa-caret-left"/>
+      <q-btn :label="storeVisit.date">
+        <q-chip style="position: absolute; top: 0; right: 1em;" dense size="xs" class="self-end" :label="visitDateLabel()"/>
 
-        <q-popup-proxy transition-show="scale" transition-hide="scale" ref="datePopup">
-          <q-date v-model="storeVisit.date" :mask="dateFormat" @update:model-value="onVisitDateUpdate" ref="uiDatePopup">
+        <q-popup-proxy transition-show="scale" transition-hide="scale" ref="uiDatePopup">
+          <q-date v-model="storeVisit.date" :mask="dateFormat" @update:model-value="onVisitDateUpdate">
             <div class="row items-center justify-end">
               <q-btn label="Сегодня" color="primary" flat @click="onVisitDateUpdate(date.formatDate(new Date(), dateFormat))"/>
               <q-btn label="Вчера" color="primary" flat @click="onVisitDateUpdate(date.formatDate(date.subtractFromDate(new Date(), {days: 1}), dateFormat))"/>
@@ -17,45 +14,51 @@
           </q-date>
         </q-popup-proxy>
       </q-btn>
-      <q-btn icon="caret-circle-right"/>
+      <q-btn icon="fas fa-caret-right"/>
     </div>
 
-    <q-list v-model="storeVisit.training" :options="storeVisit.trainings" @update:model-value="storeVisit.reloadVisits()"
-            filled >
+    <div style="width: 3em;"></div>
+
+    <q-select class="col-auto" v-model="storeVisit.training" :options="storeVisit.trainings" option-label="displayTraining"
+              @update:model-value="storeVisit.reloadVisits()" filled >
 
       <template v-slot:before-options>
         Тренировки ...
       </template>
 
-      <template v-slot:option="props">
-        <div class="row">
-          <div class="col-1">
-            {{props.opt.time}}
-          </div>
-          <div class="col-2">
-            {{props.opt.trainer.nickName}}
-          </div>
-          <div class="col-1">
-            {{props.opt.trainingType.trainingName}}
-          </div>
-          <div class="col-1">
-            {{props.opt.comment}}
-          </div>
+      <template v-slot:selected-item="props">
+        <!--{{displayTraining(props.opt)}}-->
+        <div class="q-gutter-x-sm" style="display: flex">
+        <training-line :training="props.opt"/>
         </div>
       </template>
 
-    </q-list>
+      <template v-slot:option="props">
+        <q-item @click="props.toggleOption(props.opt)" clickable :active="props.selected">
+          <q-item-section>
+            <div class="row" >
+              <training-line :training="props.opt"/>
+            </div>
+          </q-item-section>
+        </q-item>
+      </template>
 
+    </q-select>
   </div>
 
   <q-table :rows="storeVisit.visits" :columns="visitColumns"
            :loading="storeUtils.loading" :row-key="visitId"
     title="Посещения">
 
+    <template v-slot:top-right>
+      <q-btn round icon="fas fa-plus" @click="editRowStart(emptyVisit)"/>
+    </template>
+
+
     <template v-slot:body-cell-actions="props">
       <q-td :props="props">
-        <q-btn round flat size="sm" @click="editRowStart(props.row)">
-          <q-icon name="check" :class="props.row.markMaster ? 'text-green' : null"/>
+        <q-btn round flat size="sm" @click="rowMark(props.row)">
+          <q-icon name="fas fa-check" :class="props.row.markMaster ? 'text-green' : null"/>
         </q-btn>
         <q-btn round flat size="sm" icon="edit" @click="editRowStart(props.row)"/>
         <q-btn round flat size="sm" icon="delete" @click="deleteRowStart(props.row)"/>
@@ -64,11 +67,11 @@
 
   </q-table>
 
-  <q-dialog v-model="confirmDelete">
+  <q-dialog v-model="isConfirmDelete">
     <q-card>
       <q-card-section class="row items-center">
         <q-avatar icon="signal_wifi_off" color="primary" text-color="white" />
-        <span class="q-ml-sm">Удалить посещение {{ displayUserName(deleteRowObj.user) }}</span>
+        <span class="q-ml-sm">Удалить посещение {{ storeUser.userNameString(deleteRowObj.user) }}</span>
       </q-card-section>
 
       <q-card-actions align="right">
@@ -78,17 +81,18 @@
     </q-card>
   </q-dialog>
 
-  <q-dialog v-model="confirmAdd" persistent>
+  <q-dialog v-model="isConfirmAdd" persistent>
     <q-card class="q-gutter-md" style="width: 60%; max-width: 60%">
       <q-card-section>
         <div class="text-h6">{{ isRowAddOrEdit ? 'Добавить' : 'Редактировать' }}</div>
       </q-card-section>
 
       <q-card-section>
-        <q-select filled v-model="editRowObj.user" use-input
+        <q-select v-if="isRowAddOrEdit"
+                  filled v-model="editRowObj.user" use-input
                   input-debounce="0" label="Работяга"
-                  :options="users" option-label="displayUserName"
-                  @filter="userFilter"
+                  :options="storeUser.filteredRows" :option-label="storeUser.userNameString"
+                  @filter="(f, u) => u(() => storeUser.setFilter(f))"
         >
           <template v-slot:no-option>
             <q-item>
@@ -98,6 +102,7 @@
             </q-item>
           </template>
         </q-select>
+        <q-input v-model="editRowObj.comment" label="Комментарий"/>
       </q-card-section>
 
       <q-card-actions align="right">
@@ -110,12 +115,13 @@
 </template>
 
 <script lang="ts">
-import { ref, computed, Ref } from 'vue';
-import {dateFormat, useStoreCrudTraining} from 'src/store/store_crud_training'
+import {ref, computed, Ref, defineComponent} from 'vue';
+import {dateFormat, EntityCrudTraining, useStoreCrudTraining} from 'src/store/store_crud_training'
 import {EntityCrudVisit, useStoreCrudVisit, emptyVisit} from 'src/store/store_crud_visits';
 import {useStoreUtils} from 'src/store/store_utils';
 import {date, QPopupProxy} from 'quasar'
 import {useStoreCrudUser, EntityUser} from "src/store/store_crud_user";
+import TrainingLine from "components/TrainingLine.vue";
 
 const visitColumns = [
   { name: 'userFirstName', required: true, label: 'Ф', align: 'left', field: 'user', format: (val: EntityUser) => val.firstName, sortable: true },
@@ -125,16 +131,16 @@ const visitColumns = [
   { name: 'actions', label: 'Actions'},
 ]
 
-export default {
+export default defineComponent({
   name: 'TableVisits',
-  async setup () {
+  components: {TrainingLine},
+  setup () {
 
     const storeVisit = useStoreCrudVisit();
-    const storeTraining = useStoreCrudTraining();
     const storeUser = useStoreCrudUser();
     const storeUtils = useStoreUtils();
-    storeTraining.loadTrainers().catch(e => console.log('Load error', e));
-    storeTraining.loadTrainingTypes().catch(e => console.log('Load error', e));
+    storeVisit.reloadTrainings().catch(e => console.log('Load error', e));
+    storeUser.load().catch(e => console.log('Load error', e));
 
     const deleteRowObj :Ref<EntityCrudVisit | null> = ref(null);
 
@@ -158,7 +164,7 @@ export default {
     }
 
     async function editRowCommit() {
-      console.log('Add row', editRowObj);
+      console.log('Add row', editRowObj, 'Selected training id', storeVisit.training.id);
       const newValue = editRowObj.value as EntityCrudVisit;
       if (newValue.trainingId === -1) {
         newValue.trainingId = storeVisit.training.id;
@@ -170,61 +176,8 @@ export default {
       editRowObj.value = null;
     }
 
-    function displayUserName(user: EntityUser) {
-      let result: string = '';
-      const name = user.firstName || user.lastName;
-
-      function addName() {
-        if (user.firstName) {
-          result += user.firstName;
-        }
-        if (user.lastName) {
-          result += user.lastName;
-        }
-      }
-
-      if (user.nickName) {
-        result = user.nickName
-        if (name) {
-          result += ' ('
-          addName();
-          result += ')';
-        }
-      } else {
-        addName();
-      }
-      return result;
-    }
-
-
-    const users = ref(storeUser.rows);
-    function userFilter(filter: string, update: (fn: () => void) => void) {
-      if (!filter) {
-        update(() => users.value = storeUser.rows)
-      } else {
-        /** Returns true if all filters are present in some user parts */
-        function contains(user: EntityUser, filters: string[]): boolean {
-          const userStrings = [user.firstName.toLowerCase(), user.lastName.toLowerCase(), user.nickName.toLowerCase()];
-          for (let i = 0; i < filters.length; i++) {
-            let notPresent = true;
-            for (let j = 0; j < userStrings.length; j++) {
-              if (userStrings[j].includes(filters[i])) {
-                notPresent = false;
-                break;
-              }
-            }
-            if (notPresent) {
-              return false;
-            }
-          }
-          return true;
-        }
-
-        update(() => {
-          const filters = filter.toLowerCase().split(/ +/);
-          users.value = storeUser.rows.filter(u => contains(u, filters))
-        })
-      }
+    async function rowMark(row: EntityCrudVisit) {
+      await storeVisit.update(row, 'Master', !row.markMaster);
     }
 
     const uiDatePopup = ref(null);
@@ -235,7 +188,7 @@ export default {
     }
 
     function visitId(visit: EntityCrudVisit): string {
-      return visit.trainingId + '_' + visit.user.userId;
+      return String(visit.trainingId) + '_' + String(visit.user.userId);
     }
 
     function visitDateLabel(): string {
@@ -262,8 +215,8 @@ export default {
       dateFormat,
       uiDatePopup,
       onVisitDateUpdate,
-      confirmDelete: computed({get: () => deleteRowObj.value !== null, set: () => deleteRowObj.value = null}),
-      confirmAdd: computed({get: () => editRowObj.value !== null, set: () => editRowObj.value = null}),
+      isConfirmDelete: computed({get: () => deleteRowObj.value !== null, set: () => deleteRowObj.value = null}),
+      isConfirmAdd: computed({get: () => editRowObj.value !== null, set: () => editRowObj.value = null}),
       isRowAddOrEdit: computed(() => editRowObj.value?.trainingId === -1),
       deleteRowObj,
       deleteRowStart,
@@ -271,14 +224,12 @@ export default {
       editRowObj,
       editRowStart,
       editRowCommit,
-      displayUserName,
-      users,
-      userFilter,
+      rowMark,
+      date,
     }
   }
-}
+});
 </script>
 
-<style scoped>
-
+<style lang="scss" scoped>
 </style>

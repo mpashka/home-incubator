@@ -60,7 +60,7 @@ public class DbCrudVisit {
                             .map(r -> new EntityVisit().loadFromDb(r))
                             .toArray(EntityVisit[]::new)
                 )
-                .onFailure().transform(e -> new RuntimeException("Error getAll", e))
+                .onFailure().transform(e -> new RuntimeException("Error getByTraining", e))
                 ;
     }
 
@@ -68,11 +68,11 @@ public class DbCrudVisit {
      *
      * @return trainer id
      */
-    public Uni<Integer> add(EntityVisit entityVisit) {
+    public Uni<Void> add(EntityVisit entityVisit) {
         return insert.execute(Tuple.from(asList(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), entityVisit.comment,
                         entityVisit.markSchedule, entityVisit.markSelf, entityVisit.markMaster)))
-                .onItem().transform(rows -> rows.iterator().next().getInteger("visit_id"))
                 .onFailure().transform(e -> new RuntimeException("Error add", e))
+                .onItem().transform(u -> null)
                 ;
     }
 
@@ -115,7 +115,7 @@ public class DbCrudVisit {
     public Uni<Void> updateMarkMaster(EntityVisit entityVisit, boolean markMaster) {
         return updateMaster.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), markMaster))
                 .onItem().transformToUni(updateResult ->
-                        updateResult.rowCount() > 0 ? Uni.createFrom().<Void>item(null) :
+                        updateResult.rowCount() > 0 ? Uni.createFrom().item((Void) null) :
                                 insertMarks
                                         .execute(Tuple.from(asList(
                                                 entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), entityVisit.comment,
@@ -127,7 +127,7 @@ public class DbCrudVisit {
     }
 
     public Uni<Void> delete(DbCrudVisit.EntityVisit entityVisit) {
-        return delete.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), entityVisit.comment))
+        return delete.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId()))
                 .onFailure().transform(e -> new RuntimeException("Error delete", e))
                 .onItem().transform(u -> null)
                 ;
@@ -138,7 +138,7 @@ public class DbCrudVisit {
 //        private int userId;
         private DbUser.EntityUser user;
         private String comment;
-        private int ticketId;
+        private Integer ticketId;
         private boolean markSchedule;
         private boolean markSelf;
         private boolean markMaster;
@@ -148,9 +148,9 @@ public class DbCrudVisit {
             this.user = new DbUser.EntityUser().loadFromDb(row);
             this.comment = row.getString("visit_comment");
             this.ticketId = row.getInteger("ticket_id");
-            this.markSchedule = row.getBoolean("visit_schedule");
-            this.markSelf = row.getBoolean("visit_self");
-            this.markMaster = row.getBoolean("visit_master");
+            this.markSchedule = row.getBoolean("visit_mark_schedule");
+            this.markSelf = row.getBoolean("visit_mark_self");
+            this.markMaster = row.getBoolean("visit_mark_master");
             return this;
         }
     }

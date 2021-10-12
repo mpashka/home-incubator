@@ -1,5 +1,7 @@
 <template>
-  <q-table title="Пользователи" :rows="storeUser.rows" :columns="columns" :filter="filter" :loading="storeUtils.loading" row-key="id">
+  <q-table title="Пользователи" :rows="storeUser.rows" :columns="columns" :filter="filter" :loading="storeUtils.loading"
+           :pagination="{sortBy: 'lastName'}"
+           row-key="id">
     <template v-slot:top-right>
       <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
         <template v-slot:append>
@@ -17,7 +19,7 @@
     </template>
   </q-table>
 
-  <q-dialog v-model="confirmDelete">
+  <q-dialog v-model="isConfirmDelete">
     <q-card>
       <q-card-section class="row items-center">
         <q-avatar icon="signal_wifi_off" color="primary" text-color="white" />
@@ -31,7 +33,7 @@
     </q-card>
   </q-dialog>
 
-  <q-dialog v-model="confirmAdd" persistent>
+  <q-dialog v-model="isConfirmAdd" persistent>
     <q-card class="q-gutter-md" style="width: 60%; max-width: 60%">
       <q-card-section>
         <div class="text-h6">{{ isRowAddOrEdit ? 'Добавить' : 'Редактировать' }}</div>
@@ -46,7 +48,11 @@
                    :rules="[ val => val && val.length > 0 || 'Please type something']"
           />
           <q-input filled v-model="editRowObj.nickName" label="Ник"/>
-          <q-select v-model="editRowObj.type" :options="userTypes" option-label="label" option-value="type"/>
+          <q-select v-model="editRowObj.type"
+                    :options="userTypes" option-label="label" option-value="type" emit-value
+                    :display-value="userTypesMap.get(editRowObj.type)"
+          />
+
         </div>
       </q-card-section>
 
@@ -62,18 +68,7 @@
 import { ref, computed, Ref } from 'vue';
 import {useStoreCrudUser, EntityUser, EntityUserType, emptyUser} from 'src/store/store_crud_user'
 import {useStoreUtils} from "src/store/store_utils";
-
-const columns = [
-  { name: 'firstName', required: true, label: 'Имя', align: 'left', field: 'firstName', sortable: true },
-  { name: 'lastName', required: true, label: 'Фамилия', align: 'left', field: 'lastName', sortable: true },
-  { name: 'nickName', required: true, label: 'Ник', align: 'left', field: 'nickName', sortable: true },
-  // { name: 'images', required: false, label: 'картинка', align: 'left', field: 'images', sortable: false },
-  // { name: 'phones', required: false, label: 'телефон', align: 'left', field: 'phones', sortable: false },
-  // { name: 'emails', required: false, label: 'e-mail', align: 'left', field: 'emails', sortable: false },
-  // { name: 'emails', required: false, label: 'e-mail', align: 'left', field: 'emails', sortable: false },
-  { name: 'type', required: true, label: 'Тип', align: 'left', field: 'type', sortable: false },
-  { name: 'actions', label: 'Actions'}
-]
+import {EntityCrudTrainer} from "src/store/store_crud_training";
 
 interface UserType {
   type: EntityUserType,
@@ -87,21 +82,39 @@ const userTypes: UserType[] = [
   {type: 'admin'   , label: 'Администратор'},
 ]
 
+const userTypesMap = new Map<String, String>();
+userTypes.forEach(e => userTypesMap.set(e.type, e.label));
+
+const columns = [
+  { name: 'id', required: true, label: 'Id', align: 'left', field: 'userId', sortable: false, headerClasses: 'column-class-id' },
+  { name: 'firstName', required: true, label: 'Имя', align: 'left', field: 'firstName', sortable: true },
+  { name: 'lastName', required: true, label: 'Фамилия', align: 'left', field: 'lastName', sortable: true },
+  { name: 'nickName', required: true, label: 'Ник', align: 'left', field: 'nickName', sortable: true },
+  // { name: 'images', required: false, label: 'картинка', align: 'left', field: 'images', sortable: false },
+  // { name: 'phones', required: false, label: 'телефон', align: 'left', field: 'phones', sortable: false },
+  // { name: 'emails', required: false, label: 'e-mail', align: 'left', field: 'emails', sortable: false },
+  // { name: 'emails', required: false, label: 'e-mail', align: 'left', field: 'emails', sortable: false },
+  { name: 'type', required: true, label: 'Тип', align: 'left', field: 'type', format: (val: EntityUserType) => `${userTypesMap.get(val)}`, sortable: false, },
+  { name: 'actions', label: 'Actions'}
+]
+
+
 export default {
   name: 'TableUsers',
   setup () {
     let filter = ref('');
     const storeUtils = useStoreUtils();
     const storeUser = useStoreCrudUser();
-    const deleteRowObj :Ref<EntityUser | null> = ref(null);
-    const editRowObj :Ref<EntityUser | null> = ref(null);
+    storeUser.disableFilter();
 
     storeUser.load().catch(e => console.log('Load error', e));
 
-    async function deleteRowCommit() {
-      console.log('Delete row ', deleteRowObj);
-      deleteRowObj.value && await storeUser.delete(deleteRowObj.value);
-      deleteRowObj.value = null;
+
+    const editRowObj :Ref<EntityUser | null> = ref(null);
+
+    function editRowStart(row: EntityUser) {
+      console.log('Start edit row', row);
+      editRowObj.value = Object.assign({}, row);
     }
 
     async function editRowCommit() {
@@ -115,14 +128,17 @@ export default {
       editRowObj.value = null;
     }
 
+    const deleteRowObj :Ref<EntityUser | null> = ref(null);
+
     function deleteRowStart(row: EntityUser) {
       deleteRowObj.value = row;
       console.log('Confirm delete row', row);
     }
 
-    function editRowStart(row: EntityUser) {
-      console.log('Start edit row', row);
-      editRowObj.value = Object.assign({}, row);
+    async function deleteRowCommit() {
+      console.log('Delete row ', deleteRowObj);
+      deleteRowObj.value && await storeUser.delete(deleteRowObj.value);
+      deleteRowObj.value = null;
     }
 
     return {
@@ -130,22 +146,25 @@ export default {
       storeUser,
       storeUtils,
       filter,
-      deleteRowStart,
-      deleteRowCommit,
-      deleteRowObj,
+      editRowObj,
       editRowStart,
       editRowCommit,
-      editRowObj,
+      deleteRowObj,
+      deleteRowStart,
+      deleteRowCommit,
       defaultRow: emptyUser,
-      confirmDelete: computed({get: () => deleteRowObj.value !== null, set: () => deleteRowObj.value = null}),
-      confirmAdd: computed({get: () => editRowObj.value !== null, set: () => editRowObj.value = null}),
+      isConfirmDelete: computed({get: () => deleteRowObj.value !== null, set: () => deleteRowObj.value = null}),
+      isConfirmAdd: computed({get: () => editRowObj.value !== null, set: () => editRowObj.value = null}),
       isRowAddOrEdit: computed(() => editRowObj.value?.userId === -1),
       userTypes,
+      userTypesMap,
     }
   }
 }
 </script>
 
-<style scoped>
-
+<style scoped lang="scss">
+column-class-id {
+  width: 5em;
+}
 </style>

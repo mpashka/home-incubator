@@ -95,14 +95,14 @@
     </q-drawer>
 
     <q-page-container>
-      <Suspense>
+      <Suspense timeout="0">
         <template #default>
           <router-view />
         </template>
-        <template #fallback>
+        <!--template #fallback>
           <q-spinner color="primary" size="3em"/>
           <div>Loading...</div>
-        </template>
+        </template-->
       </Suspense>
     </q-page-container>
   </q-layout>

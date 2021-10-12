@@ -28,13 +28,8 @@ public class DbUser {
 
     private final PgPool client;
     private final boolean schemaCreate;
+    private PreparedQuery<RowSet<Row>> selectUser;
     private PreparedQuery<RowSet<Row>> selectUsers;
-    private PreparedQuery<RowSet<Row>> selectUserShortById;
-    private PreparedQuery<RowSet<Row>> selectUserFullById;
-    private PreparedQuery<RowSet<Row>> selectSocialNetworkByUserId;
-    private PreparedQuery<RowSet<Row>> selectEmailByUserId;
-    private PreparedQuery<RowSet<Row>> selectPhoneByUserId;
-    private PreparedQuery<RowSet<Row>> selectImageByUserId;
     private PreparedQuery<RowSet<Row>> selectBySocialNetwork;
     private PreparedQuery<RowSet<Row>> selectByEmail;
     private PreparedQuery<RowSet<Row>> selectByPhone;
@@ -60,7 +55,10 @@ public class DbUser {
         }
 
         String selectUserSql = "SELECT * FROM user_info u " +
-                "LEFT OUTER JOIN user_image ON u.primary_image = user_image.image_id ";
+                "array_agg(row_to_json(ue.*)) AS emails " +
+                "LEFT OUTER JOIN user_email ue ON user_info.user_id = ue.user_id" +
+                "LEFT OUTER JOIN user_email ue ON user_info.user_id = ue.user_id" +
+                " ";
         selectUsers = client.preparedQuery(selectUserSql);
         selectUserShortById = client.preparedQuery(selectUserSql + "WHERE u.user_id = $1");
         selectUserFullById = client.preparedQuery("SELECT * from user_info WHERE user_id = $1");
