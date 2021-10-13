@@ -1,14 +1,14 @@
 <template>
-  <q-table title="Пользователи" :rows="storeUser.rows" :columns="columns" :filter="filter" :loading="storeUtils.loading"
-           :pagination="{sortBy: 'lastName'}"
+  <q-table title="Пользователи" :rows="storeUser.filteredRows" :columns="columns" :filter="nameFilter" :loading="storeUtils.loading"
+           :pagination="pagination"
            row-key="id">
     <template v-slot:top-right>
-      <q-input borderless dense debounce="300" v-model="filter" placeholder="Search">
+      <q-input borderless dense debounce="300" v-model="nameFilter" placeholder="Search">
         <template v-slot:append>
           <q-icon name="search" />
         </template>
       </q-input>
-      <q-btn round icon="plus" @click="editRowStart(defaultRow)"/>
+      <q-toggle icon="fas fa-filter" :model-value="storeUser.isFiltered()" @click="filterDialogShow"/>
     </template>
 
     <template v-slot:body-cell-actions="props">
@@ -18,6 +18,9 @@
       </q-td>
     </template>
   </q-table>
+  <div class="row no-wrap justify-end">
+    <q-btn round icon="fas fa-plus" @click="editRowStart(defaultRow)"/>
+  </div>
 
   <q-dialog v-model="isConfirmDelete">
     <q-card>
@@ -54,8 +57,10 @@
           />
           <div class="column" v-if="editRowObj.type === 'trainer' || editRowObj.type === 'admin'">
             <div class="text-h4">Тренер по</div>
+            <div v-for="tt in editRowObj.trainingTypes">{{tt}}</div>
+
             <q-checkbox v-for="training in storeCrudTraining.trainingTypes"
-              v-model="editRowObj.trainingTypes" :val="training.trainingType" label="training.trainingName"
+              v-model="editRowObj.trainingTypes" :val="training.trainingType" :label="training.trainingName"
                         :key="'training-type-' + training.trainingType"
             />
           </div>
@@ -68,11 +73,28 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+
+  <q-dialog v-model="isFilterDialogVisible">
+    <q-card>
+      <q-card-section>
+        <div class="text-h4">Показать</div>
+      </q-card-section>
+      <q-card-section>
+        <q-radio v-model="filterType" val="all" label="Все" />
+        <q-radio v-model="filterType" val="trainers" label="Тренеры" />
+      </q-card-section>
+      <q-card-section>
+        <q-btn flat label="Ok" color="primary" @click="storeUser.setFilterByType(filterType)" v-close-popup />
+        <q-btn flat label="Сбросить" color="primary" @click="storeUser.disableFilter()" v-close-popup />
+        <q-btn flat label="Cancel" color="primary" v-close-popup />
+      </q-card-section>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script lang="ts">
 import { ref, computed, Ref } from 'vue';
-import {useStoreCrudUser, EntityUser, EntityUserType, emptyUser} from 'src/store/store_crud_user'
+import {useStoreCrudUser, EntityUser, EntityUserType, emptyUser, EntityUserFilterTypes} from 'src/store/store_crud_user'
 import {useStoreUtils} from "src/store/store_utils";
 import {useStoreCrudTraining} from "src/store/store_crud_training";
 
@@ -104,25 +126,34 @@ const columns = [
   { name: 'actions', label: 'Actions'}
 ]
 
-
 export default {
   name: 'TableUsers',
   setup () {
-    let filter = ref('');
+    const isFilterDialogVisible = ref(false);
     const storeUtils = useStoreUtils();
     const storeUser = useStoreCrudUser();
     const storeCrudTraining = useStoreCrudTraining();
+    const pagination = {sortBy: 'lastName'};
     storeUser.disableFilter();
 
     storeCrudTraining.loadTrainingTypes().catch(e => console.log('Load error', e));
     storeUser.load().catch(e => console.log('Load error', e));
 
+    const filterType = ref<EntityUserFilterTypes>('all');
+
+    function filterDialogShow() {
+      isFilterDialogVisible.value = true;
+      filterType.value = storeUser.filterVal.type;
+    }
 
     const editRowObj :Ref<EntityUser | null> = ref(null);
 
     function editRowStart(row: EntityUser) {
       console.log('Start edit row', row);
       editRowObj.value = Object.assign({}, row);
+      if (!editRowObj.value.trainingTypes) {
+        editRowObj.value.trainingTypes = [];
+      }
     }
 
     async function editRowCommit() {
@@ -151,22 +182,20 @@ export default {
 
     return {
       columns,
+      pagination,
       storeUser,
       storeUtils,
       storeCrudTraining,
-      filter,
-      editRowObj,
-      editRowStart,
-      editRowCommit,
-      deleteRowObj,
-      deleteRowStart,
-      deleteRowCommit,
+      nameFilter: ref(''),
+      editRowObj, editRowStart, editRowCommit,
+      deleteRowObj, deleteRowStart, deleteRowCommit,
       defaultRow: emptyUser,
       isConfirmDelete: computed({get: () => deleteRowObj.value !== null, set: () => deleteRowObj.value = null}),
       isConfirmAdd: computed({get: () => editRowObj.value !== null, set: () => editRowObj.value = null}),
       isRowAddOrEdit: computed(() => editRowObj.value?.userId === -1),
       userTypes,
       userTypesMap,
+      isFilterDialogVisible, filterDialogShow, filterType,
     }
   }
 }

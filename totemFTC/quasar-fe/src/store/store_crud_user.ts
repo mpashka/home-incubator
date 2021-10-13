@@ -52,10 +52,22 @@ export interface EntityUser {
   socialNetworks: EntityUserSocialNetwork[],
 }
 
+export type EntityUserFilterTypes = 'all' | 'trainers';
+
+export interface EntityUserFilter {
+  name: string,
+  type: EntityUserFilterTypes,
+}
+
+export const emptyUserFilter: EntityUserFilter = {
+  name: '',
+  type: 'all',
+};
+
 export const useStoreCrudUser = defineStore('crudUser', {
   state: () => ({
     rows: [] as EntityUser[],
-    filterVal: '',
+    filterVal: {...emptyUserFilter},
     filteredRows: [] as EntityUser[],
   }),
 
@@ -63,7 +75,7 @@ export const useStoreCrudUser = defineStore('crudUser', {
     async load() {
       this.rows = (await api.get<EntityUser[]>('/api/user/list')).data;
       this.filter();
-      console.log('Rows received', this.rows);
+      console.log('Users received', this.rows);
     },
 
     async delete(user: EntityUser) {
@@ -88,20 +100,33 @@ export const useStoreCrudUser = defineStore('crudUser', {
     },
 
     disableFilter() {
-      this.filterVal = '';
-    },
-
-    setFilter(filterStr: string) {
-      this.filterVal = filterStr;
+      this.filterVal = {...emptyUserFilter};
       this.filter();
     },
 
+    setFilterByName(filterStr: string) {
+      this.filterVal.name = filterStr;
+      this.filter();
+    },
+
+    setFilterByType(filterType: EntityUserFilterTypes) {
+      this.filterVal.type = filterType;
+      this.filter();
+    },
+
+    isFiltered() {
+      return this.filterVal.name || this.filterVal.type !== 'all';
+    },
+
     filter() {
-      if (!this.filterVal) {
+      if (!this.filterVal.name) {
         this.filteredRows = this.rows;
       } else {
-        const filters = this.filterVal.toLowerCase().split(/ +/);
+        const filters = this.filterVal.name.toLowerCase().split(/ +/);
         this.filteredRows = this.rows.filter(u => contains([u.firstName.toLowerCase(), u.lastName.toLowerCase(), u.nickName.toLowerCase()], filters));
+      }
+      if (this.filterVal.type === 'trainers') {
+        this.filteredRows = this.filteredRows.filter(t => (t.type === 'trainer' || t.type === 'admin') && t.trainingTypes);
       }
     },
 

@@ -46,22 +46,27 @@ public class DbUser {
 
     @PostConstruct
     void init() {
-        String selectUserSql = "SELECT u.*, " +
-                "   array_agg(row_to_json(sn.*)) AS social_networks, " +
-                "   array_agg(row_to_json(e.*)) AS emails, " +
-                "   array_agg(row_to_json(p.*)) AS phones, " +
-                "   array_agg(json_build_object('image_id', i.image_id, 'content_type', i.content_type)) AS images " +
-                "FROM user_info u " +
-                "LEFT OUTER JOIN user_social_network sn ON u.user_id = sn.user_id " +
-                "LEFT OUTER JOIN user_email e ON u.user_id = e.user_id " +
-                "LEFT OUTER JOIN user_phone p ON u.user_id = p.user_id " +
-                "LEFT OUTER JOIN user_image i ON u.user_id = i.user_id "
-                ;
-        String selectUserGroupBy = "GROUP BY u.user_id";
-        selectUsers = client.preparedQuery(selectUserSql + selectUserGroupBy);
-        selectTrainers = client.preparedQuery(selectUserSql + " WHERE cardinality(u.training_types) > 0 AND " +
-                "u.user_type IN ('trainer', 'admin') " + selectUserGroupBy);
-        selectUser = client.preparedQuery(selectUserSql + " WHERE u.user_id = $1 " + selectUserGroupBy);
+        String selectUserSql = "SELECT u.*," +
+                "   sn.social_networks," +
+                "   e.emails," +
+                "   p.phones," +
+                "   i.images " +
+                " FROM user_info u " +
+                "   LEFT OUTER JOIN (SELECT user_id, array_agg(row_to_json(sn.*)) AS social_networks FROM user_social_network sn GROUP BY user_id) sn ON u.user_id = sn.user_id " +
+                "   LEFT OUTER JOIN (SELECT user_id, array_agg(row_to_json(e.*)) AS emails FROM user_email e GROUP BY user_id) e ON u.user_id = e.user_id " +
+                "   LEFT OUTER JOIN (SELECT user_id, array_agg(row_to_json(p.*)) AS phones FROM user_phone p GROUP BY user_id) p ON u.user_id = p.user_id " +
+                "   LEFT OUTER JOIN (SELECT user_id, array_agg(json_build_object('image_id', i.image_id, 'content_type', i.content_type)) AS images FROM user_image i GROUP BY user_id) i ON u.user_id = i.user_id";
+        selectUsers = client.preparedQuery(selectUserSql);
+        selectTrainers = client.preparedQuery(selectUserSql +
+                " WHERE cardinality(u.training_types) > 0" +
+                "   AND u.user_type IN ('trainer', 'admin') ");
+        selectUser = client.preparedQuery("SELECT * " +
+                " FROM user_info u, " +
+                "   (SELECT array_agg(row_to_json(sn.*)) AS social_networks FROM user_social_network sn WHERE user_id = $1) sn, " +
+                "   (SELECT array_agg(row_to_json(e.*)) AS emails FROM user_email e WHERE user_id = $1) e, " +
+                "   (SELECT array_agg(row_to_json(p.*)) AS phones FROM user_phone p WHERE user_id = $1) p, " +
+                "   (SELECT array_agg(json_build_object('image_id', i.image_id, 'content_type', i.content_type)) AS images FROM user_image i WHERE user_id = $1) i " +
+                " WHERE u.user_id = $1 ");
 
         selectBySocialNetwork = client.preparedQuery("SELECT user_id " +
                 "FROM user_social_network " +
@@ -325,7 +330,8 @@ public class DbUser {
         public EntityUser loadFromDbFull(Row row) {
             loadFromDb(row);
             Integer primaryImageId = row.getInteger("primary_image");
-            this.images = Arrays.stream(row.getArrayOfJsons("images"))
+            Object[] images = row.getArrayOfJsons("images");
+            this.images = images == null ? null : Arrays.stream(images)
                     .map(ij -> {
                         EntityImage image = new EntityImage().loadFromDb((JsonObject) ij);
                         if (primaryImageId != null && image.getId() == primaryImageId) {
@@ -334,13 +340,16 @@ public class DbUser {
                         return image;
                     })
                     .toArray(EntityImage[]::new);
-            this.emails = Arrays.stream(row.getArrayOfJsons("emails"))
+            Object[] emails = row.getArrayOfJsons("emails");
+            this.emails = emails == null ? null : Arrays.stream(emails)
                     .map(ej -> new EntityEmail().loadFromDb((JsonObject) ej))
                     .toArray(EntityEmail[]::new);
-            this.phones = Arrays.stream(row.getArrayOfJsons("phones"))
+            Object[] phones = row.getArrayOfJsons("phones");
+            this.phones = phones == null ? null : Arrays.stream(phones)
                     .map(pj -> new EntityPhone().loadFromDb((JsonObject) pj))
                     .toArray(EntityPhone[]::new);
-            this.socialNetworks = Arrays.stream(row.getArrayOfJsons("social_networks"))
+            Object[] socialNetworks = row.getArrayOfJsons("social_networks");
+            this.socialNetworks = socialNetworks == null ? null : Arrays.stream(socialNetworks)
                     .map(pj -> new EntitySocialNetwork().loadFromDb((JsonObject) pj))
                     .toArray(EntitySocialNetwork[]::new);
             return this;

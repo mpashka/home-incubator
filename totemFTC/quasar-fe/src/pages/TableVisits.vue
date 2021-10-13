@@ -92,7 +92,7 @@
                   filled v-model="editRowObj.user" use-input
                   input-debounce="0" label="Работяга"
                   :options="storeUser.filteredRows" :option-label="storeUser.userNameString"
-                  @filter="(f, u) => u(() => storeUser.setFilter(f))"
+                  @filter="(f, u) => u(() => storeUser.setFilterByName(f))"
         >
           <template v-slot:no-option>
             <q-item>
