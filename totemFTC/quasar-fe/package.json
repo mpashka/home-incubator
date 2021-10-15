@@ -6,6 +6,10 @@
   "author": "Pavel Moukhataev <m_pashka@mail.ru>",
   "private": true,
   "scripts": {
+    "dev": "quasar dev",
+    "build": "quasar build",
+    "build:mvn": "mvn install",
+    "build:pwa": "quasar build -m pwa",
     "lint": "eslint --ext .js,.ts,.vue ./",
     "test": "echo \"No test specified\" && exit 0"
   },

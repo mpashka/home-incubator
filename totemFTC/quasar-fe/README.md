@@ -22,5 +22,11 @@ npm run lint
 quasar build
 ```
 
+or better
+```
+mvn install
+```
+This will run `npm build (quasar build) `, pack and put into local maven repository
+
 ### Customize the configuration
 See [Configuring quasar.conf.js](https://v2.quasar.dev/quasar-cli/quasar-conf-js).

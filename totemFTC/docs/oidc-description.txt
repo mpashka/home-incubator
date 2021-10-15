@@ -124,3 +124,7 @@ response_type=token%2Csigned_request%2Cgraph_domain&
 return_scopes=true
 
 https://m.facebook.com/v11.0/dialog/oauth/confirm/
+
+local redirects:
+urn:ietf:wg:oauth:2.0:oob:auto
+urn:ietf:wg:oauth:2.0:oob

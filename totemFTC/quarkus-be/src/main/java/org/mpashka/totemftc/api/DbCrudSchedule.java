@@ -11,6 +11,7 @@ import io.vertx.mutiny.sqlclient.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -27,19 +28,16 @@ public class DbCrudSchedule {
     PgPool client;
 
     private PreparedQuery<RowSet<Row>> select;
-    private PreparedQuery<RowSet<Row>> selectTrainingTypes;
-    private PreparedQuery<RowSet<Row>> selectTrainers;
     private PreparedQuery<RowSet<Row>> insert;
     private PreparedQuery<RowSet<Row>> update;
     private PreparedQuery<RowSet<Row>> delete;
 
-    void onStart(@Observes StartupEvent ev) {
+    @PostConstruct
+    void init() {
         select = client.preparedQuery("SELECT * from training_schedule t " +
                 "JOIN user_info u ON t.trainer = u.user_id " +
                 "JOIN training_type tt on t.training_type = tt.training_type " +
                 "ORDER BY t.training_time");
-        selectTrainingTypes = client.preparedQuery("SELECT * from training_type");
-        selectTrainers = client.preparedQuery("SELECT * from trainer_type tt JOIN user_info u on u.user_id = tt.user_id");
         insert = client.preparedQuery("INSERT INTO training_schedule (training_time, trainer, training_type) VALUES ($1, $2, $3) RETURNING training_schedule_id");
         update = client.preparedQuery("UPDATE training_schedule SET training_time=$2, trainer=$3, training_type=$4 WHERE training_schedule_id=$1");
         delete = client.preparedQuery("DELETE FROM training_schedule WHERE training_schedule_id=$1");

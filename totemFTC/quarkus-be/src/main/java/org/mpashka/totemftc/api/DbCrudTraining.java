@@ -11,6 +11,7 @@ import io.vertx.mutiny.sqlclient.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.PostConstruct;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.inject.Singleton;
@@ -33,7 +34,8 @@ public class DbCrudTraining {
     private PreparedQuery<RowSet<Row>> update;
     private PreparedQuery<RowSet<Row>> delete;
 
-    void onStart(@Observes StartupEvent ev) {
+    @PostConstruct
+    void init() {
         select = client.preparedQuery("SELECT * from training t " +
                 "JOIN user_info u ON t.trainer = u.user_id " +
                 "JOIN training_type tt on t.training_type = tt.training_type " +

@@ -10,6 +10,7 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
 const { configure } = require('quasar/wrappers');
 
+// See lib/helpers/get-quasar-ctx.js
 module.exports = configure(function (ctx) {
   return {
     // https://v2.quasar.dev/quasar-cli/supporting-ts
@@ -79,6 +80,17 @@ module.exports = configure(function (ctx) {
       chainWebpack (/* chain */) {
         //
       },
+
+      distDir: ctx.modeName === 'spa' && ctx.prod ? 'target/classes/META-INF/resources' : `dist/${ctx.modeName}`,
+
+      env: {
+        // Used to open login page. See Login.vue
+        BackendFullUrl: ctx.dev ? 'http://localhost:8080' : 'https://totemftc.bbs.io',
+
+        // Used to make backend api calls. See axios.ts
+        BackendUrl: ctx.dev ? 'http://localhost:8080' : '/',
+        // FrontendUrl: ctx.dev ? 'http://localhost:8081' : 'https://totemftc.bbs.io',
+      }
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli/quasar-conf-js#Property%3A-devServer

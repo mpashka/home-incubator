@@ -57,8 +57,6 @@
           />
           <div class="column" v-if="editRowObj.type === 'trainer' || editRowObj.type === 'admin'">
             <div class="text-h4">Тренер по</div>
-            <div v-for="tt in editRowObj.trainingTypes">{{tt}}</div>
-
             <q-checkbox v-for="training in storeCrudTraining.trainingTypes"
               v-model="editRowObj.trainingTypes" :val="training.trainingType" :label="training.trainingName"
                         :key="'training-type-' + training.trainingType"

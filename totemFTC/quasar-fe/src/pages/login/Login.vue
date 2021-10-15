@@ -19,9 +19,10 @@ function openLoginWindow(event: Event, type: string) {
   event.preventDefault();
   event.stopPropagation();
   try {
-    const url = `http://localhost:8080/login/init/${type}`;
+    const url = `${String(process.env.BackendFullUrl)}/login/init/${type}`;
 
     /*
+todo locate and resize
 https://stackoverflow.com/questions/3437786/get-the-size-of-the-screen-current-web-page-and-browser-window
 window.innerHeight 1174
 window.innerWidth 1158
