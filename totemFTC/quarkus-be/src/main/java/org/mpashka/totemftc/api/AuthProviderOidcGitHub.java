@@ -21,7 +21,7 @@ public class AuthProviderOidcGitHub extends AuthProviderOidc {
     public AuthProviderOidcGitHub() {
         super("github",
                 "read:user+user:email",
-                "https://github.com/login/oauth/authorize?client_id=<client_id>&redirect_uri=<redirect_uri>&state=<state>&response_type=code&scope=<scope>&nonce=<nonce>",
+                "https://github.com/login/oauth/authorize?client_id=<client_id>&redirect_uri=<redirect_uri>&state=<state>&scope=<scope>&state=<state>&response_type=code&nonce=<nonce>",
                 "https://github.com/login/oauth/access_token");
     }
 
@@ -43,7 +43,8 @@ public class AuthProviderOidcGitHub extends AuthProviderOidc {
                     String name = userJson.getString("name");
                     String[] names = name != null ? name.split("\\s+") : new String[0];
 
-                    return new UserInfo(userJson.getString("id"),
+                    return new UserInfo(getName(),
+                            userJson.getString("id"),
                             userJson.getString("html_url"),
                             userJson.getString("email"),
                             null,

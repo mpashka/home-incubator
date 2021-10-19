@@ -14,13 +14,11 @@ import org.jboss.resteasy.reactive.server.ServerRequestFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.SecurityContext;
 import java.security.Permission;
 import java.security.Principal;
 import java.util.Collections;
@@ -35,9 +33,9 @@ import java.util.Set;
  * https://quarkus.io/guides/security-built-in-authentication
  */
 @Singleton
-public class SecurityProvider implements HttpAuthenticationMechanism {
+public class MySecurityProvider implements HttpAuthenticationMechanism {
 
-    private static final Logger log = LoggerFactory.getLogger(SecurityProvider.class);
+    private static final Logger log = LoggerFactory.getLogger(MySecurityProvider.class);
 
     private static final String USER = "user";
     private static final Principal PRINCIPAL = () -> USER;
@@ -90,7 +88,7 @@ public class SecurityProvider implements HttpAuthenticationMechanism {
     };
 
     @Inject
-    SecurityService securityService;
+    WebSessionService webSessionService;
 
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext context, IdentityProviderManager identityProviderManager) {
@@ -99,7 +97,7 @@ public class SecurityProvider implements HttpAuthenticationMechanism {
         if (auth == null || !auth.startsWith("Bearer ")) {
             return Uni.createFrom().optional(Optional.empty());
         }
-        SecurityService.Session session = securityService.getSession(auth.substring(7));
+        WebSessionService.Session session = webSessionService.getSession(auth.substring(7));
         log.debug("Session: {}", session);
         if (session == null) {
             return Uni.createFrom().optional(Optional.empty());
@@ -129,34 +127,5 @@ public class SecurityProvider implements HttpAuthenticationMechanism {
     public HttpCredentialTransport getCredentialTransport() {
         log.info("::getCredentialTransport");
         return new HttpCredentialTransport(HttpCredentialTransport.Type.AUTHORIZATION, "token");
-    }
-
-    /**
-     * Set session to request parameter.
-     * Is needed since {@link HttpAuthenticationMechanism} doesn't have access to request context
-     */
-    @Singleton
-    public static class SecurityFilter implements ContainerRequestFilter {
-
-        @Inject
-        SecurityService.RequestParameters requestParameters;
-
-        @Inject
-        SecurityService securityService;
-
-        @ServerRequestFilter(preMatching = true)
-        public void filter(ContainerRequestContext requestContext) {
-            String auth = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
-            log.debug("Auth[{}]: {}", requestContext.getUriInfo().getRequestUri(), auth);
-            if (auth == null || !auth.startsWith("Bearer ")) {
-                return;
-            }
-            SecurityService.Session session = securityService.getSession(auth.substring(7));
-            log.debug("Session: {}", session);
-            if (session == null) {
-                return;
-            }
-            requestParameters.setSession(session);
-        }
     }
 }

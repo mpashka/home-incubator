@@ -7,7 +7,22 @@
           Totem FTC
         </q-toolbar-title>
 
-        <div v-if="storeLogin.isAuthenticated">{{ storeLogin.fullName }}</div>
+        <div v-if="storeLogin.isAuthenticated">
+          {{ storeLogin.fullName }}
+          <q-icon name="more_vert" size="sm">
+            <q-menu auto-close>
+              <q-list>
+                <q-item clickable to="/settings">
+                  <q-item-section>Настройки</q-item-section>
+                </q-item>
+                <q-separator />
+                <q-item clickable @click="storeLogin.logout()">
+                  <q-item-section>Выход</q-item-section>
+                </q-item>
+              </q-list>
+            </q-menu>
+          </q-icon>
+        </div>
       </q-toolbar>
     </q-header>
 
@@ -83,19 +98,13 @@
               <q-icon name="tools" />
             </q-item-section>
 
-            <q-item-section>
-              <q-item-label>Настройки</q-item-label>
-              <q-item-label caption>
-                Настройки
-              </q-item-label>
-            </q-item-section>
           </q-item>
         </router-link>
       </q-list>
     </q-drawer>
 
     <q-page-container>
-      <Suspense timeout="0">
+      <Suspense timeout="100">
         <template #default>
           <router-view />
         </template>

@@ -9,6 +9,7 @@
         Oops. Nothing here...
       </div>
 
+      <div class="q-gutter-lg">
       <q-btn
         class="q-mt-xl"
         color="white"
@@ -18,6 +19,17 @@
         label="Go Home"
         no-caps
       />
+
+      <q-btn
+        class="q-mt-xl"
+        color="white"
+        text-color="blue"
+        unelevated
+        to="/login"
+        label="Login"
+        no-caps
+      />
+      </div>
     </div>
   </div>
 </template>

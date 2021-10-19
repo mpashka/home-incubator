@@ -27,7 +27,7 @@ public class AuthProviderOidcVk extends AuthProviderOidc {
     public AuthProviderOidcVk() {
         super("vk",
                 "email",
-                "https://oauth.vk.com/authorize?client_id=<client_id>&redirect_uri=<redirect_uri>&scope=<scope>&response_type=code",
+                "https://oauth.vk.com/authorize?client_id=<client_id>&redirect_uri=<redirect_uri>&scope=<scope>&state=<state>&response_type=code&nonce=<nonce>",
                 "https://api.instagram.com/oauth/access_token");
     }
 
@@ -35,7 +35,7 @@ public class AuthProviderOidcVk extends AuthProviderOidc {
     {"access_token":"...","expires_in":86333,"user_id":91831849,"email":"m_pashka@mail.ru"}
      */
     void processTokenResponse(WebResourceLogin.LoginState loginState, JsonObject tokenJson) {
-        loginState.setAuthUserInfo(new UserInfo(
+        loginState.setAuthUserInfo(new UserInfo(getName(),
                 tokenJson.getString("user_id"), null, tokenJson.getString("email"), null, null, null, null, null
         ));
     }
@@ -71,7 +71,8 @@ public class AuthProviderOidcVk extends AuthProviderOidc {
                     String domain = userJson.getString("domain");
                     boolean isNick = domain.matches("id\\d+");
 
-                    return new UserInfo(userJson.getString("id"),
+                    return new UserInfo(getName(),
+                            userJson.getString("id"),
                             "https://vk.com/<domain>".replace("<domain>", domain),
                             email,
                             null,

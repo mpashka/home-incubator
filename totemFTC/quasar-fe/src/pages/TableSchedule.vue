@@ -20,7 +20,7 @@
   </q-card>
   </div>
 
-  <q-dialog v-model="confirmDelete">
+  <q-dialog v-model="isConfirmDelete">
     <q-card>
       <q-card-section class="row items-center">
         <q-avatar icon="signal_wifi_off" color="primary" text-color="white" />
@@ -34,7 +34,7 @@
     </q-card>
   </q-dialog>
 
-  <q-dialog v-model="confirmAdd" persistent>
+  <q-dialog v-model="isConfirmAdd" persistent>
     <q-card class="q-gutter-md" style="width: 60%; max-width: 60%">
       <q-card-section>
         <div class="text-h6">{{ isRowAddOrEdit ? 'Добавить' : 'Редактировать' }}</div>

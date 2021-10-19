@@ -20,7 +20,7 @@ public class AuthProviderOidcInstagram extends AuthProviderOidc {
     public AuthProviderOidcInstagram() {
         super("instagram",
                 "openid,user_profile",
-                "https://api.instagram.com/oauth/authorize?client_id=<client_id>&redirect_uri=<redirect_uri>&scope=<scope>&response_type=code",
+                "https://api.instagram.com/oauth/authorize?client_id=<client_id>&redirect_uri=<redirect_uri>&state=<state>&scope=<scope>&response_type=code&nonce=<nonce>",
                 "https://api.instagram.com/oauth/access_token");
     }
 
@@ -60,7 +60,8 @@ public class AuthProviderOidcInstagram extends AuthProviderOidc {
                                 JsonObject userJson = userInfoJson.getJsonObject("graphql").getJsonObject("user");
                                 String name = userJson.getString("full_name");
                                 String[] names = name != null ? name.split("\\s+") : new String[0];
-                                return new UserInfo(userJson.getString("id"),
+                                return new UserInfo(getName(),
+                                        userJson.getString("id"),
                                         "https://www.instagram.com/<username>/".replace("<username>", username),
                                         null,
                                         null,

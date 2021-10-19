@@ -1,12 +1,17 @@
 package org.mpashka.totemftc.api;
 
+import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
+import org.jboss.resteasy.reactive.server.ServerRequestFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.ws.rs.Produces;
+import javax.inject.Singleton;
+import javax.ws.rs.container.ContainerRequestContext;
+import javax.ws.rs.container.ContainerRequestFilter;
+import javax.ws.rs.core.HttpHeaders;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -14,9 +19,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 @ApplicationScoped
-public class SecurityService {
+public class WebSessionService {
 
-    private static final Logger log = LoggerFactory.getLogger(SecurityService.class);
+    private static final Logger log = LoggerFactory.getLogger(WebSessionService.class);
 
     private static final String USER_ID_ATTR = "login:userId";
 
@@ -25,15 +30,22 @@ public class SecurityService {
     private ConcurrentMap<String, Session> sessions = new ConcurrentHashMap<>();
 
     @Inject
-    DbUser dbUser;
+    WebSessionService.RequestParameters requestParameters;
 
-    @Inject
-    SecurityService.RequestParameters requestParameters;
-
-    @Produces
     @RequestScoped
     RequestParameters requestParameters() {
         return new RequestParameters();
+    }
+
+    public Session getSession() {
+        return requestParameters.session;
+    }
+
+    public void closeSession() {
+        if (requestParameters.session != null) {
+            sessions.remove(requestParameters.session.sessionId);
+            requestParameters.setSession(null);
+        }
     }
 
     public Session getSession(String sessionId) {
@@ -55,13 +67,12 @@ public class SecurityService {
     }
 
     public Integer getUserId() {
-        return requestParameters.getUserId();
+        return Optional.of(requestParameters.getSession()).map(Session::getUserId).orElse(null);
     }
 
-    public void setUserInfo(Integer userId) {
-        requestParameters.setUserId(userId);
-    }
-
+    /**
+     * Used to ass
+     */
     public static class RequestParameters {
         private Session session;
 
@@ -71,14 +82,6 @@ public class SecurityService {
 
         public void setSession(Session session) {
             this.session = session;
-        }
-
-        public Integer getUserId() {
-            return Optional.of(session).map(Session::getUserId).orElse(null);
-        }
-
-        public void setUserId(Integer userId) {
-            session.setUserId(userId);
         }
     }
 
@@ -113,7 +116,34 @@ public class SecurityService {
         public void setUserId(int userId) {
             setParameter(USER_ID_ATTR, userId);
         }
-
     }
 
+    /**
+     * Set session to request parameter.
+     * Is needed since {@link HttpAuthenticationMechanism} doesn't have access to request context
+     */
+    @Singleton
+    public static class MySecurityFilter implements ContainerRequestFilter {
+
+        @Inject
+        WebSessionService.RequestParameters requestParameters;
+
+        @Inject
+        WebSessionService webSessionService;
+
+        @ServerRequestFilter(preMatching = true)
+        public void filter(ContainerRequestContext requestContext) {
+            String auth = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
+            log.debug("Auth[{}]: {}", requestContext.getUriInfo().getRequestUri(), auth);
+            if (auth == null || !auth.startsWith("Bearer ")) {
+                return;
+            }
+            WebSessionService.Session session = webSessionService.getSession(auth.substring(7));
+            log.debug("Session: {}", session);
+            if (session == null) {
+                return;
+            }
+            requestParameters.setSession(session);
+        }
+    }
 }

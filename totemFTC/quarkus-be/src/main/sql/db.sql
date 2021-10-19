@@ -29,11 +29,13 @@ CREATE TABLE IF NOT EXISTS user_image (
     image bytea,
     content_type VARCHAR(20) NOT NULL);
 CREATE TABLE IF NOT EXISTS user_social_network (
-    network_id VARCHAR(10) NOT NULL,
+    -- facebook, okru, e.t.c. See AuthProvider#name
+    network_name VARCHAR(10) NOT NULL,
+    -- User id in social network. Specific to network
     id VARCHAR(30) NOT NULL,
     user_id INTEGER NOT NULL REFERENCES user_info (user_id),
     link VARCHAR(400) NULL,
-    PRIMARY KEY (network_id,id));
+    PRIMARY KEY (network_name,id));
 
 
 

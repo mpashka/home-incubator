@@ -1,11 +1,11 @@
 package org.mpashka.totemftc.api;
 
-import io.quarkus.security.Authenticated;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.jboss.resteasy.reactive.RestCookie;
 import org.jboss.resteasy.reactive.RestPath;
+import org.jboss.resteasy.reactive.RestQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +24,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@Path("/login")
+@Path("/api/login")
 public class WebResourceLogin {
 
     private static final Logger log = LoggerFactory.getLogger(WebResourceLogin.class);
@@ -35,7 +35,7 @@ public class WebResourceLogin {
     private Map<String, AuthProvider> authProviders;
 
     @Inject
-    SecurityService securityService;
+    WebSessionService webSessionService;
 
     @Inject
     DbUser dbUser;
@@ -59,17 +59,33 @@ public class WebResourceLogin {
     @GET
     @Path("init/{providerName}")
     @Produces(MediaType.TEXT_HTML)
-    public Response initLogin(@RestPath String providerName) {
-        log.debug("Init login {}.", providerName);
-        // todo check if user is logged in already - abort
-        SecurityService.Session session = securityService.createSession();
+    public Response initLogin(@RestPath String providerName, @RestQuery("action") ProviderAction action, @RestQuery("sessionId") String sessionId) {
+        log.debug("Init login {} / {}.", providerName, action);
+        WebSessionService.Session session;
+        switch (action) {
+            case link:
+                session = webSessionService.getSession(sessionId);
+                if (session == null) {
+                    throw new RuntimeException("Session not found " + sessionId);
+                }
+                break;
+
+            default:
+                action = ProviderAction.login;
+            case login:
+                if (webSessionService.getSession() != null) {
+                    throw new RuntimeException("User already logged in");
+                }
+                session = webSessionService.createSession();
+                break;
+        }
         AuthProvider provider = authProviders.get(providerName);
         if (provider == null) {
             throw new RuntimeException("Unknown security provider " + providerName);
         }
         String state = provider.getName() + "_" + Utils.generateRandomString(20);
-        session.setParameter(STATE_ATTR, new LoginState(provider, state));
-        log.debug("Session: {}", session);
+        session.setParameter(STATE_ATTR, new LoginState(action, provider, state));
+        log.debug("Pre-login session: {}", session);
         return Response.status(Response.Status.FOUND)
                 .location(URI.create(provider.getAuthorizationEndpoint()
                         .replace("<state>", state)
@@ -110,10 +126,13 @@ public class WebResourceLogin {
         log.info("Callback: {}. SessionId: {}", uriInfo.getRequestUri(), sessionId);
         // Response params: state&code&scope
 
-        SecurityService.Session session;
+        WebSessionService.Session session;
         LoginState loginState;
-        if (sessionId == null || (session = securityService.removeSession(sessionId)) == null || (loginState = session.getParameter(STATE_ATTR)) == null) {
+        if (sessionId == null || (session = webSessionService.getSession(sessionId)) == null || (loginState = session.removeParameter(STATE_ATTR)) == null) {
             throw new LoginException("Session not found");
+        }
+        if (loginState.action == ProviderAction.login) {
+            webSessionService.removeSession(sessionId);
         }
 
         /* error_reason, error, error_description */
@@ -124,89 +143,128 @@ public class WebResourceLogin {
             throw new LoginException(error, errorReason, errorDescription);
         }
 
-        String callbackState = uriInfo.getQueryParameters().getFirst("state");
-        if (!callbackState.equals(loginState.getState()) || !providerName.equals(loginState.getProvider().getName())) {
-            throw new LoginException("Received invalid state");
-        }
-
         AuthProvider authProvider = loginState.getProvider();
         return authProvider.processCallback(uriInfo, loginState)
+                .onFailure().transform(e -> new RuntimeException("Error processing callback", e))
                 .onItem().transformToUni(u -> authProvider.readUserInfo(loginState))
+//                .onFailure().transform(e -> new RuntimeException("Error parsing user info", e))
                 .onItem().invoke(loginState::setAuthUserInfo)
-                .onItem().transformToUni(u -> dbUser.findById(authProvider.getName(), u.getId(), u.getEmail(), u.getPhone()))
-                .onItem().transformToUni(searchResult -> {
-                    if (searchResult != null && searchResult.getType() == DbUser.UserSearchType.socialNetwork) {
-                        // Login by social network id - user id is present, no need to update database
-                        return Uni.createFrom().item(searchResult.getUserId());
+                .onItem().transformToUni(u -> {
+                    switch (loginState.action) {
+                        case login: return userIdLogin(loginState);
+                        case link: return userIdLink(session, loginState);
+                        default: throw new RuntimeException("Unknown action " + loginState.action);
                     }
+                })
+                .onItem().invoke(userId -> loginState.userId = userId)
+                .onItem().transformToUni(u -> saveImage(loginState))
+                .onItem().transform(imageId -> {
+                    WebSessionService.Session newSession;
+                    switch (loginState.action) {
+                        case login:
+                            newSession = webSessionService.createSession();
+                            newSession.setUserId(loginState.userId);
+                            log.debug("Login session: {}, UserId: {}", newSession.getSessionId(), newSession.getUserId());
+                            break;
 
-                    Uni<Integer> userIdUni = addOrUpdateUser(searchResult, loginState);
-                    return loadImage(userIdUni, loginState.getAuthUserInfo().getImageUrl());
-                }).onItem().transform(userId -> {
-                    SecurityService.Session newSession = securityService.createSession();
-                    newSession.setUserId(userId);
+                        case link:
+                            newSession = session;
+                            break;
+                        default: throw new RuntimeException("Unknown action " + loginState.action);
+                    }
 
                     // return "<script>onLoginCompleted();</script>";
                     // probably temporary solution to avoid cross browser issue
                     return Response.status(Response.Status.FOUND)
 //                            .location(URI.create("http://localhost:8081/callback/login-ok.html?session_id=<session_id>&user_type=<user_type>"
-                            .location(URI.create("<frontend_url>/login-ok?session_id=<session_id>&user_type=<user_type>"
+                            .location(URI.create("<frontend_url>/login/ok?action=<action>&session_id=<session_id>&user_type=<user_type>"
+                                    .replace("<action>", loginState.action.name())
                                     .replace("<frontend_url>", frontendUrl)
-                                    .replace("<session_id>", session.getSessionId())
-                                    .replace("<user_type>", loginState.isNewUser() ? "new" : "existing")
+                                    .replace("<session_id>", newSession.getSessionId())
+                                    .replace("<user_type>", loginState.newUser ? "new" : "existing")
                             ))
                             .cookie(new NewCookie(SESSION_ID_COOKIE,  null, "/", null, null, 0, false, false))
                             .build();
                 });
     }
 
-    private Uni<Integer> addOrUpdateUser(DbUser.UserSearchResult searchResult, LoginState loginState) {
+    /**
+     * find user for login scenario, add social network if user was found by e-mail or by phone,
+     * @return user id
+     */
+    private Uni<Integer> userIdLogin(LoginState loginState) {
         AuthProvider.UserInfo userInfo = loginState.getAuthUserInfo();
-        if (searchResult != null) {
-            // User was found by phone or email - Add social network info
-            return dbUser.addSocialNetwork(searchResult.getUserId(), loginState.getProvider().getName(), userInfo.getId(), userInfo.getLink(), userInfo.getEmail(), userInfo.getPhone())
-                    .onItem().transform(u -> searchResult.getUserId());
-        } else {
-            loginState.setNewUser(true);
-            // User was not found - Create new user id
-            return dbUser.addUser(new DbUser.EntityUser()
-                    .setFirstName(userInfo.getFirstName())
-                    .setLastName(userInfo.getLastName())
-                    .setType(DbUser.UserType.guest)
-            ).onItem().transformToUni(userId ->
-                    dbUser.addEmail(userId, userInfo.getEmail())
-                            .onItem().transform(u -> userId)
-            ).onItem().transformToUni(userId ->
-                    dbUser.addPhone(userId, userInfo.getPhone())
-                            .onItem().transform(u -> userId)
-            );
-        }
+        return dbUser.findById(userInfo)
+                .onItem().transformToUni(searchResult -> {
+                    if (searchResult != null && searchResult.getType() == DbUser.UserSearchType.socialNetwork) {
+                        // Login by social network id - user id is present, no need to update database
+                        loginState.loadImage = false;
+                        return Uni.createFrom().item(searchResult.getUserId());
+                    } else if (searchResult != null) {
+                        // User was found by phone or email - Add social network info
+                        loginState.loadImage = true;
+                        return
+                                dbUser.addUserSocialNetwork(searchResult.getUserId(), userInfo)
+                                        .onItem().transform(u -> searchResult.getUserId());
+                    } else {
+                        // User was not found - Create new user id
+                        loginState.newUser = true;
+                        loginState.loadImage = true;
+                        return
+                                dbUser.addUser(new DbUser.EntityUser()
+                                        .setFirstName(userInfo.getFirstName())
+                                        .setLastName(userInfo.getLastName())
+                                        .setType(DbUser.UserType.guest)
+                                ).onItem().transformToUni(userId ->
+                                        dbUser.addUserSocialNetwork(userId, userInfo)
+                                                .onItem().transform(u -> userId)
+                                );
+                    }
+                });
     }
 
-    private Uni<Integer> loadImage(Uni<Integer> userIdUni, String imageUrl) {
-        if (!Utils.isEmpty(imageUrl)) {
-            // Load image and save to db
-            userIdUni = userIdUni.onItem().transformToUni(userId ->
-                    webClient.getAbs(imageUrl).send()
-                            .onItem().transformToUni(image -> {
-                                String contentType = image.getHeader(HttpHeaders.CONTENT_TYPE);
-                                return dbUser.addImage(userId, image.body(), contentType)
-                                        .onItem().transformToUni(imageId -> dbUser.setMainImage(userId, imageId, true));
-                            }).onItem().transform(u -> userId));
+    /**
+     * saves user social network info to DB
+     * @return user id
+     */
+    private Uni<Integer> userIdLink(WebSessionService.Session session, LoginState loginState) {
+        AuthProvider.UserInfo userInfo = loginState.getAuthUserInfo();
+        int userId = session.getUserId();
+        return dbUser.addUserSocialNetwork(userId, userInfo)
+                .onItem().transform(u -> userId);
+    }
+
+    /**
+     * Loads image from social network and saves it into database
+     * @return image id
+     */
+    private Uni<Integer> saveImage(LoginState loginState) {
+        String imageUrl = loginState.getAuthUserInfo().getImageUrl();
+        if (!loginState.loadImage || Utils.isEmpty(imageUrl)) {
+            return Uni.createFrom().item(0);
         }
-        return userIdUni;
+
+        // Load image and save to db
+        return webClient.getAbs(imageUrl).send()
+                .onItem().transformToUni(image -> {
+                    String contentType = image.getHeader(HttpHeaders.CONTENT_TYPE);
+                    int userId = loginState.userId;
+                    return dbUser.addImage(userId, image.body(), contentType)
+                            .onItem().transformToUni(imageId ->
+                                    dbUser.setMainImage(userId, imageId, true)
+                                            .onItem().transform(u -> imageId));
+                });
     }
 
     @GET
-    @Path("user")
+    @Path("logout")
     @Produces(MediaType.APPLICATION_JSON)
-    @Authenticated
-    public Uni<DbUser.EntityUser> user() {
-        int userId = securityService.getUserId();
-        return dbUser.getUser(userId);
+    public Response logout() {
+        webSessionService.closeSession();
+        return Response.ok().build();
     }
 
-    private static class LoginException extends RuntimeException {
+    static class LoginException extends RuntimeException {
         private String[] uiMessage;
         public LoginException(String... uiMessage) {
             super(Arrays.toString(uiMessage));
@@ -217,16 +275,26 @@ public class WebResourceLogin {
         }
     }
 
-    public static class LoginState {
+    static class LoginState {
+        private ProviderAction action;
         private AuthProvider provider;
         private String state;
         private String token;
         private AuthProvider.UserInfo authUserInfo;
+        private int userId;
+        /** true if this is new user and we add him into db */
         private boolean newUser;
+        /** true if this is new user or new social network */
+        private boolean loadImage;
 
-        public LoginState(AuthProvider provider, String state) {
-            this.state = state;
+        public LoginState(ProviderAction action, AuthProvider provider, String state) {
+            this.action = action;
             this.provider = provider;
+            this.state = state;
+        }
+
+        public ProviderAction getAction() {
+            return action;
         }
 
         public AuthProvider getProvider() {
@@ -252,14 +320,9 @@ public class WebResourceLogin {
         public void setAuthUserInfo(AuthProvider.UserInfo authUserInfo) {
             this.authUserInfo = authUserInfo;
         }
-
-        public boolean isNewUser() {
-            return newUser;
-        }
-
-        public void setNewUser(boolean newUser) {
-            this.newUser = newUser;
-        }
     }
 
+    public enum ProviderAction {
+        login, link
+    }
 }

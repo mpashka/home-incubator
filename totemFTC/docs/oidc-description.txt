@@ -31,6 +31,16 @@ https://graph.facebook.com/me?fields=id&access_token="xxxxx" (https://stackoverf
 https://developers.facebook.com/apps/558989508631164/roles/test-users/
 https://developers.facebook.com/support/
 
+Twitter: https://developer.twitter.com/en/docs/authentication/oauth-2-0/application-only
+https://developer.twitter.com/en/apps
+https://developer.twitter.com/en/docs, https://developer.twitter.com/en/docs/tutorials, https://developer.twitter.com/en/community
+
+Apple: https://developer.apple.com/documentation/sign_in_with_apple/sign_in_with_apple_rest_api/authenticating_users_with_sign_in_with_apple
+https://developer.apple.com/sign-in-with-apple/
+https://developer.apple.com/documentation/sign_in_with_apple/generate_and_validate_tokens
+https://docs.mongodb.com/realm/authentication/apple/
+https://yablyk.com/731133-free-developer-account/
+
 me?fields=albums.fields(id,name,cover_photo,photos.fields(name,picture,source))
 <ALBUM-ID>/photos?fields=name,source,id
         Facebook user response received: {"id":"4493174020705731","email":"m_pashka@mail.ru","first_name":"Павел","last_name":"Мухатаев","name":"Павел Мухатаев",
@@ -128,3 +138,7 @@ https://m.facebook.com/v11.0/dialog/oauth/confirm/
 local redirects:
 urn:ietf:wg:oauth:2.0:oob:auto
 urn:ietf:wg:oauth:2.0:oob
+
+---
+https://www.facebook.com/dialog/oauth?client_id=4493174020705731&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Flogin%2Fcallback%2Ffacebook&state=facebook_e0SlBNR31qWJNBIQXJu9&response_type=code&scope=openid%20email%20public_profile%20user_gender%20user_link%20user_birthday%20user_location
+

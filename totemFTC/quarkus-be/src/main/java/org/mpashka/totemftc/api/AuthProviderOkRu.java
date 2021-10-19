@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
+import javax.ws.rs.core.UriInfo;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -31,13 +32,20 @@ public class AuthProviderOkRu extends AuthProviderOidc {
     public AuthProviderOkRu() {
         super("okru",
                 "VALUABLE_ACCESS;GET_EMAIL;LONG_ACCESS_TOKEN",
-                "https://connect.ok.ru/oauth/authorize?client_id=<client_id>&redirect_uri=<redirect_uri>&scope=<scope>&response_type=code",
+                "https://connect.ok.ru/oauth/authorize?client_id=<client_id>&redirect_uri=<redirect_uri>&scope=<scope>&state=<state>&response_type=code&nonce=<nonce>",
                 "https://api.ok.ru/oauth/token.do");
     }
 
     @PostConstruct
     void init() throws NoSuchAlgorithmException {
         md5 = MessageDigest.getInstance("MD5");
+    }
+
+    /**
+     * ok.ru doesn't send state back, so ignore
+     */
+    @Override
+    void checkState(UriInfo uriInfo, WebResourceLogin.LoginState loginState) {
     }
 
     @Override
@@ -74,7 +82,8 @@ public class AuthProviderOkRu extends AuthProviderOidc {
                 .onItem().transform(userJson -> {
                     log.debug("Ok.ru user response received: {}", userJson);
 
-                    return new UserInfo(userJson.getString("uid"),
+                    return new UserInfo(getName(),
+                            userJson.getString("uid"),
                             userJson.getString("url_profile"),
                             userJson.getString("email"),
                             null,

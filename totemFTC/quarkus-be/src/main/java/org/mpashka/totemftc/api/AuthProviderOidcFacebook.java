@@ -28,7 +28,7 @@ public class AuthProviderOidcFacebook extends AuthProviderOidc {
     public AuthProviderOidcFacebook() {
         super("facebook",
                 "openid+email+public_profile+user_gender+user_link+user_birthday+user_location",
-                "https://www.facebook.com/dialog/oauth?client_id=<client_id>&redirect_uri=<redirect_uri>&state=<state>&response_type=code&scope=<scope>",
+                "https://www.facebook.com/dialog/oauth?client_id=<client_id>&redirect_uri=<redirect_uri>&state=<state>&response_type=code&scope=<scope>&nonce=<nonce>",
                 "https://graph.facebook.com/oauth/access_token");
     }
 
@@ -52,7 +52,8 @@ public class AuthProviderOidcFacebook extends AuthProviderOidc {
                             .map(d -> d.getString("url"))
                             .orElse(null);
 
-                    return new UserInfo(userJson.getString("id"),
+                    return new UserInfo(getName(),
+                            userJson.getString("id"),
                             userJson.getString("link"),
                             userJson.getString("email"),
                             null,

@@ -25,6 +25,16 @@ public class WebResourceUser {
     @Inject
     DbUser dbUser;
 
+    @Inject
+    WebSessionService webSessionService;
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<DbUser.EntityUser> user() {
+        int userId = webSessionService.getUserId();
+        return dbUser.getUser(userId);
+    }
+
     @GET
     @Path("list")
     @Produces(MediaType.APPLICATION_JSON)
@@ -33,9 +43,15 @@ public class WebResourceUser {
     }
 
     @DELETE
-    @Path("{userId}")
+    @Path("delete/{userId}")
     public Uni<Void> delete(@PathParam("userId") int userId) {
         return dbUser.deleteUser(userId);
+    }
+
+    @DELETE
+    @Path("current/network/{networkId}")
+    public Uni<Void> deleteNetwork(@PathParam("networkId") String networkId) {
+        return dbUser.deleteUserSocialNetwork(webSessionService.getUserId(), networkId);
     }
 
     @POST

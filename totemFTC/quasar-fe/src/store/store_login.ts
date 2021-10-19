@@ -1,13 +1,13 @@
-import {defineStore} from 'pinia'
+import {defineStore} from 'pinia';
 import {api} from 'boot/axios';
-import {EntityUser, emptyUser} from "src/store/store_crud_user";
+import {useStoreCrudUser} from 'src/store/store_crud_user';
+import Router from 'src/router';
 
 const SESSION_ID_STORAGE_KEY = 'session_id';
 
 export const useStoreLogin = defineStore('login', {
   state: () => ({
     sessionId: '',
-    user: {...emptyUser} as EntityUser,
   }),
 
   getters: {
@@ -17,8 +17,9 @@ export const useStoreLogin = defineStore('login', {
       return b;
     },
 
-    fullName(state) {
-      return `${state.user.firstName} ${state.user.lastName}`;
+    fullName() {
+      const storeUser = useStoreCrudUser();
+      return `${storeUser.user.firstName} ${storeUser.user.lastName}`;
     }
   },
 
@@ -38,13 +39,22 @@ export const useStoreLogin = defineStore('login', {
       }
 
       this.sessionId = sessionId;
-
-      this.user = (await api.get<EntityUser>('/login/user')).data;
-      console.log('User received', this.user);
+      const storeUser = useStoreCrudUser();
+      await storeUser.loadUser();
     },
 
     clearSession() {
       localStorage.removeItem(SESSION_ID_STORAGE_KEY);
+      this.sessionId = '';
+      const storeUser = useStoreCrudUser();
+      storeUser.clear();
     },
+
+
+    async logout() {
+      await api.get('/api/logout/');
+      this.clearSession();
+      await Router.replace('/login');
+    }
   },
 });

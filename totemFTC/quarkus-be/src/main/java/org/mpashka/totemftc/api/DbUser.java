@@ -43,6 +43,7 @@ public class DbUser {
     private PreparedQuery<RowSet<Row>> updateMainImageIfAbsent;
     private PreparedQuery<RowSet<Row>> updateMainImage;
     private PreparedQuery<RowSet<Row>> deleteUser;
+    private PreparedQuery<RowSet<Row>> deleteUserSocialNetwork;
 
     @PostConstruct
     void init() {
@@ -70,7 +71,7 @@ public class DbUser {
 
         selectBySocialNetwork = client.preparedQuery("SELECT user_id " +
                 "FROM user_social_network " +
-                "WHERE network_id = $1 and id = $2");
+                "WHERE network_name = $1 and id = $2");
         selectByEmail = client.preparedQuery("SELECT user_id " +
                 "FROM user_email " +
                 "WHERE email = $1");
@@ -79,7 +80,7 @@ public class DbUser {
                 "WHERE phone = $1");
 
         insertUser = client.preparedQuery("INSERT INTO user_info (first_name, last_name, nick_name, user_type) VALUES ($1, $2, $3, $4) RETURNING user_id");
-        insertSocialNetwork = client.preparedQuery("INSERT INTO user_social_network (network_id, id, user_id, link) VALUES ($1, $2, $3, $4)");
+        insertSocialNetwork = client.preparedQuery("INSERT INTO user_social_network (network_name, id, user_id, link) VALUES ($1, $2, $3, $4)");
         insertEmail = client.preparedQuery("INSERT INTO user_email (email, user_id, confirmed) VALUES ($1, $2, $3)");
         insertPhone = client.preparedQuery("INSERT INTO user_phone (phone, user_id, confirmed) VALUES ($1, $2, $3)");
         insertImage = client.preparedQuery("INSERT INTO user_image (user_id, image, content_type) VALUES ($1, $2, $3) RETURNING image_id");
@@ -94,13 +95,15 @@ public class DbUser {
                 "DELETE FROM user_social_network WHERE user_id=$1;" +
                 "DELETE FROM user_info WHERE user_id=$1"
                 );
+        deleteUserSocialNetwork = client.preparedQuery("DELETE FROM user_social_network WHERE user_id=$1 and network_name=$2");
     }
 
-    public Uni<UserSearchResult> findById(String socialNetworkProvider, String socialNetworkId, String email, String phone) {
+    public Uni<UserSearchResult> findById(AuthProvider.UserInfo userInfo) {
         return selectBySocialNetwork
-                .execute(Tuple.of(socialNetworkProvider, socialNetworkId))
+                .execute(Tuple.of(userInfo.getNetworkName(), userInfo.getId()))
                 .onItem().transform(r -> find(UserSearchType.socialNetwork, r))
                 .onItem().transformToUni(userId -> {
+                    String email = userInfo.getEmail();
                     if (userId == null && Utils.notEmpty(email)) {
                         return selectByEmail
                                 .execute(Tuple.of(email))
@@ -110,6 +113,7 @@ public class DbUser {
                     }
                 })
                 .onItem().transformToUni(userId -> {
+                    String phone = userInfo.getPhone();
                     if (userId == null && Utils.notEmpty(phone)) {
                         return selectByPhone
                                 .execute(Tuple.of(phone))
@@ -172,6 +176,13 @@ public class DbUser {
                 ;
     }
 
+    public Uni<Void> deleteUserSocialNetwork(int userId, String socialNetworkName) {
+        return deleteUserSocialNetwork.execute(Tuple.of(userId, socialNetworkName))
+                .onFailure().transform(e -> new RuntimeException("Error delete social network", e))
+                .onItem().transform(u -> null)
+                ;
+    }
+
     public Uni<Void> deleteUser(int userId) {
         return deleteUser.execute(Tuple.of(userId))
                 .onFailure().transform(e -> new RuntimeException("Error delete", e))
@@ -182,10 +193,10 @@ public class DbUser {
     /**
      * Add social network and probably email and phone
      */
-    public Uni<Void> addSocialNetwork(int userId, String provider, String id, String link, String email, String phone) {
-        return insertSocialNetwork.execute(Tuple.of(provider, id, userId, link))
-                .onItem().transformToUni(u -> addEmail(userId, email))
-                .onItem().transformToUni(u -> addPhone(userId, phone))
+    public Uni<Void> addUserSocialNetwork(int userId, AuthProvider.UserInfo userInfo) {
+        return insertSocialNetwork.execute(Tuple.of(userInfo.getNetworkName(), userInfo.getId(), userId, userInfo.getLink()))
+                .onItem().transformToUni(u -> addEmail(userId, userInfo.getEmail()))
+                .onItem().transformToUni(u -> addPhone(userId, userInfo.getPhone()))
                 .onFailure().transform(e -> new RuntimeException("Error addSocialNetwork", e))
                 .onItem().transform(u -> null)
                 ;
@@ -356,12 +367,12 @@ public class DbUser {
         }
 
         public static class EntitySocialNetwork {
-            private String networkId;
+            private String networkName;
             private String id;
             private String link;
 
             public EntitySocialNetwork loadFromDb(JsonObject row) {
-                this.networkId = row.getString("network_id");
+                this.networkName = row.getString("network_name");
                 this.id = row.getString("id");
                 this.link = row.getString("link");
                 return this;

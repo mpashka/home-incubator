@@ -21,7 +21,7 @@ public class AuthProviderOidcMailRu extends AuthProviderOidc {
     public AuthProviderOidcMailRu() {
         super("mailru",
                 "openid+userinfo+email+profile+offline_access",
-                "https://oauth.mail.ru/login?client_id=<client_id>&redirect_uri=<redirect_uri>&scope=<scope>&response_type=code",
+                "https://oauth.mail.ru/login?client_id=<client_id>&redirect_uri=<redirect_uri>&scope=<scope>&state=<state>&response_type=code&nonce=<nonce>",
                 "https://oauth.mail.ru/token");
     }
 
@@ -38,7 +38,8 @@ public class AuthProviderOidcMailRu extends AuthProviderOidc {
                 .onItem().transform(userJson -> {
                     log.debug("Mail.ru user response received: {}", userJson);
 
-                    return new UserInfo(userJson.getString("id"),
+                    return new UserInfo(getName(),
+                            userJson.getString("id"),
                             null,
                             userJson.getString("email"),
                             null,

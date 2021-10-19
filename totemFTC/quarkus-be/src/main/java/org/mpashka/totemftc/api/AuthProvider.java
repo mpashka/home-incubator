@@ -8,22 +8,18 @@ import org.eclipse.microprofile.config.ConfigProvider;
 import javax.inject.Inject;
 import javax.ws.rs.core.UriInfo;
 
+/**
+ * Probably useless abstraction class
+ */
 public abstract class AuthProvider {
 
     @Inject
     WebClient webClient;
 
     private String name;
-    private String authorizationEndpoint;
-    private String redirectUri;
-    private String backendUrl;
 
     public AuthProvider(String name) {
         this.name = name;
-        this.backendUrl = ConfigProvider.getConfig().getValue("app.url.backend", String.class);
-        this.redirectUri = "<backend_url>/login/callback/<provider>"
-                .replace("<backend_url>", backendUrl)
-                .replace("<provider>", name);
     }
 
     public WebClient getWebClient() {
@@ -34,27 +30,14 @@ public abstract class AuthProvider {
         return name;
     }
 
-    public String getAuthorizationEndpoint() {
-        return authorizationEndpoint;
-    }
-
-    public void setAuthorizationEndpoint(String authorizationEndpoint) {
-        this.authorizationEndpoint = authorizationEndpoint;
-    }
-
-    public String getRedirectUri() {
-        return redirectUri;
-    }
-
-    public String getBackendUrl() {
-        return backendUrl;
-    }
+    public abstract String getAuthorizationEndpoint();
 
     public abstract Uni<WebResourceLogin.LoginState> processCallback(UriInfo uriInfo, WebResourceLogin.LoginState loginState);
 
     public abstract Uni<UserInfo> readUserInfo(WebResourceLogin.LoginState loginState);
 
     static class UserInfo {
+        String networkName;
         /** Social network user id */
         private String id;
         private String link;
@@ -65,7 +48,8 @@ public abstract class AuthProvider {
         private String nickName;
         private String imageUrl;
 
-        public UserInfo(String id, String link, String email, String phone, String firstName, String lastName, String nickName, String imageUrl) {
+        public UserInfo(String networkName, String id, String link, String email, String phone, String firstName, String lastName, String nickName, String imageUrl) {
+            this.networkName = networkName;
             this.id = id;
             this.link = link;
             this.email = email;
@@ -74,6 +58,10 @@ public abstract class AuthProvider {
             this.lastName = lastName;
             this.nickName = nickName;
             this.imageUrl = imageUrl;
+        }
+
+        public String getNetworkName() {
+            return networkName;
         }
 
         public String getId() {

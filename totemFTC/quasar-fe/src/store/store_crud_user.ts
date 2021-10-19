@@ -1,6 +1,6 @@
-import {defineStore} from "pinia";
-import {api} from "boot/axios";
-import {contains} from "src/store/store_utils";
+import {defineStore} from 'pinia';
+import {api} from 'boot/axios';
+import {contains} from 'src/store/store_utils';
 
 export const emptyUser: EntityUser = {
   userId: -1,
@@ -31,7 +31,8 @@ export interface EntityUserImage {
 }
 
 export interface EntityUserSocialNetwork {
-  networkId: string,
+  /** Network name */
+  networkName: string,
   id: string,
   link: string,
 }
@@ -66,12 +67,22 @@ export const emptyUserFilter: EntityUserFilter = {
 
 export const useStoreCrudUser = defineStore('crudUser', {
   state: () => ({
+    user: {...emptyUser} as EntityUser,
     rows: [] as EntityUser[],
     filterVal: {...emptyUserFilter},
     filteredRows: [] as EntityUser[],
   }),
 
   actions: {
+    async loadUser() {
+      this.user = (await api.get<EntityUser>('/api/user')).data;
+      console.log('User received', this.user);
+    },
+
+    clear() {
+      this.user = {...emptyUser};
+    },
+
     async load() {
       this.rows = (await api.get<EntityUser[]>('/api/user/list')).data;
       this.filter();
@@ -79,7 +90,7 @@ export const useStoreCrudUser = defineStore('crudUser', {
     },
 
     async delete(user: EntityUser) {
-      await api.delete(`/api/user/${String(user.userId)}`)
+      await api.delete(`/api/user/delete/${String(user.userId)}`)
       this.rows = this.rows.filter(r => r.userId !== user.userId);
       this.filter();
     },
@@ -97,6 +108,11 @@ export const useStoreCrudUser = defineStore('crudUser', {
         this.rows[index] = user;
       }
       this.filter();
+    },
+
+    async deleteSocialNetwork(name: string) {
+      await api.delete(`/api/user/current/network/${name}`);
+      this.user.socialNetworks = this.user.socialNetworks.filter(s => s.networkName !== name);
     },
 
     disableFilter() {

@@ -48,10 +48,11 @@ public class AuthProviderOidcGoogle extends AuthProviderOidc {
                 .send()
                 .onItem().transform(HttpResponse::bodyAsJsonObject)
                 .onItem().transform(userJson -> {
-                    log.debug("Facebook user response received: {}", userJson);
+                    log.debug("Google user response received: {}", userJson);
 
 // todo                   userJson.getBoolean("verified_email"),
-                    return new UserInfo(userJson.getString("id"),
+                    return new UserInfo(getName(),
+                            userJson.getString("id"),
                             userJson.getString("link"),
                             userJson.getString("email"),
                             null,

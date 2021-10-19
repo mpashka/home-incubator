@@ -43,7 +43,7 @@ module.exports = configure(function (ctx) {
     // https://github.com/quasarframework/quasar/tree/dev/extras
     extras: [
       // 'ionicons-v4',
-      // 'mdi-v5',
+      'mdi-v6',
       'fontawesome-v5',
       // 'eva-icons',
       // 'themify',
@@ -84,6 +84,9 @@ module.exports = configure(function (ctx) {
       distDir: ctx.modeName === 'spa' && ctx.prod ? 'target/classes/META-INF/resources' : `dist/${ctx.modeName}`,
 
       env: {
+        // Used to show login warning
+        FrontendFullUrl: ctx.dev ? 'http://localhost:8081' : 'https://totemftc.bbs.io',
+
         // Used to open login page. See Login.vue
         BackendFullUrl: ctx.dev ? 'http://localhost:8080' : 'https://totemftc.bbs.io',
 
