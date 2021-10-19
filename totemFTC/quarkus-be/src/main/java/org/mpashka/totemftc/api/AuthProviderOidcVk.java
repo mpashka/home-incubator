@@ -28,7 +28,7 @@ public class AuthProviderOidcVk extends AuthProviderOidc {
         super("vk",
                 "email",
                 "https://oauth.vk.com/authorize?client_id=<client_id>&redirect_uri=<redirect_uri>&scope=<scope>&state=<state>&response_type=code&nonce=<nonce>",
-                "https://api.instagram.com/oauth/access_token");
+                "https://oauth.vk.com/access_token");
     }
 
     /*
@@ -65,11 +65,14 @@ public class AuthProviderOidcVk extends AuthProviderOidc {
                         .replace("<fields>", fields)
                 ).send()
                 .onItem().transform(HttpResponse::bodyAsJsonObject)
-                .onItem().transform(userJson -> {
-                    log.debug("VK user response received: {}", userJson);
+                .onItem().transform(userResponseJson -> {
+                    log.debug("VK user response received: {}", userResponseJson);
+                    JsonObject userJson = userResponseJson.getJsonArray("response").getJsonObject(0);
                     String email = loginState.getAuthUserInfo().getEmail();
                     String domain = userJson.getString("domain");
                     boolean isNick = domain.matches("id\\d+");
+
+                    // todo - other social network links are present: skype, facebook (+facebook_name), twitter, livejournal, instagram
 
                     return new UserInfo(getName(),
                             userJson.getString("id"),

@@ -1,18 +1,25 @@
 <template>
   <div class="absolute-center">
-    <q-img src="~assets/photo.png" style="width: 100%"/>
-    <div class="text-h4">Totem FTC</div>
-    <div>
-      <q-btn round icon="facebook" @click.stop="openLoginWindow('facebook', 'login')"/>
-    </div>
+    <q-card style="width: 406px;">
+      <q-card-section>
+        <q-img src="~assets/photo.png"/>
+      </q-card-section>
+      <!--    <div class="text-h4 q-gutter-lg">Totem FTC</div>-->
+      <q-card-section class="q-gutter-lg">
+        <!--      v-if="socialNetwork.loginScreen" -->
+        <q-btn v-for="socialNetwork in socialNetworks" :key="socialNetwork.name" round @click.stop="openLoginWindow(socialNetwork.name, 'login')">
+          <q-icon :color="socialNetwork.iconColor" :name="socialNetwork.icon" />
+        </q-btn>
+      </q-card-section>
+    </q-card>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import {computed, defineComponent} from 'vue';
 import { useStoreLogin } from 'src/store/store_login';
 import { useRouter } from 'vue-router';
-import {windowObjectReference, openLoginWindow, LoginUserType} from 'src/components/login';
+import {windowObjectReference, openLoginWindow, LoginUserType, socialNetworks} from 'pages/login/login';
 
 export default defineComponent({
   name: 'Login',
@@ -44,6 +51,7 @@ export default defineComponent({
     return {
       windowObjectReference,
       openLoginWindow,
+      socialNetworks: computed(() => socialNetworks.filter(s => s.loginScreen)),
     }
   }
 });

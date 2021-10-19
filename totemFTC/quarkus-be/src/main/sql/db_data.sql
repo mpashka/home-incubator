@@ -14,9 +14,9 @@ INSERT INTO training_type (training_type, name) VALUES
                                                     ('massage', 'Массаж');
 
 INSERT INTO user_info (user_id, first_name, last_name, nick_name, user_type, training_types) VALUES
-                                                                                 (1000, 'Ринат', 'Фаттяхудинов', 'Ринат', 'admin', ['func']),
-                                                                                 (1001, 'Нина', 'Елизова', 'Нина', 'trainer', ['func', 'stretch']),
-                                                                                 (1002, 'Ильза', 'Зырянова', 'Ильза', 'trainer', ['func', 'stretch', 'yoga']);
+                                                                                 (1000, 'Ринат', 'Фаттяхудинов', 'Ринат', 'admin', ARRAY['func']),
+                                                                                 (1001, 'Нина', 'Елизова', 'Нина', 'trainer', ARRAY['func', 'stretch']),
+                                                                                 (1002, 'Ильза', 'Зырянова', 'Ильза', 'trainer', ARRAY['func', 'stretch', 'yoga']);
 INSERT INTO user_email (email, user_id, confirmed) VALUES
     ('rinchik_g@mail.ru', 1000, true);
 

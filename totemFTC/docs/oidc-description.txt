@@ -1,3 +1,7 @@
+https://totemftc.bbs.io/docs/user_agreement.html
+https://totemftc.bbs.io/docs/privacy_policy.html
+http://totemftc.bbs.io/api/login/callback/<provider>
+
 https://accounts.google.com/.well-known/openid-configuration
 https://datatracker.ietf.org/doc/html/rfc8628
 https://www.facebook.com/.well-known/openid-configuration

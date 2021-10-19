@@ -31,7 +31,7 @@
         <q-item clickable v-ripple v-for="socialNetwork in uiSocialNetworks" :key="socialNetwork.name" @click="onClickSocialNetwork(socialNetwork)">
           <q-item-section avatar>
             <q-icon :color="socialNetwork.iconColor" :name="socialNetwork.icon" />
-            <q-icon v-if="socialNetwork.iconExclamation" name="fas fa-exclamation-triangle" color="yellow" style="position: absolute; left: 10px; top: 10px; font-size: 9px; "/>
+            <q-icon v-if="socialNetwork.customLoginUrl" name="fas fa-exclamation-triangle" color="yellow" style="position: absolute; left: 10px; top: 10px; font-size: 9px; "/>
           </q-item-section>
 
           <q-item-section>
@@ -67,94 +67,25 @@
 <script lang="ts">
 import {EntityUserSocialNetwork, useStoreCrudUser} from 'src/store/store_crud_user';
 import {computed, defineComponent, ref} from 'vue';
-import {LoginUserType, openLoginWindow, openPopupWindow, windowObjectReference} from 'components/login';
+import {
+  LoginUserType,
+  SocialNetwork,
+  openLoginWindow,
+  openPopupWindow,
+  windowObjectReference,
+  socialNetworks,
+} from 'pages/login/login';
 
-interface SocialNetwork {
-  name: string,
-  icon: string,
-  iconColor?: string,
-  iconExclamation?: boolean,
-  site: string,
-  link: string, // This is used if social network doesn't have user link
-}
-
+/**
+ * Used to display social network (SN) connections in UI
+ * Contains meta info about SN and this user SN connection
+ *
+ * todo Use SocialNetwork as field instead of extension
+ */
 interface UiSocialNetwork extends SocialNetwork {
   label: string,
   user?: EntityUserSocialNetwork,
 }
-
-const socialNetworks: SocialNetwork[] = [
-  {
-    name: 'facebook',
-    site: 'facebook.com',
-    icon: 'fab fa-facebook-f',
-    iconColor: 'blue-10',
-    iconExclamation: true,
-    link: 'https://facebook.com'
-  },
-  {
-    name: 'google',
-    site: 'google.com',
-    icon: 'fab fa-google',
-    iconColor: 'red-8',
-    iconExclamation: true,
-    link: 'https://google.com'
-  },
-  {
-    name: 'apple',
-    site: 'apple.com',
-    icon: 'fab fa-apple',
-    iconColor: 'grey-13',
-    iconExclamation: true,
-    link: 'https://apple.com'
-  },
-  {
-    name: 'instagram',
-    site: 'instagram.com',
-    // icon: 'fab fa-instagram',
-    // iconColor: 'orange-8',
-    icon: `img:${require('src/assets/Instagram_logo_2016.svg')}`,
-    // icon: 'svguse:/icons/Instagram_logo_2016.svg',
-    iconExclamation: true,
-    link: 'https://instagram.com'
-  },
-  {
-    name: 'twitter',
-    site: 'twitter.com',
-    icon: 'fab fa-twitter',
-    iconColor: 'light-blue-7',
-    iconExclamation: true,
-    link: 'https://twitter.com'
-  },
-  {
-    name: 'github',
-    site: 'github.com',
-    icon: 'fab fa-github',
-    iconColor: 'black',
-    link: 'https://github.com'
-  },
-  {
-    name: 'vk',
-    site: 'vk.com',
-    icon: 'fab fa-vk',
-    iconColor: 'blue-2',
-    link: 'https://vk.com'
-  },
-  {
-    name: 'mailru',
-    site: 'mail.ru',
-    icon: 'fas fa-at',
-    iconColor: 'deep-orange',
-    link: 'https://mail.ru'
-  },
-  {
-    name: 'okru',
-    site: 'ok.ru',
-    icon: 'fab fa-odnoklassniki',
-    iconColor: 'orange',
-    link: 'https://ok.ru'
-  },
-]
 
 export default defineComponent({
   name: 'Settings',

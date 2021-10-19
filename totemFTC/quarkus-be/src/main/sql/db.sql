@@ -1,3 +1,7 @@
+CREATE DATABASE totemftc;
+CREATE USER totemftc WITH ENCRYPTED PASSWORD 'totemftc';
+GRANT ALL PRIVILEGES ON DATABASE totemftc TO totemftc;
+
 -- Users
 CREATE TYPE user_type_enum AS ENUM ('guest', 'user', 'trainer', 'admin');
 
