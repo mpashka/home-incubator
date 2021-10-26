@@ -1,9 +1,7 @@
 package org.mpashka.totemftc.api;
 
 import io.smallrye.mutiny.Uni;
-import io.vertx.mutiny.core.Vertx;
 import io.vertx.mutiny.ext.web.client.WebClient;
-import org.eclipse.microprofile.config.ConfigProvider;
 
 import javax.inject.Inject;
 import javax.ws.rs.core.UriInfo;
@@ -32,7 +30,7 @@ public abstract class AuthProvider {
 
     public abstract String getAuthorizationEndpoint();
 
-    public abstract Uni<WebResourceLogin.LoginState> processCallback(UriInfo uriInfo, WebResourceLogin.LoginState loginState);
+    public abstract Uni<WebResourceLogin.LoginState> processCallback(UriInfo uriInfo, WebResourceLogin.LoginState loginState, String client);
 
     public abstract Uni<UserInfo> readUserInfo(WebResourceLogin.LoginState loginState);
 

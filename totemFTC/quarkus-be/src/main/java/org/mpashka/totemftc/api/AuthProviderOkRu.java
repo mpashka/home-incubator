@@ -41,13 +41,6 @@ public class AuthProviderOkRu extends AuthProviderOidc {
         md5 = MessageDigest.getInstance("MD5");
     }
 
-    /**
-     * ok.ru doesn't send state back, so ignore
-     */
-    @Override
-    void checkState(UriInfo uriInfo, WebResourceLogin.LoginState loginState) {
-    }
-
     @Override
     void processTokenResponse(WebResourceLogin.LoginState loginState, JsonObject tokenJson) {
         String accessToken = loginState.getToken();

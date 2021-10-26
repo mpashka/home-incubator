@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login callback</title>
+</head>
+<body>
+<script>
+  try {
+    opener.parent.onLoginCompleted(window.location.search);
+  } catch (e) {
+    console.log('Error', e);
+  }
+</script>
+
+</body>
+</html>

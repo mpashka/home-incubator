@@ -4,9 +4,8 @@ import io.smallrye.mutiny.Uni;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.MultiMap;
-import io.vertx.mutiny.ext.web.client.HttpResponse;
 import org.eclipse.microprofile.config.ConfigProvider;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.config.ConfigValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,10 +52,12 @@ public abstract class AuthProviderOidc extends AuthProvider {
     }
 
     @Override
-    public Uni<WebResourceLogin.LoginState> processCallback(UriInfo uriInfo, WebResourceLogin.LoginState loginState) {
-        checkState(uriInfo, loginState);
-
+    public Uni<WebResourceLogin.LoginState> processCallback(UriInfo uriInfo, WebResourceLogin.LoginState loginState, String client) {
         String code = uriInfo.getQueryParameters().getFirst("code");
+        ConfigValue redirectUriConfig = ConfigProvider.getConfig().getConfigValue("oidc.client.<clientId>.redirectUri".replace("<clientId>", client));
+        String redirectUri = redirectUriConfig.getValue() == null
+                ? this.redirectUri
+                : redirectUriConfig.getValue().replace("<provider>", getName());
 
         MultiMap form = MultiMap.caseInsensitiveMultiMap()
                 .set("client_id", clientId)
@@ -85,13 +86,6 @@ public abstract class AuthProviderOidc extends AuthProvider {
                     processTokenResponse(loginState, tokenJson);
                     return loginState;
                 });
-    }
-
-    void checkState(UriInfo uriInfo, WebResourceLogin.LoginState loginState) {
-        String callbackState = uriInfo.getQueryParameters().getFirst("state");
-        if (!callbackState.equals(loginState.getState()) || !getName().equals(loginState.getProvider().getName())) {
-            throw new WebResourceLogin.LoginException("Received invalid state");
-        }
     }
 
     void processTokenResponse(WebResourceLogin.LoginState loginState, JsonObject tokenJson) {}

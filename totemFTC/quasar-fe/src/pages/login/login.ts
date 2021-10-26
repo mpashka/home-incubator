@@ -7,6 +7,10 @@ export function openPopupWindow(url: string) {
 
     /*
 todo locate and resize
+      var left = Math.max(0, (screen.width - width) / 2) + (screen.availLeft | 0),
+          top = Math.max(0, (screen.height - height) / 2) + (screen.availTop | 0);
+
+
 https://stackoverflow.com/questions/3437786/get-the-size-of-the-screen-current-web-page-and-browser-window
 window.innerHeight 1174
 window.innerWidth 1158

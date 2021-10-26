@@ -29,9 +29,6 @@ public class WebResourceLogin {
 
     private static final Logger log = LoggerFactory.getLogger(WebResourceLogin.class);
 
-    private static final String STATE_ATTR = "login:state";
-    private static final String SESSION_ID_COOKIE = "sessionId";
-
     private Map<String, AuthProvider> authProviders;
 
     @Inject
@@ -39,10 +36,6 @@ public class WebResourceLogin {
 
     @Inject
     DbUser dbUser;
-
-    @Inject
-    @ConfigProperty(name = "app.url.frontend", defaultValue = "http://localhost:8081")
-    String frontendUrl;
 
     @Inject
     WebClient webClient;
@@ -59,81 +52,47 @@ public class WebResourceLogin {
     @GET
     @Path("init/{providerName}")
     @Produces(MediaType.TEXT_HTML)
-    public Response initLogin(@RestPath String providerName, @RestQuery("action") ProviderAction action, @RestQuery("sessionId") String sessionId) {
-        log.debug("Init login {} / {}.", providerName, action);
-        WebSessionService.Session session;
-        switch (action) {
-            case link:
-                session = webSessionService.getSession(sessionId);
-                if (session == null) {
-                    throw new RuntimeException("Session not found " + sessionId);
-                }
-                break;
-
-            default:
-                action = ProviderAction.login;
-            case login:
-                if (webSessionService.getSession() != null) {
-                    throw new RuntimeException("User already logged in");
-                }
-                session = webSessionService.createSession();
-                break;
-        }
+    public Response initLogin(@RestPath String providerName) {
+        log.debug("Init login {}.", providerName);
         AuthProvider provider = authProviders.get(providerName);
         if (provider == null) {
             throw new RuntimeException("Unknown security provider " + providerName);
         }
-        String state = provider.getName() + "_" + Utils.generateRandomString(20);
-        session.setParameter(STATE_ATTR, new LoginState(action, provider, state));
-        log.debug("Pre-login session: {}", session);
         return Response.status(Response.Status.FOUND)
                 .location(URI.create(provider.getAuthorizationEndpoint()
-                        .replace("<state>", state)
                         .replace("<nonce>", Utils.generateRandomString(15))
                 ))
-                .cookie(new NewCookie(SESSION_ID_COOKIE, session.getSessionId(), "/", null, null, NewCookie.DEFAULT_MAX_AGE, false))
                 .build();
     }
 
     /**
      * todo proper error handling
+     * Response params: state&code&scope
+     * @param client client id used to create appropriate redirectUrl
      */
     @GET
     @Path("callback/{providerName}")
-    @Produces(MediaType.TEXT_HTML)
-    public Uni<Response> callback(UriInfo uriInfo, @RestPath String providerName, @RestCookie(SESSION_ID_COOKIE) String sessionId) {
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<LoginResult> callback(UriInfo uriInfo, @RestPath String providerName,
+                                     @RestQuery("sessionId") String sessionId,
+                                     @RestQuery("action") ProviderAction action,
+                                     @RestQuery("client") String client) {
         try {
-            return processCallback(uriInfo, providerName, sessionId);
+            return processCallback(uriInfo, providerName, sessionId, action, client);
         } catch (Exception e) {
             log.error("Login callback error", e);
             throw new RuntimeException(e);
-
-        /*
-            return Uni.createFrom().item(
-                    Response
-                            .status(Response.Status.BAD_REQUEST)
-                            .entity("<!DOCTYPE html><html><body>" +
-                                    "<div>Session cookie is not set</div>" +
-                                    "</body></html>")
-                            .build()
-            );
-        
-         */
         }
     }
 
-    private Uni<Response> processCallback(UriInfo uriInfo, String providerName, String sessionId) {
-        log.info("Callback: {}. SessionId: {}", uriInfo.getRequestUri(), sessionId);
-        // Response params: state&code&scope
+    private Uni<LoginResult> processCallback(UriInfo uriInfo, String providerName, String sessionId, ProviderAction action, String client) {
+        log.info("Callback: {}. SessionId: {}. Action: {}. Client: {}", uriInfo.getRequestUri(), sessionId, action, client);
 
-        WebSessionService.Session session;
-        LoginState loginState;
-        if (sessionId == null || (session = webSessionService.getSession(sessionId)) == null || (loginState = session.removeParameter(STATE_ATTR)) == null) {
+        WebSessionService.Session linkSession = null;
+        if (action == ProviderAction.link && (Utils.isEmpty(sessionId) || (linkSession = webSessionService.getSession(sessionId)) == null)) {
             throw new LoginException("Session not found");
         }
-        if (loginState.action == ProviderAction.login) {
-            webSessionService.removeSession(sessionId);
-        }
+        WebSessionService.Session session = linkSession;
 
         /* error_reason, error, error_description */
         String error = uriInfo.getQueryParameters().getFirst("error");
@@ -143,48 +102,38 @@ public class WebResourceLogin {
             throw new LoginException(error, errorReason, errorDescription);
         }
 
-        AuthProvider authProvider = loginState.getProvider();
-        return authProvider.processCallback(uriInfo, loginState)
+        AuthProvider authProvider = authProviders.get(providerName);
+        LoginState loginState = new LoginState();
+        return authProvider.processCallback(uriInfo, loginState, client)
                 .onFailure().transform(e -> new RuntimeException("Error processing callback", e))
                 .onItem().transformToUni(u -> authProvider.readUserInfo(loginState))
 //                .onFailure().transform(e -> new RuntimeException("Error parsing user info", e))
                 .onItem().invoke(loginState::setAuthUserInfo)
                 .onItem().transformToUni(u -> {
-                    switch (loginState.action) {
+                    switch (action) {
                         case login: return userIdLogin(loginState);
-                        case link: return userIdLink(session, loginState);
-                        default: throw new RuntimeException("Unknown action " + loginState.action);
+                        case link:
+                            return userIdLink(session, loginState);
+                        default: throw new InternalException("Unknown action " + action);
                     }
                 })
                 .onItem().invoke(userId -> loginState.userId = userId)
                 .onItem().transformToUni(u -> saveImage(loginState))
                 .onItem().transform(imageId -> {
                     WebSessionService.Session newSession;
-                    switch (loginState.action) {
+                    switch (action) {
                         case login:
                             newSession = webSessionService.createSession();
                             newSession.setUserId(loginState.userId);
-                            log.debug("Login session: {}, UserId: {}", newSession.getSessionId(), newSession.getUserId());
                             break;
 
                         case link:
                             newSession = session;
                             break;
-                        default: throw new RuntimeException("Unknown action " + loginState.action);
+                        default: throw new InternalException("Unknown action " + action);
                     }
 
-                    // return "<script>onLoginCompleted();</script>";
-                    // probably temporary solution to avoid cross browser issue
-                    return Response.status(Response.Status.FOUND)
-//                            .location(URI.create("http://localhost:8081/callback/login-ok.html?session_id=<session_id>&user_type=<user_type>"
-                            .location(URI.create("<frontend_url>/login/ok?action=<action>&session_id=<session_id>&user_type=<user_type>"
-                                    .replace("<action>", loginState.action.name())
-                                    .replace("<frontend_url>", frontendUrl)
-                                    .replace("<session_id>", newSession.getSessionId())
-                                    .replace("<user_type>", loginState.newUser ? "new" : "existing")
-                            ))
-                            .cookie(new NewCookie(SESSION_ID_COOKIE,  null, "/", null, null, 0, false, false))
-                            .build();
+                    return new LoginResult(newSession.getSessionId(), loginState.newUser ? "new" : "existing");
                 });
     }
 
@@ -264,6 +213,19 @@ public class WebResourceLogin {
         return Response.ok().build();
     }
 
+    /**
+     * JSON entity returning to client
+     */
+    static class LoginResult {
+        private String sessionId;
+        private String userType;
+
+        public LoginResult(String sessionId, String userType) {
+            this.sessionId = sessionId;
+            this.userType = userType;
+        }
+    }
+
     static class LoginException extends RuntimeException {
         private String[] uiMessage;
         public LoginException(String... uiMessage) {
@@ -275,35 +237,17 @@ public class WebResourceLogin {
         }
     }
 
+    /**
+     * Internal class to store login processing state
+     */
     static class LoginState {
-        private ProviderAction action;
-        private AuthProvider provider;
-        private String state;
         private String token;
         private AuthProvider.UserInfo authUserInfo;
         private int userId;
-        /** true if this is new user and we add him into db */
+        /** true if this is new user, and we are adding him into db */
         private boolean newUser;
-        /** true if this is new user or new social network */
+        /** true if this is new user or new social network, and thus we need to load social network image */
         private boolean loadImage;
-
-        public LoginState(ProviderAction action, AuthProvider provider, String state) {
-            this.action = action;
-            this.provider = provider;
-            this.state = state;
-        }
-
-        public ProviderAction getAction() {
-            return action;
-        }
-
-        public AuthProvider getProvider() {
-            return provider;
-        }
-
-        public String getState() {
-            return state;
-        }
 
         public String getToken() {
             return token;
