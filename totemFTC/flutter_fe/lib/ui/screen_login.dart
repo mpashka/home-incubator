@@ -19,22 +19,18 @@ class LoginScreen extends StatefulWidget {
   const LoginScreen(this._injector, {Key? key}) : super(key: key);
 
   @override
-  State<LoginScreen> createState() {
-    return LoginScreenState(_injector);
-  }
+  State<LoginScreen> createState() => LoginScreenState();
 }
 
 class LoginScreenState extends State<LoginScreen> {
-  static final Logger log = Logger('LoginScreen');
+  static final Logger log = Logger('LoginScreenState');
 
-  final SessionBloc _session;
+  late final SessionBloc _session;
   bool dialogVisible = false;
-
-  LoginScreenState(Injector injector): _session = injector.get<Session>().bloc();
-
 
   @override
   void initState() {
+    _session = widget._injector.get<Session>().bloc();
     super.initState();
     _session.listenLoginState((loginStateInfo) {
       switch (loginStateInfo.state) {
@@ -51,8 +47,7 @@ class LoginScreenState extends State<LoginScreen> {
           _showDialog(AlertDialog(
             title: const Text('Login error'),
             content: Column(children: [
-              const Text('Login error'),
-              Text(loginStateInfo.description!),
+              Expanded(child: SingleChildScrollView(child: Text(loginStateInfo.description!))),
             ],),
           ));
           break;
@@ -84,7 +79,7 @@ class LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Totem FC'),),
+      appBar: AppBar(title: const Text('Totem FC'), automaticallyImplyLeading: false,),
       // drawer: MyDrawer(),
       body: Column(children: [
         // Text('Login'),

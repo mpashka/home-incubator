@@ -3,6 +3,7 @@ package org.mpashka.totemftc.api;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.PreparedQuery;
 import io.vertx.mutiny.sqlclient.Row;
@@ -124,7 +125,9 @@ public class DbCrudTraining {
             this.id = row.getInteger("training_id");
             this.time = row.getLocalDateTime("training_time");
             this.trainer = new DbUser.EntityUser().loadFromDb(row);
-            this.trainingType = new EntityTrainingType().loadFromDb(row);
+            if (row.getString("training_type") != null) {
+                this.trainingType = new EntityTrainingType().loadFromDb(row);
+            }
             this.comment = row.getString("training_comment");
             return this;
         }
@@ -135,6 +138,12 @@ public class DbCrudTraining {
         private String trainingName;
 
         public EntityTrainingType loadFromDb(Row row) {
+            this.trainingType = row.getString("training_type");
+            this.trainingName = row.getString("name");
+            return this;
+        }
+
+        public EntityTrainingType loadFromDb(JsonObject row) {
             this.trainingType = row.getString("training_type");
             this.trainingName = row.getString("name");
             return this;

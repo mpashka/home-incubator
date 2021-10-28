@@ -36,9 +36,13 @@ dependencies:
   shared_preferences: ^2.0.8
   url_launcher: ^6.0.12
   http: ^0.13.4
+  json_annotation: ^4.3.0
 
 dev_dependencies:
   flutter_lints: ^1.0.4
+  build_runner: ^2.1.4
+  json_serializable: ^6.0.1
+
   flutter_test:
     sdk: flutter
 

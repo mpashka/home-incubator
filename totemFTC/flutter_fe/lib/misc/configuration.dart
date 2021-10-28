@@ -19,6 +19,10 @@ class Configuration {
   var _doc;
   late SharedPreferences _prefs;
 
+  /// Note: configuration is not proper place for sessionId. But. Just to avoid
+  /// circular dependency between crud_api and session
+  String sessionId = '';
+
   Future load() {
     try {
       WidgetsFlutterBinding.ensureInitialized();

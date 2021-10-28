@@ -133,7 +133,7 @@ public class WebResourceLogin {
                         default: throw new InternalException("Unknown action " + action);
                     }
 
-                    return new LoginResult(newSession.getSessionId(), loginState.newUser ? "new" : "existing");
+                    return new LoginResult(newSession.getSessionId(), loginState.newUser ? "newUser" : "existing");
                 });
     }
 

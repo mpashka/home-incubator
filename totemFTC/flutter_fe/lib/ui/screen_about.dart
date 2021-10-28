@@ -9,14 +9,16 @@ import 'widgets/ui_attend.dart';
 
 class AboutScreen extends StatelessWidget {
 
+  const AboutScreen({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Totem FC'),
+        title: const Text('Totem FC'),
       ),
       drawer: MyDrawer(),
-      body: Text('About'),
+      body: const Text('About'),
     );
   }
 }

@@ -162,7 +162,7 @@ export function openLoginWindow(provider:string, action: ProviderActionType) {
   return false;
 }
 
-export type LoginUserType = 'new' | 'existing';
+export type LoginUserType = 'newUser' | 'existing';
 
 declare global {
   interface Window {

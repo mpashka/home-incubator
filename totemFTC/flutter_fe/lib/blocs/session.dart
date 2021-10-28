@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_fe/blocs/crud_api.dart';
+import 'package:flutter_fe/blocs/crud_user.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
+import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:http/http.dart' as http;
@@ -12,16 +15,23 @@ import '../misc/utils.dart';
 import 'base.dart';
 import 'login_helper.dart' if (dart.library.js) 'login_helper_js.dart' as login_helper;
 
-class Session {
-  static final Logger log = Logger('SessionBlock');
+part 'session.g.dart';
 
-  String _sessionId = '';
-  late Configuration _configuration;
+class Session {
+  static final Logger log = Logger('Session');
+
+  final Configuration _configuration;
+  final CrudApi _api;
   final StreamController<LoginStateInfo> _loginController = StreamController<LoginStateInfo>();
   late final Sink<LoginStateInfo> _loginStateIn;
   late final Stream<LoginStateInfo> _loginState;
 
-  Session(Injector injector): _configuration = injector.get<Configuration>() {
+  CrudEntityUser _user = emptyUser;
+
+  Session(Injector injector):
+        _configuration = injector.get<Configuration>(),
+        _api = injector.get<CrudApi>()
+  {
     _loginState = _loginController.stream.asBroadcastStream();
     _loginStateIn = _loginController.sink;
   }
@@ -55,21 +65,29 @@ class Session {
       return;
     }
     _loginStateIn.add(LoginStateInfo(LoginState.inProgress));
-    var uri = Uri.parse('${_configuration.backendUrl()}/api/login/callback/${provider.name}$loginParams&action=login&client=${_configuration.clientId()}');
-    final loginResponse = await http.get(uri);
-    if (loginResponse.statusCode != 200) {
-      log.severe('Error processing login $uri ${loginResponse.statusCode}\n${loginResponse.body}');
-      _loginStateIn.add(LoginStateInfo(LoginState.error, loginResponse.body));
-      return;
-    }
+    Uri? uri;
+    http.Response? loginResponse;
     try {
-      var login = jsonDecode(loginResponse.body);
-      _sessionId = login['sessionId'];
-      String userType = login['userType'];
+      uri = Uri.parse('${_configuration.backendUrl()}/api/login/callback/${provider.name}$loginParams&action=login&client=${_configuration.clientId()}');
+      loginResponse = await http.get(uri);
+      if (loginResponse.statusCode != 200) {
+        log.severe('Error processing login $uri ${loginResponse.statusCode}\n${loginResponse.body}');
+        _loginStateIn.add(LoginStateInfo(LoginState.error, loginResponse.body));
+        return;
+      }
+      var login = EntityLogin.fromJson(jsonDecode(loginResponse.body));
+      _configuration.sessionId = login.sessionId;
+      await loadUser();
       _loginStateIn.add(LoginStateInfo(LoginState.done));
+    } on http.ClientException catch (e,s) {
+      log.severe('Http Error processing login $uri', e, s);
+      _loginStateIn.add(LoginStateInfo(LoginState.error, 'Backend Server Error'));
     } catch (e,s) {
-      log.severe('Error processing login $uri ${loginResponse.statusCode}\n${loginResponse.body}', e, s);
-      _loginStateIn.add(LoginStateInfo(LoginState.error, 'Internal error $e'));
+      log.severe('[${e.runtimeType}] Error processing login $uri', e, s);
+      if (loginResponse != null) {
+        log.severe('loginResponseStatus: ${loginResponse.statusCode}\n${loginResponse.body}', e, s);
+      }
+      _loginStateIn.add(LoginStateInfo(LoginState.error, 'Error $e'));
     }
   }
 
@@ -77,7 +95,12 @@ class Session {
   }
 
   bool isLoggedIn() {
-    return _sessionId.length > 0;
+    return _configuration.sessionId.isNotEmpty;
+  }
+
+  Future<CrudEntityUser> loadUser() async {
+    _user = CrudEntityUser.fromJson(await _api.get('/api/user'));
+    return _user;
   }
 
 }
@@ -123,4 +146,18 @@ class LoginStateInfo {
 
 enum LoginState {
   none, inProgress, error, done
+}
+
+@JsonSerializable()
+class EntityLogin {
+  String sessionId;
+  EntityLoginUserType userType;
+
+  EntityLogin({required this.sessionId, required this.userType});
+  factory EntityLogin.fromJson(Map<String, dynamic> json) => _$EntityLoginFromJson(json);
+  Map<String, dynamic> toJson() => _$EntityLoginToJson(this);
+}
+
+enum EntityLoginUserType {
+ newUser, existing
 }

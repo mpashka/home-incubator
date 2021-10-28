@@ -14,7 +14,9 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import java.time.LocalDateTime;
 
 /**
  */
@@ -26,6 +28,16 @@ public class WebResourceVisit {
 
     @Inject
     DbCrudVisit dbVisit;
+
+    @Inject
+    WebSessionService.RequestParameters requestParameters;
+
+    @GET
+    @Path("byUser")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<DbCrudVisit.EntityVisit[]> listByUser(@QueryParam("from") LocalDateTime from, @QueryParam("rows") int rows) {
+        return dbVisit.getByUser(requestParameters.getSession().getUserId(), from, rows);
+    }
 
     @GET
     @Path("byTraining/{trainingId}")

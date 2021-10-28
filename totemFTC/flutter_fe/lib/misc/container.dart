@@ -1,6 +1,11 @@
-import 'package:flutter_fe/blocs/session.dart';
-import 'package:flutter_fe/misc/configuration.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
+
+import '../blocs/crud_api.dart';
+import '../blocs/session.dart';
+import '../blocs/crud_user.dart';
+import '../blocs/crud_training.dart';
+import '../blocs/crud_ticket.dart';
+import 'configuration.dart';
 
 import 'initializer.dart';
 
@@ -9,6 +14,10 @@ class ModuleContainer {
     injector.map((i) => Configuration(), isSingleton: true);
     injector.map((i) => Initializer(injector), isSingleton: true);
     injector.map((i) => Session(injector), isSingleton: true);
+    injector.map((i) => CrudApi(injector), isSingleton: true);
+    injector.map((i) => CrudUser(injector), isSingleton: true);
+    injector.map((i) => CrudTraining(injector), isSingleton: true);
+    injector.map((i) => CrudTicket(injector), isSingleton: true);
     return injector;
   }
 }

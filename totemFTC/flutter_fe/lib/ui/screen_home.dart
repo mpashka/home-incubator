@@ -1,55 +1,87 @@
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_fe/blocs/crud_visit.dart';
+import 'package:flutter_simple_dependency_injection/injector.dart';
+import 'package:logging/logging.dart';
 
 import 'drawer.dart';
 import 'widgets/scroll_list_selector.dart';
 import 'widgets/ui_subscription.dart';
 import 'widgets/ui_attend.dart';
+import '../blocs/crud_ticket.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  final Injector _injector;
+  const HomeScreen(this._injector, {Key? key}) : super(key: key);
+
+  @override
+  State<StatefulWidget> createState() => HomeScreenState();
+}
+
+class HomeScreenState extends State<HomeScreen> {
+  static final Logger log = Logger('HomeScreenState');
+
   final GlobalKey _keyFAB = GlobalKey();
+
+  late final CrudTicketBloc _ticketBloc;
+  late final CrudVisitBloc _visitBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    _ticketBloc = widget._injector.get<CrudTicket>().bloc();
+    _visitBloc = widget._injector.get<CrudVisit>().bloc();
+    _ticketBloc.crudTicket.loadTickets();
+    _visitBloc.crudVisit.loadVisits(DateTime.now().subtract(const Duration(days: 14)), 10);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Totem FC'),
+        title: const Text('Totem FC'),
       ),
       drawer: MyDrawer(),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          UiSubscription(name: 'Кроссфит',
-            start: DateTime.now().subtract(Duration(days: 1, minutes: 10)),
-            count: 10, used: 3
+          StreamBuilder(
+              stream: _ticketBloc.ticketsState,
+              initialData: _ticketBloc.crudTicket.tickets,
+              builder: (BuildContext context, AsyncSnapshot<List<CrudEntityTicket>> ticketsSnapshot) => Column(
+                children: [
+                  for (var ticket in ticketsSnapshot.requireData)
+                    UiSubscription(name: ticket.ticketType.name,
+                        start: ticket.start,
+                        count: ticket.ticketType.visits, used: ticket.visited
+                    ),
+                ],)),
+          StreamBuilder(
+            stream: _visitBloc.visitsState,
+            initialData: _visitBloc.crudVisit.visits,
+            builder: (BuildContext context, AsyncSnapshot<List<CrudEntityVisit>> visitsSnapshot) {
+              List<Widget> prevWidgets = [], nextWidgets = [];
+              DateTime now = DateTime.now();
+              for (var visit in visitsSnapshot.requireData) {
+                var training = visit.training!;
+                var widget = UiAttend(name: training.trainingType.trainingName, date: training.time, marked: visit.markSelf);
+                (training.time.isBefore(now) ? prevWidgets : nextWidgets).add(widget);
+              }
+              return Column(children: [
+                if (prevWidgets.isNotEmpty) Row(children: const [Divider(), Text('Прошло')]),
+                for (var widget in prevWidgets) widget,
+                if (nextWidgets.isNotEmpty) Row(children: const [Divider(), Text('Будет')]),
+                for (var widget in nextWidgets) widget,
+              ],);
+            },
           ),
-
-          UiSubscription(name: 'Растяжка',
-            start: DateTime.now().subtract(Duration(days: 1, minutes: 10)),
-            count: 4, used: 2
-          ),
-
-          Divider(
-            height: 20,
-            thickness: 5,
-            indent: 20,
-            endIndent: 20,
-          ),
-
-          UiAttend(name: 'Кроссфит', date: DateTime.now().subtract(Duration(days: 3, minutes: 10)), marked: true),
-          UiAttend(name: 'Кроссфит', date: DateTime.now().subtract(Duration(days: 2, minutes: 10)), marked: true),
-          UiAttend(name: 'Растяжка', date: DateTime.now().subtract(Duration(days: 2, minutes: 10)), marked: true),
-
-          Divider(
-            height: 20,
-            thickness: 2,
-            indent: 20,
-            endIndent: 20,
-          ),
-
-          UiAttend(name: 'Кроссфит', date: DateTime.now().add(Duration(days: 2, minutes: 10)), marked: false),
         ],
       ),
       floatingActionButton: FloatingActionButton(

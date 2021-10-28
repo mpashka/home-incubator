@@ -37,6 +37,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Totem FC App',
       theme: uiCreateTheme(),
+/*
       routes: {
         '/': (context) => HomeScreen(),
         '/login': (context) => LoginScreen(injector),
@@ -48,6 +49,7 @@ class MyApp extends StatelessWidget {
         '/master_trains': (context) => MasterTrainsScreen(),
         '/master_people': (context) => MasterPeopleScreen(),
       },
+*/
       initialRoute: showInitScreen(initializer),
       onGenerateRoute: (settings) {
         log.info('New route received: ${settings.name}, ${settings.arguments} / $settings');
@@ -59,13 +61,13 @@ class MyApp extends StatelessWidget {
         if (!session.isLoggedIn()) {
           return MaterialPageRoute(builder: (context) => LoginScreen(injector));
         } else if (settings.name == '/login') {
-          return MaterialPageRoute(builder: (context) => HomeScreen());
+          return MaterialPageRoute(builder: (context) => HomeScreen(injector));
         } else {
           switch (settings.name) {
-            case '/': return MaterialPageRoute(builder: (context) => HomeScreen());
+            case '/': return MaterialPageRoute(builder: (context) => HomeScreen(injector));
             case '/login': return MaterialPageRoute(builder: (context) => LoginScreen(injector));
             case '/init': return MaterialPageRoute(builder: (context) => InitScreen(initializer));
-            case '/about': return MaterialPageRoute(builder: (context) => AboutScreen());
+            case '/about': return MaterialPageRoute(builder: (context) => const AboutScreen());
             case '/subscriptions': return MaterialPageRoute(builder: (context) => SubscriptionsScreen());
             case '/trains': return MaterialPageRoute(builder: (context) => AttendsScreen());
             case '/purchases': return MaterialPageRoute(builder: (context) => PurchasesScreen());
