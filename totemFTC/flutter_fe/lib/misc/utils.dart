@@ -8,4 +8,5 @@ Random _rnd = Random();
 String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
     length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
 
-final dateTimeFormat = DateFormat('yyyy-MM-dd');
+final dateFormat = DateFormat('yyyy-MM-dd');
+final dateTimeFormat = DateFormat('yyyy-MM-dd HH:mm');

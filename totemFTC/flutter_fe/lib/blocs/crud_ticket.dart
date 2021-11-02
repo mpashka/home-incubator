@@ -33,6 +33,7 @@ class CrudTicket {
   Future<List<CrudEntityTicket>> loadTickets() async {
     tickets = (await _backend.get('/api/tickets/byUser') as List)
         .map((item) => CrudEntityTicket.fromJson(item)).toList();
+    log.fine('Tickets received: $tickets');
     _ticketsStateIn.add(tickets);
     return tickets;
   }

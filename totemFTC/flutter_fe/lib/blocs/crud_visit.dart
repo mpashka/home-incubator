@@ -33,7 +33,7 @@ class CrudVisit {
   }
 
   Future<List<CrudEntityVisit>> loadVisits(DateTime from, int rows) async {
-    visits = (await _backend.get('/api/visit/byUser?from=${dateTimeFormat.format(from)}&rows=$rows') as List)
+    visits = (await _backend.get('/api/visit/byUser?from=${Uri.encodeComponent(dateTimeFormat.format(from))}&rows=$rows') as List)
         .map((item) => CrudEntityVisit.fromJson(item)).toList();
     _visitsStateIn.add(visits);
     return visits;

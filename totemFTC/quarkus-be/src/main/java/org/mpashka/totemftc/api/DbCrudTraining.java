@@ -115,7 +115,7 @@ public class DbCrudTraining {
 
     public static class Entity {
         private int id;
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
+        @JsonFormat(pattern = Utils.DATE_TIME_FORMAT)
         private LocalDateTime time;
         private DbUser.EntityUser trainer;
         private EntityTrainingType trainingType;

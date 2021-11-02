@@ -99,6 +99,7 @@ public class DbCrudTicket {
     }
 
     public Uni<EntityTicket[]> getTicketsByUser(int userId) {
+        log.debug("Select tickets by userId: {}", userId);
         return selectTicketsByUser
                 .execute(Tuple.of(userId))
                 .onItem().transform(set ->
@@ -106,6 +107,7 @@ public class DbCrudTicket {
                             .map(r -> new EntityTicket().loadFromDb(r))
                             .toArray(EntityTicket[]::new)
                 )
+                .onItem().invoke(t -> log.debug("Tickets loaded: {}", Arrays.asList(t)))
                 .onFailure().transform(e -> new RuntimeException("Error getTicketsByUser", e))
                 ;
     }
@@ -186,9 +188,9 @@ public class DbCrudTicket {
         private int id;
         private EntityTicketType ticketType;
         private DbUser.EntityUser user;
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
+        @JsonFormat(pattern = Utils.DATE_TIME_FORMAT)
         private LocalDateTime start;
-        @JsonFormat(pattern = "yyyy-MM-dd HH:mm")
+        @JsonFormat(pattern = Utils.DATE_TIME_FORMAT)
         private LocalDateTime end;
         private int visited;
 

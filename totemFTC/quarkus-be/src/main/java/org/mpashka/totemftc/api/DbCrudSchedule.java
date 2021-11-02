@@ -84,7 +84,7 @@ public class DbCrudSchedule {
 
     public static class Entity {
         private int id;
-        @JsonFormat(pattern = "HH:mm")
+        @JsonFormat(pattern = Utils.TIME_FORMAT)
         private LocalTime time;
         private int day;
 //        private int trainerId;

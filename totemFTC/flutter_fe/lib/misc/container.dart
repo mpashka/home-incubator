@@ -5,6 +5,7 @@ import '../blocs/session.dart';
 import '../blocs/crud_user.dart';
 import '../blocs/crud_training.dart';
 import '../blocs/crud_ticket.dart';
+import '../blocs/crud_visit.dart';
 import 'configuration.dart';
 
 import 'initializer.dart';
@@ -18,6 +19,7 @@ class ModuleContainer {
     injector.map((i) => CrudUser(injector), isSingleton: true);
     injector.map((i) => CrudTraining(injector), isSingleton: true);
     injector.map((i) => CrudTicket(injector), isSingleton: true);
+    injector.map((i) => CrudVisit(injector), isSingleton: true);
     return injector;
   }
 }

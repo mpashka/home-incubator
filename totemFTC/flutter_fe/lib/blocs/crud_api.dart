@@ -16,7 +16,8 @@ class CrudApi {
 
   CrudApi(Injector injector): _configuration = injector.get<Configuration>();
 
-  Future<Map<String, dynamic>> get(String apiUri) async {
+  /// This can be either Map or List
+  Future<dynamic> get(String apiUri) async {
     try {
       Uri uri = Uri.parse('${_configuration.backendUrl()}$apiUri');
       http.Response userResponse = await http.get(uri, headers: {'Authorization': 'Bearer ${_configuration.sessionId}'});
