@@ -7,13 +7,20 @@ import org.jboss.resteasy.reactive.server.ServerResponseFilter;
 
 import javax.annotation.PostConstruct;
 import javax.ws.rs.container.ContainerResponseContext;
+import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.List;
 
 public class WebFilters {
+
+    private static final List<String> TYPE_JSON = Collections.singletonList(MediaType.APPLICATION_JSON);
+    private static final String TYPE_JSON_UTF8 = MediaType.APPLICATION_JSON_TYPE.withCharset(StandardCharsets.UTF_8.name()).toString();
 
     private String indexHtml;
 
@@ -34,6 +41,13 @@ public class WebFilters {
         if (responseContext.getStatus() == HttpResponseStatus.NOT_FOUND.code()) {
             responseContext.setStatusInfo(RestResponse.Status.OK);
             responseContext.setEntity(indexHtml, null, MediaType.TEXT_HTML_TYPE);
+        }
+    }
+
+    @ServerResponseFilter
+    public void charsetFilter(ContainerResponseContext responseContext) {
+        if (responseContext.getStatus() == HttpResponseStatus.OK.code() && TYPE_JSON.equals(responseContext.getHeaders().get(HttpHeaders.CONTENT_TYPE))) {
+            responseContext.getHeaders().putSingle(HttpHeaders.CONTENT_TYPE, TYPE_JSON_UTF8);
         }
     }
 }

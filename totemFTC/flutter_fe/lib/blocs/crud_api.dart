@@ -25,6 +25,7 @@ class CrudApi {
         log.severe('Backend error get $uri ${userResponse.statusCode}\n${userResponse.body}');
         throw ApiException('Server error', userResponse.body);
       }
+      log.fine('Response received $uri ${userResponse.statusCode}\n${userResponse.body}');
       var decoded = jsonDecode(userResponse.body);
       return decoded;
     } catch (e,s) {
@@ -42,8 +43,13 @@ class ApiException implements Exception {
 }
 
 final _dateTimeFormatter = DateFormat('yyyy-MM-dd HH:mm');
+final _dateFormatter = DateFormat('yyyy-MM-dd');
 DateTime dateTimeFromJson(String date) => _dateTimeFormatter.parse(date);
 String dateTimeToJson(DateTime date) => _dateTimeFormatter.format(date);
+DateTime? dateTimeFromJson_(String? date) => date != null ? _dateTimeFormatter.parse(date) : null;
+String? dateTimeToJson_(DateTime? date) => date != null ? _dateTimeFormatter.format(date) : null;
+DateTime dateFromJson(String date) => _dateFormatter.parse(date);
+String dateToJson(DateTime date) => _dateFormatter.format(date);
 
 // @JsonKey(name: 'registration_date_millis')
 // @JsonKey(defaultValue: false)

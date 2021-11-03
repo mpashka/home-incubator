@@ -56,3 +56,6 @@ Easily start your RESTful Web Services
 
 Build docker
 ./mvnw package -Dquarkus.container-image.build=true
+
+Run
+`./mvnw [compile] quarkus:dev [-Ddebug=5005] [-DdebugHost=0.0.0.0] [-Dquarkus.http.port=8080]`

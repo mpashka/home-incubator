@@ -36,6 +36,7 @@ class MasterPeopleScreen extends StatelessWidget {
           endIndent: 20,
         ),
 
+/*
         UiSubscription(name: 'Кроссфит',
             start: DateTime.now().subtract(Duration(days: 1, minutes: 10)),
             count: 10, used: 3
@@ -45,6 +46,7 @@ class MasterPeopleScreen extends StatelessWidget {
             start: DateTime.now().subtract(Duration(days: 1, minutes: 10)),
             count: 4, used: 2
         ),
+*/
 
         Divider(
           height: 20,

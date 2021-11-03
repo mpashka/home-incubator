@@ -58,10 +58,7 @@ class HomeScreenState extends State<HomeScreen> {
               builder: (BuildContext context, AsyncSnapshot<List<CrudEntityTicket>> ticketsSnapshot) => Column(
                 children: [
                   for (var ticket in ticketsSnapshot.requireData)
-                    UiSubscription(name: ticket.ticketType.name,
-                        start: ticket.start,
-                        count: ticket.ticketType.visits, used: ticket.visited
-                    ),
+                    UiSubscription(ticket),
                 ],)),
           StreamBuilder(
             stream: _visitBloc.visitsState,

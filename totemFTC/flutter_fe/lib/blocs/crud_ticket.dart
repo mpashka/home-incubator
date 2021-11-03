@@ -34,6 +34,7 @@ class CrudTicket {
     tickets = (await _backend.get('/api/tickets/byUser') as List)
         .map((item) => CrudEntityTicket.fromJson(item)).toList();
     log.fine('Tickets received: $tickets');
+    tickets.forEach((element) => log.fine('Type: ${element.ticketType.name}'));
     _ticketsStateIn.add(tickets);
     return tickets;
   }
@@ -88,13 +89,16 @@ class CrudEntityTicketType {
 class CrudEntityTicket {
   int id;
   CrudEntityTicketType ticketType;
-  CrudEntityUser user;
-  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
-  DateTime start;
+  CrudEntityUser? user;
+  @JsonKey(fromJson: dateFromJson, toJson: dateToJson)
+  DateTime buy;
+  @JsonKey(fromJson: dateTimeFromJson_, toJson: dateTimeToJson_)
+  DateTime? start;
+  @JsonKey(fromJson: dateTimeFromJson_, toJson: dateTimeToJson_)
   DateTime? end;
   int visited;
 
-  CrudEntityTicket({required this.id, required this.ticketType, required this.user, required this.start, this.end, required this.visited});
+  CrudEntityTicket({required this.id, required this.ticketType, required this.user, required this.buy, this.start, this.end, required this.visited});
   factory CrudEntityTicket.fromJson(Map<String, dynamic> json) => _$CrudEntityTicketFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityTicketToJson(this);
 }

@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS training_ticket (
     ticket_id SERIAL PRIMARY KEY ,
     ticket_type_id INTEGER REFERENCES ticket_type,
     user_id INTEGER REFERENCES user_info(user_id),
+    ticket_buy TIMESTAMP NOT NULL,
     ticket_start DATE NULL,
     ticket_end DATE NULL
 );

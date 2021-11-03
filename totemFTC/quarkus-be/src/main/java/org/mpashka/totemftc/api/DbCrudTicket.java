@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.stream.StreamSupport;
@@ -38,10 +39,10 @@ public class DbCrudTicket {
 
     @PostConstruct
     void init() {
-        selectTicketType = client.preparedQuery("SELECT t.*, array_agg(row_to_json(tt.*)) AS training_types_obj " +
-                "FROM ticket_type t " +
-                "JOIN training_type tt ON tt.training_type=ANY(t.training_types) " +
-                "GROUP BY t.ticket_type_id");
+        selectTicketType = client.preparedQuery("SELECT tit.*, array_agg(row_to_json(trt.*)) AS training_types_obj " +
+                "FROM ticket_type tit " +
+                "JOIN training_type trt ON trt.training_type=ANY(tit.training_types) " +
+                "GROUP BY tit.ticket_type_id");
         insertTicketType = client.preparedQuery("INSERT INTO ticket_type (training_types, ticket_name, ticket_cost, ticket_visits, ticket_days) VALUES ($1, $2, $3, $4, $5) RETURNING ticket_type_id");
         updateTicketType = client.preparedQuery("UPDATE ticket_type SET training_types=$2, ticket_name=$3, ticket_cost=$4, ticket_visits=$5, ticket_days=$6 WHERE ticket_type_id=$1");
         deleteTicketType = client.preparedQuery("DELETE FROM ticket_type WHERE ticket_type_id=$1");
@@ -49,6 +50,10 @@ public class DbCrudTicket {
         selectTicketsByUser = client.preparedQuery("SELECT * FROM training_ticket t " +
                 "JOIN ticket_type tit ON tit.ticket_type_id=t.ticket_type_id " +
 //                "JOIN (SELECT array_agg(row_to_json(tt.*)) AS training_types_obj FROM training_type tt WHERE tt.training_type=ANY(t.training_types)) training_type trt ON trt.training_type=" +
+                "JOIN (SELECT tit.ticket_type_id, array_agg(row_to_json(trt.*)) AS training_types_obj " +
+                "       FROM ticket_type tit " +
+                "       JOIN training_type trt ON trt.training_type=ANY(tit.training_types) " +
+                "       GROUP BY tit.ticket_type_id) trto ON trto.ticket_type_id=tit.ticket_type_id " +
                 "LEFT OUTER JOIN (SELECT ticket_id, COUNT(*) training_visit_count FROM training_visit GROUP BY ticket_id) vc ON t.ticket_id=vc.ticket_id " +
                 "WHERE t.user_id=$1");
         selectTicketById = client.preparedQuery("SELECT * FROM training_ticket t " +
@@ -181,25 +186,25 @@ public class DbCrudTicket {
         }
     }
 
-    /**
-     * todo [!] add buy date
-     */
     public static class EntityTicket {
         private int id;
         private EntityTicketType ticketType;
         private DbUser.EntityUser user;
         @JsonFormat(pattern = Utils.DATE_TIME_FORMAT)
-        private LocalDateTime start;
-        @JsonFormat(pattern = Utils.DATE_TIME_FORMAT)
-        private LocalDateTime end;
+        private LocalDateTime buy;
+        @JsonFormat(pattern = Utils.DATE_FORMAT)
+        private LocalDate start;
+        @JsonFormat(pattern = Utils.DATE_FORMAT)
+        private LocalDate end;
         private int visited;
 
         public EntityTicket loadFromDb(Row row) {
             this.id = row.getInteger("ticket_id");
             this.ticketType = new EntityTicketType().loadFromDb(row);
 //            this.user = row.getString("ticket_name");
-            this.start = row.getLocalDateTime("ticket_start");
-            this.end = row.getLocalDateTime("ticket_end");
+            this.buy = row.getLocalDateTime("ticket_buy");
+            this.start = row.getLocalDate("ticket_start");
+            this.end = row.getLocalDate("ticket_end");
             Integer visitedObj = row.getInteger("training_visit_count");
             this.visited = visitedObj != null ? visitedObj : 0;
             return this;

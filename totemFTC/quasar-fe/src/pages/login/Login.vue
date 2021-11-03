@@ -43,7 +43,7 @@ export default defineComponent({
         if (props.inProgress) {
           router.back();
         } else {
-          await router.replace({path: user === 'new' ? '/settings' : '/'});
+          await router.replace({path: user === 'newUser' ? '/settings' : '/'});
         }
       }
     };
