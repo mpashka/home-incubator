@@ -8,6 +8,8 @@ import io.vertx.mutiny.sqlclient.PreparedQuery;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -15,6 +17,7 @@ import javax.inject.Inject;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +32,8 @@ import java.util.stream.StreamSupport;
 @ApplicationScoped
 public class DbSchedulePropagate {
 
+    private static final Logger log = LoggerFactory.getLogger(DbSchedulePropagate.class);
+
     @Inject
     PgPool client;
 
@@ -40,7 +45,7 @@ public class DbSchedulePropagate {
     private void init() {
         selectSchedule = client.preparedQuery("SELECT * from training_schedule t");
         selectTraining = client.preparedQuery("SELECT * from training t WHERE training_time>$1 and training_time<$2");
-        insertTraining = client.preparedQuery("INSERT INTO training (training_schedule_id, training_time, trainer, training_type) VALUES ($1, $2, $3, $4)");
+        insertTraining = client.preparedQuery("INSERT INTO training (training_schedule_id, training_time, trainer, training_type) VALUES ($1, $2, $3, $4) RETURNING training_time, training_type");
     }
 
     @Scheduled(cron="0 30 0 * * ?")
@@ -52,7 +57,7 @@ public class DbSchedulePropagate {
      * Insert records into training from schedule for the next 7 days
      * if there are no records in trainings for that specific day.
      */
-    public Uni<Void> schedulePropagate() {
+    public Uni<RowSet<Row>> schedulePropagate() {
         return selectSchedule.execute()
                 .onItem().transform(set -> StreamSupport
                         .stream(set.spliterator(), false)
@@ -60,8 +65,8 @@ public class DbSchedulePropagate {
                         .collect(Collectors.groupingBy(s -> s.time.getDayOfMonth()))
                 )
                 .onItem().transformToUni(schedule -> {
-                    LocalDate now = LocalDate.now();
-                    LocalDate nextWeek = now.plusDays(7);
+                    LocalDateTime now = LocalDateTime.of(LocalDate.now(), LocalTime.MIDNIGHT);
+                    LocalDateTime nextWeek = now.plusDays(7);
                     return selectTraining.execute(Tuple.of(now, nextWeek))
                             .onItem().transform(set -> StreamSupport
                                     .stream(set.spliterator(), false)
@@ -75,17 +80,18 @@ public class DbSchedulePropagate {
                         LocalDate date = LocalDate.now().plusDays(i);
                         List<EntityTraining> trainings = e.trainings.get(date);
                         List<EntitySchedule> schedules = e.schedule.get(date.getDayOfWeek().getValue());
+                        log.debug("Day {}. Date:{}", i, date);
                         if (trainings == null && schedules != null) {
                             for (EntitySchedule schedule : schedules) {
+                                log.debug("    {}", schedule);
                                 insertTrainingParams.add(Tuple.of(schedule.id, LocalDateTime.of(date, schedule.time.toLocalTime()), schedule.trainerId, schedule.trainingType));
                             }
                         }
                     }
-                    return insertTrainingParams.isEmpty() ? Uni.createFrom().item(null) :
-                            insertTraining
-                                    .executeBatch(insertTrainingParams)
-                                    .onItem().transform(u -> null);
-                });
+                    return insertTrainingParams.isEmpty() ? Uni.createFrom().item((RowSet<Row>) null) :
+                            insertTraining.executeBatch(insertTrainingParams);
+                })
+                .onFailure().transform(e -> new RuntimeException("Error schedulePropagate", e));
     }
 
     private static class Entities {
@@ -112,6 +118,16 @@ public class DbSchedulePropagate {
             this.trainingType = row.getString("training_type");
             return this;
         }
+
+        @Override
+        public String toString() {
+            return "EntitySchedule{" +
+                    "id=" + id +
+                    ", time=" + time +
+                    ", trainerId=" + trainerId +
+                    ", trainingType='" + trainingType + '\'' +
+                    '}';
+        }
     }
 
     private static class EntityTraining {
@@ -128,7 +144,7 @@ public class DbSchedulePropagate {
             this.time = row.getLocalDateTime("training_time");
             this.trainerId = row.getInteger("trainer");
             this.trainingType = row.getString("training_type");
-            this.comment = row.getString("comment");
+            this.comment = row.getString("training_comment");
             return this;
         }
     }

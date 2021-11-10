@@ -134,7 +134,7 @@ class HomeScreenState extends State<HomeScreen> {
       elevation: 8.0,
     );
     log.finer("Menu item $result selected");
-    if (result == 1) {
+    if (result == 1 || result == 2) {
       _onAddTraining(_keyFAB.currentContext!, result == 2);
     }
   }
@@ -146,10 +146,10 @@ class HomeScreenState extends State<HomeScreen> {
     DateTime from, to;
     if (past) {
       to = now;
-      from = now.subtract(Duration(days: 3));
+      from = now.subtract(const Duration(days: 4));
     } else {
       from = now;
-      to = now.add(Duration(days: 3));
+      to = now.add(const Duration(days: 4));
     }
 
     List<CrudEntityTraining> allTrainings = [];
@@ -163,8 +163,7 @@ class HomeScreenState extends State<HomeScreen> {
     Sink<List<CrudEntityTraining>> trainingsIn = trainingsCtrl.sink;
     Stream<List<CrudEntityTraining>> trainingsOut = trainingsCtrl.stream;
 
-    _trainingBloc.loadTrainings(from, to)
-        .then((trainings) {
+    _trainingBloc.loadTrainings(from, to).then((trainings) {
       allTrainings = trainings;
       Set<CrudEntityTrainingType> loadedTypes = HashSet<CrudEntityTrainingType>();
       for (var training in allTrainings) {
@@ -202,6 +201,7 @@ class HomeScreenState extends State<HomeScreen> {
                     child:
                     Row(children: [
                       Flexible(
+                        flex: 10,
                           child: WheelListSelector<CrudEntityTrainingType>(
                             initialData: trainingTypes,
                             dataStream: trainingTypesOut,
@@ -209,6 +209,7 @@ class HomeScreenState extends State<HomeScreen> {
                             onSelectedItemChanged: onTrainingTypeChange,
                           )),
                       Flexible(
+                          flex: 15,
                           child: WheelListSelector<CrudEntityTraining>(
                               initialData: trainings,
                               dataStream: trainingsOut,
@@ -239,7 +240,11 @@ class HomeScreenState extends State<HomeScreen> {
           markSchedule: _past ? false : true,
           markSelf: _past ? CrudEntityVisitMark.on : CrudEntityVisitMark.unmark,
           markMaster: CrudEntityVisitMark.unmark);
-      _visitBloc.addVisit(visit);
+      if (_past) {
+        _visitBloc.markSelf(visit, CrudEntityVisitMark.on);
+      } else {
+        _visitBloc.markSchedule(visit, true);
+      }
     }
   }
 }

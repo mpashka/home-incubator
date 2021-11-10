@@ -77,12 +77,14 @@ class CrudVisitBloc extends BlocBase {
     crudVisit.update();
   }
 
+/*
   Future<void> addVisit(CrudEntityVisit visit) async {
     await crudVisit._backend.request('POST', '/api/visit', body: visit);
     crudVisit.visits.add(visit);
     crudVisit.visits.sort();
     crudVisit.update();
   }
+*/
 
   @override
   void dispose() {

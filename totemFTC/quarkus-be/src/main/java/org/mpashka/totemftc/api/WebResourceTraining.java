@@ -26,6 +26,9 @@ public class WebResourceTraining {
     private static final Logger log = LoggerFactory.getLogger(WebResourceTraining.class);
 
     @Inject
+    WebSessionService webSessionService;
+
+    @Inject
     DbUser dbUser;
 
     @Inject
@@ -63,7 +66,8 @@ public class WebResourceTraining {
     @GET
     @Path("training/byDateInterval")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<DbCrudTraining.Entity[]> byDateInterval(@QueryParam("from") LocalDateTime from, @QueryParam("to") LocalDateTime to) {
+    public Uni<DbCrudTraining.Entity[]> byDateInterval(@QueryParam("from") LocalDateTime from, @QueryParam("to") LocalDateTime to, @QueryParam("excludeVisits") boolean excludeVisits) {
+//        return excludeVisits ? dbTraining.getByDateIntervalExcludeVisits(from, to, webSessionService.getUserId()) : dbTraining.getByDateInterval(from, to);
         return dbTraining.getByDateInterval(from, to);
     }
 

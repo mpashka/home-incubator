@@ -31,6 +31,7 @@ public class DbCrudTraining {
     private PreparedQuery<RowSet<Row>> select;
     private PreparedQuery<RowSet<Row>> selectByDate;
     private PreparedQuery<RowSet<Row>> selectByDateInterval;
+//    private PreparedQuery<RowSet<Row>> selectByDateIntervalExcludeVisits;
     private PreparedQuery<RowSet<Row>> selectTrainingTypes;
     private PreparedQuery<RowSet<Row>> insert;
     private PreparedQuery<RowSet<Row>> update;
@@ -52,6 +53,16 @@ public class DbCrudTraining {
                 "JOIN training_type tt on t.training_type = tt.training_type " +
                 "WHERE t.training_time >= $1 AND t.training_time <= $2 " +
                 "ORDER BY t.training_time");
+/*
+        selectByDateIntervalExcludeVisits = client.preparedQuery("SELECT t.*,u.*,tt.* from training t " +
+                "JOIN user_info u ON t.trainer = u.user_id " +
+                "JOIN training_type tt on t.training_type = tt.training_type " +
+                "LEFT OUTER JOIN training_visit tv on t.training_id = tv.training_id " +
+                "WHERE t.training_time >= $1 AND t.training_time <= $2 " +
+                "   AND tv.user_id=$3" +
+                "   AND tv.training_id IS NULL " +
+                "ORDER BY t.training_time");
+*/
         selectTrainingTypes = client.preparedQuery("SELECT * FROM training_type");
         insert = client.preparedQuery("INSERT INTO training (training_time, trainer, training_type) VALUES ($1, $2, $3) RETURNING training_id");
         update = client.preparedQuery("UPDATE training SET training_time=$2, trainer=$3, training_type=$4 WHERE training_id=$1");
@@ -93,6 +104,20 @@ public class DbCrudTraining {
                 .onFailure().transform(e -> new RuntimeException("Error getByDateInterval", e))
                 ;
     }
+
+/*
+    public Uni<Entity[]> getByDateIntervalExcludeVisits(LocalDateTime from, LocalDateTime to, int userId) {
+        return selectByDateIntervalExcludeVisits
+                .execute(Tuple.of(from, to, userId))
+                .onItem().transform(set ->
+                    StreamSupport.stream(set.spliterator(), false)
+                            .map(r -> new Entity().loadFromDb(r))
+                            .toArray(Entity[]::new)
+                )
+                .onFailure().transform(e -> new RuntimeException("Error getByDateInterval", e))
+                ;
+    }
+*/
 
     public Uni<EntityTrainingType[]> getTrainingTypes() {
         return selectTrainingTypes
