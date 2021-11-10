@@ -52,6 +52,7 @@ class PurchasesScreen extends StatelessWidget {
                   child:
                   Row(
                     children: [
+/*
                       Flexible(child: WheelListSelector(items: [
                         'Энергетик',
                         'Батончик',
@@ -63,6 +64,7 @@ class PurchasesScreen extends StatelessWidget {
                         'Апельсин',
                         'Груша',
                       ],)),
+*/
                     ],
                   ),
                 )

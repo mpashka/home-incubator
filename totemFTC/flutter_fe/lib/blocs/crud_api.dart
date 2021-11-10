@@ -26,7 +26,7 @@ class CrudApi {
       String uriStr = '${_configuration.backendUrl()}$apiUri';
       if (params != null) {
         var delimiter = '?';
-        params.forEach((key, value) { uriStr += '$delimiter$key=${Uri.encodeComponent(value)}'; delimiter = '&'; });
+        params.forEach((key, value) { uriStr += '$delimiter$key=${Uri.encodeComponent(value.toString())}'; delimiter = '&'; });
       }
       http.Request request = http.Request(method, Uri.parse(uriStr));
       request.encoding = utf8;
@@ -36,7 +36,9 @@ class CrudApi {
       }
       request.headers['Authorization'] = 'Bearer ${_configuration.sessionId}';
     // Accept: application/json
-      http.Response response = await http.Response.fromStream(await _httpClient.send(request));
+      var responseStream = await _httpClient.send(request);
+      log.fine('Received streamed response: ${responseStream.statusCode}');
+      http.Response response = await http.Response.fromStream(responseStream);
       if (response.statusCode != 200) {
         log.severe('Backend error get $apiUri ${response.statusCode}\n${response.body}');
         throw ApiException('Server error ${response.statusCode}', response.body);
@@ -44,7 +46,7 @@ class CrudApi {
       log.fine('Response received $apiUri ${response.statusCode}\n${response.body}');
       return response;
     } catch (e,s) {
-      log.severe('Internal error get $apiUri', e, s);
+      log.severe('Internal error $method $apiUri', e, s);
       throw ApiException('Internal error', e.toString());
     }
   }

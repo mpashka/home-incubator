@@ -45,7 +45,15 @@ public class DbSchedulePropagate {
 
     @Scheduled(cron="0 30 0 * * ?")
     public void cronJob(ScheduledExecution execution) {
-        selectSchedule.execute()
+        schedulePropagate().await().atMost(Duration.of(10, ChronoUnit.MINUTES));
+    }
+
+    /**
+     * Insert records into training from schedule for the next 7 days
+     * if there are no records in trainings for that specific day.
+     */
+    public Uni<Void> schedulePropagate() {
+        return selectSchedule.execute()
                 .onItem().transform(set -> StreamSupport
                         .stream(set.spliterator(), false)
                         .map(r -> new EntitySchedule().loadFromDb(r))
@@ -77,7 +85,7 @@ public class DbSchedulePropagate {
                             insertTraining
                                     .executeBatch(insertTrainingParams)
                                     .onItem().transform(u -> null);
-                }).await().atMost(Duration.of(10, ChronoUnit.MINUTES));
+                });
     }
 
     private static class Entities {

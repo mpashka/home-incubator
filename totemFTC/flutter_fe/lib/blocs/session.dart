@@ -27,6 +27,7 @@ class Session {
   late final Stream<LoginStateInfo> _loginState;
 
   CrudEntityUser _user = emptyUser;
+  CrudEntityUser get user => _user;
 
   Session(Injector injector):
         _configuration = injector.get<Configuration>(),

@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:core';
 
-import 'package:flutter_fe/blocs/crud_api.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
+
+import 'crud_api.dart';
+import '../misc/utils.dart';
 
 part 'crud_user.g.dart';
 
@@ -27,7 +29,7 @@ class CrudUserBloc {
 CrudEntityUser emptyUser = CrudEntityUser(userId: -1, type: CrudEntityUserType.guest);
 
 @JsonSerializable(explicitToJson: true)
-class CrudEntityUser {
+class CrudEntityUser implements Comparable<CrudEntityUser> {
 
   int userId;
   String? firstName;
@@ -56,6 +58,16 @@ class CrudEntityUser {
 
   factory CrudEntityUser.fromJson(Map<String, dynamic> json) => _$CrudEntityUserFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityUserToJson(this);
+
+  @override
+  int compareTo(CrudEntityUser other) {
+    if (userId == other.userId) return 0;
+    int result = compare(0, lastName, other.lastName);
+    result = compare(result, firstName, other.firstName);
+    result = compare(result, nickName, other.nickName);
+    return compareId(result, userId, other.userId);
+  }
+
 }
 
 @JsonSerializable()

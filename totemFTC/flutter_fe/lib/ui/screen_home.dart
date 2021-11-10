@@ -5,7 +5,9 @@ import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/crud_training.dart';
 import 'package:flutter_fe/blocs/crud_visit.dart';
+import 'package:flutter_fe/blocs/session.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
+import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
 
 import 'drawer.dart';
@@ -26,6 +28,7 @@ class HomeScreenState extends State<HomeScreen> {
 
   final GlobalKey _keyFAB = GlobalKey();
 
+  late final Session _session;
   late final CrudTicketBloc _ticketBloc;
   late final CrudVisitBloc _visitBloc;
   late final CrudTrainingBloc _trainingBloc;
@@ -34,6 +37,7 @@ class HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     final injector = Injector();
+    _session = injector.get<Session>();
     _trainingBloc = injector.get<CrudTraining>().bloc();
     _ticketBloc = injector.get<CrudTicket>().bloc();
     _visitBloc = injector.get<CrudVisit>().bloc();
@@ -135,6 +139,8 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  final _dateTimeFormatter = DateFormat('EEE,dd HH:mm');
+
   Future<void> _onAddTraining(BuildContext context, bool past) async {
     DateTime now = DateTime.now();
     DateTime from, to;
@@ -154,6 +160,8 @@ class HomeScreenState extends State<HomeScreen> {
     List<CrudEntityTraining> trainings = [];
     Sink<List<CrudEntityTrainingType>> trainingTypesIn = trainingTypesCtrl.sink;
     Stream<List<CrudEntityTrainingType>> trainingTypesOut = trainingTypesCtrl.stream;
+    Sink<List<CrudEntityTraining>> trainingsIn = trainingsCtrl.sink;
+    Stream<List<CrudEntityTraining>> trainingsOut = trainingsCtrl.stream;
 
     _trainingBloc.loadTrainings(from, to)
         .then((trainings) {
@@ -168,14 +176,19 @@ class HomeScreenState extends State<HomeScreen> {
       // Scrollable.ensureVisible(context);
     });
 
-    void onTrainingTypeChange(int index) {
+    void onTrainingTypeChange(CrudEntityTrainingType trainingType) {
       trainings.clear();
-      var trainingType = trainingTypes[index];
       for (var training in allTrainings) {
         if (trainingType == training.trainingType) {
           trainings.add(training);
         }
       }
+      trainingsIn.add(trainings);
+    }
+
+    CrudEntityTraining? selectedTraining;
+    void onTrainingChange(CrudEntityTraining training) {
+      selectedTraining = training;
     }
 
     var result = await showDialog(context: context,
@@ -185,29 +198,48 @@ class HomeScreenState extends State<HomeScreen> {
               elevation: 5,
               children: [
                 SizedBox(
-                  height: 300,
-                  child:
-                  Row(
-                    children: [
+                    height: 150,
+                    child:
+                    Row(children: [
                       Flexible(
-                          child: WheelListSelector(
+                          child: WheelListSelector<CrudEntityTrainingType>(
                             initialData: trainingTypes,
                             dataStream: trainingTypesOut,
-                            childBuilder: (context, index) => Text(trainingTypes[index].trainingName),
+                            childBuilder: (context, index, trainingType) => Text(trainingType.trainingName),
                             onSelectedItemChanged: onTrainingTypeChange,
                           )),
-                      Flexible(child: WheelListSelector(items: [
-                        'Понедельник, 10:00',
-                        'Понедельник, 12:00',
-                        'Вторник 8:00',
-                        'Среда 10:00',
-                      ],)),
-                    ],
+                      Flexible(
+                          child: WheelListSelector<CrudEntityTraining>(
+                              initialData: trainings,
+                              dataStream: trainingsOut,
+                              childBuilder: (context, index, training) => Text('${_dateTimeFormatter.format(training.time)} ${training.trainer.nickName}'),
+                              onSelectedItemChanged: onTrainingChange
+                          )),
+                    ],),
+                ),
+                Row(children: [
+                  SimpleDialogOption(
+                    child: const Text('Ok'),
+                    onPressed: () => Navigator.pop(context, selectedTraining),
                   ),
-                )
+                  SimpleDialogOption(
+                    child: const Text('Cancel'),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],)
               ]
           );
         });
     log.finer("Dialog result: $result");
+    if (result != null) {
+      bool _past = selectedTraining!.time.isBefore(DateTime.now());
+      CrudEntityVisit visit = CrudEntityVisit(
+          user: _session.user,
+          training: selectedTraining,
+          markSchedule: _past ? false : true,
+          markSelf: _past ? CrudEntityVisitMark.on : CrudEntityVisitMark.unmark,
+          markMaster: CrudEntityVisitMark.unmark);
+      _visitBloc.addVisit(visit);
+    }
   }
 }

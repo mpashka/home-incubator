@@ -5,13 +5,13 @@ import 'package:flutter/services.dart';
 
 class WheelListSelector<E> extends StatelessWidget {
 
-  final NullableIndexedWidgetBuilder _childBuilder;
-  final ValueChanged<int>? onSelectedItemChanged;
+  final WidgetBuilder<E> _childBuilder;
+  final ValueChanged<E>? onSelectedItemChanged;
   final List<E> initialData;
   final Stream<List<E>> dataStream;
 
   const WheelListSelector({Key? key, required this.initialData, required this.dataStream,
-    required NullableIndexedWidgetBuilder childBuilder, this.onSelectedItemChanged}) :
+    required WidgetBuilder<E> childBuilder, this.onSelectedItemChanged}) :
         _childBuilder = childBuilder,
         super(key: key);
 
@@ -27,11 +27,12 @@ class WheelListSelector<E> extends StatelessWidget {
               stream: dataStream,
               builder: (BuildContext context, AsyncSnapshot<List<E>> items) {
                 return ListWheelScrollView.useDelegate(
-                    onSelectedItemChanged: (item) {
-                      developer.log("Item selected: $item");
+                    onSelectedItemChanged: (itemIndex) {
+                      developer.log("Item selected: $itemIndex");
                       HapticFeedback.selectionClick();
                       var onSelectedItemChanged = this.onSelectedItemChanged;
                       if (onSelectedItemChanged != null) {
+                        var item = items.requireData[itemIndex];
                         onSelectedItemChanged(item);
                       }
                     },
@@ -53,7 +54,7 @@ class WheelListSelector<E> extends StatelessWidget {
 */
                     childDelegate: ListWheelChildBuilderDelegate(
                       childCount: items.requireData.length,
-                      builder: _childBuilder,
+                      builder: (context, index) => _childBuilder(context, index, items.requireData[index]),
                     )
                 );
               },
@@ -81,3 +82,5 @@ class WheelListSelector<E> extends StatelessWidget {
     );
   }
 }
+
+typedef WidgetBuilder<E> = Widget? Function(BuildContext context, int index, E data);

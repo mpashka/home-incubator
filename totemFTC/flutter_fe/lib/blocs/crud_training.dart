@@ -54,7 +54,7 @@ class CrudTrainingBloc {
 }
 
 @JsonSerializable(explicitToJson: true)
-class CrudEntityTraining {
+class CrudEntityTraining implements Comparable<CrudEntityTraining> {
   int id;
   @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime time;
@@ -66,6 +66,15 @@ class CrudEntityTraining {
     required this.trainingType, this.comment});
   factory CrudEntityTraining.fromJson(Map<String, dynamic> json) => _$CrudEntityTrainingFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityTrainingToJson(this);
+
+  @override
+  int compareTo(CrudEntityTraining other) {
+    if (id == other.id) return 0;
+    int result = compare(0, time, other.time);
+    result = compare(result, trainingType, other.trainingType);
+    result = compare(result, trainer, other.trainer);
+    return compareId(result, id, other.id);
+  }
 }
 
 @JsonSerializable()

@@ -30,7 +30,7 @@ class UiAttendState extends State<UiAttend> {
   UiAttendState() {
     _visit = widget._visit;
     final injector = Injector();
-    _visitBloc = injector.get();
+    _visitBloc = injector.get<CrudVisit>().bloc();
   }
 
 

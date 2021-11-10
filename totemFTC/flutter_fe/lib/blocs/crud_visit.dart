@@ -11,6 +11,7 @@ import 'crud_ticket.dart';
 import 'crud_training.dart';
 import 'crud_user.dart';
 import '../misc/utils.dart';
+import 'session.dart';
 
 part 'crud_visit.g.dart';
 
@@ -29,7 +30,6 @@ class CrudVisit {
   {
     _visitsState = _visitsController.stream.asBroadcastStream();
     _visitsStateIn = _visitsController.sink;
-
   }
 
   Future<List<CrudEntityVisit>> loadVisits(DateTime from, int rows) async {
@@ -77,6 +77,13 @@ class CrudVisitBloc extends BlocBase {
     crudVisit.update();
   }
 
+  Future<void> addVisit(CrudEntityVisit visit) async {
+    await crudVisit._backend.request('POST', '/api/visit', body: visit);
+    crudVisit.visits.add(visit);
+    crudVisit.visits.sort();
+    crudVisit.update();
+  }
+
   @override
   void dispose() {
     // if (_loginStateSubscription != null) {
@@ -102,7 +109,7 @@ class CrudEntityTicketType {
 }
 
 @JsonSerializable(explicitToJson: true)
-class CrudEntityVisit {
+class CrudEntityVisit implements Comparable<CrudEntityVisit> {
   CrudEntityUser? user;
   String? comment;
   bool markSchedule;
@@ -118,6 +125,12 @@ class CrudEntityVisit {
 
   factory CrudEntityVisit.fromJson(Map<String, dynamic> json) => _$CrudEntityVisitFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityVisitToJson(this);
+
+  @override
+  int compareTo(CrudEntityVisit other) {
+    int result = compare(0, training, other.training);
+    return compare(result, user, other.user);
+  }
 }
 
 enum CrudEntityVisitMark {
