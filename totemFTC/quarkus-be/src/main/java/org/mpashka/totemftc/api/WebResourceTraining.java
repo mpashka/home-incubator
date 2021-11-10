@@ -66,8 +66,7 @@ public class WebResourceTraining {
     @GET
     @Path("training/byDateInterval")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<DbCrudTraining.Entity[]> byDateInterval(@QueryParam("from") LocalDateTime from, @QueryParam("to") LocalDateTime to, @QueryParam("excludeVisits") boolean excludeVisits) {
-//        return excludeVisits ? dbTraining.getByDateIntervalExcludeVisits(from, to, webSessionService.getUserId()) : dbTraining.getByDateInterval(from, to);
+    public Uni<DbCrudTraining.Entity[]> byDateInterval(@QueryParam("from") LocalDateTime from, @QueryParam("to") LocalDateTime to) {
         return dbTraining.getByDateInterval(from, to);
     }
 
