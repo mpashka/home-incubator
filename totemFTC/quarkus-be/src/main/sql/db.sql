@@ -4,6 +4,7 @@ GRANT ALL PRIVILEGES ON DATABASE totemftc TO totemftc;
 
 -- Users
 CREATE TYPE user_type_enum AS ENUM ('guest', 'user', 'trainer', 'admin');
+CREATE TYPE mark_type_enum AS ENUM ('on', 'off', 'unmark');
 
 CREATE TABLE IF NOT EXISTS user_type_description (
     user_type user_type_enum NOT NULL PRIMARY KEY,
@@ -94,8 +95,8 @@ CREATE TABLE IF NOT EXISTS training_visit (
     visit_comment VARCHAR(200) NULL,  --
     ticket_id INTEGER NULL REFERENCES training_ticket(ticket_id),
     visit_mark_schedule BOOLEAN NOT NULL DEFAULT false,
-    visit_mark_self BOOLEAN NOT NULL DEFAULT false,
-    visit_mark_master BOOLEAN NOT NULL DEFAULT false,
+    visit_mark_self mark_type_enum NOT NULL DEFAULT 'unmark'::mark_type_enum,
+    visit_mark_master mark_type_enum NOT NULL DEFAULT 'unmark'::mark_type_enum,
     PRIMARY KEY (training_id, user_id, ticket_user_id)
 );
 

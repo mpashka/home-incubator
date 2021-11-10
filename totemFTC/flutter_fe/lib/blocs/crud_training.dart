@@ -1,12 +1,13 @@
 import 'dart:async';
 import 'dart:core';
 
-import 'package:flutter_fe/blocs/crud_api.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
 
 import 'crud_user.dart';
+import 'crud_api.dart';
+import '../misc/utils.dart';
 
 part 'crud_training.g.dart';
 
@@ -27,14 +28,29 @@ class CrudTraining {
   }
 */
 
-  clear() {
+  void clear() {
     // _tickets = [];
   }
 
+  CrudTrainingBloc bloc() {
+    return CrudTrainingBloc(this);
+  }
 }
 
-class CrudTicketsBlock {
+class CrudTrainingBloc {
+  CrudTraining crudTraining;
 
+  CrudTrainingBloc(this.crudTraining);
+
+  void dispose() {
+
+  }
+
+  Future<List<CrudEntityTraining>> loadTrainings(DateTime from, DateTime to) async {
+    return (await crudTraining._backend.requestJson('GET', '/api/training/byDateInterval',
+        params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
+        .map((item) => CrudEntityTraining.fromJson(item)).toList();
+  }
 }
 
 @JsonSerializable(explicitToJson: true)
@@ -53,11 +69,24 @@ class CrudEntityTraining {
 }
 
 @JsonSerializable()
-class CrudEntityTrainingType {
+class CrudEntityTrainingType implements Comparable<CrudEntityTrainingType> {
   String trainingType;
   String trainingName;
 
   CrudEntityTrainingType({required this.trainingType, required this.trainingName});
   factory CrudEntityTrainingType.fromJson(Map<String, dynamic> json) => _$CrudEntityTrainingTypeFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityTrainingTypeToJson(this);
+
+  @override
+  bool operator ==(Object other) {
+    return other is CrudEntityTrainingType ? other.trainingType == trainingType : false;
+  }
+
+  @override
+  int get hashCode => trainingType.hashCode;
+
+  @override
+  int compareTo(CrudEntityTrainingType other) {
+    return trainingType.compareTo(other.trainingType);
+  }
 }

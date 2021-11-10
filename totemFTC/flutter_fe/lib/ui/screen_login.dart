@@ -14,9 +14,7 @@ import 'widgets/ui_subscription.dart';
 import 'widgets/ui_attend.dart';
 
 class LoginScreen extends StatefulWidget {
-  final Injector _injector;
-
-  const LoginScreen(this._injector, {Key? key}) : super(key: key);
+  const LoginScreen({Key? key}) : super(key: key);
 
   @override
   State<LoginScreen> createState() => LoginScreenState();
@@ -30,7 +28,7 @@ class LoginScreenState extends State<LoginScreen> {
 
   @override
   void initState() {
-    _session = widget._injector.get<Session>().bloc();
+    _session = Injector().get<Session>().bloc();
     super.initState();
     _session.listenLoginState((loginStateInfo) {
       switch (loginStateInfo.state) {
@@ -56,6 +54,12 @@ class LoginScreenState extends State<LoginScreen> {
     });
   }
 
+  @override
+  void dispose() {
+    _session.dispose();
+    super.dispose();
+  }
+
   _showDialog(Widget widget) {
     if (dialogVisible) {
       log.info('Hide dialog');
@@ -68,12 +72,6 @@ class LoginScreenState extends State<LoginScreen> {
       log.info('OnHide dialog');
       dialogVisible = false;
     });
-  }
-
-  @override
-  void dispose() {
-    _session.dispose();
-    super.dispose();
   }
 
   @override

@@ -55,8 +55,9 @@ class MasterPeopleScreen extends StatelessWidget {
           endIndent: 20,
         ),
 
-        UiAttend(name: '', date: DateTime.now().subtract(Duration(days: 3)), marked: true),
-        UiAttend(name: '', date: DateTime.now().subtract(Duration(days: 2, hours: 2)), marked: true),
+        // todo
+        // UiAttend(name: '', date: DateTime.now().subtract(Duration(days: 3)), marked: true),
+        // UiAttend(name: '', date: DateTime.now().subtract(Duration(days: 2, hours: 2)), marked: true),
 
       ],
     );

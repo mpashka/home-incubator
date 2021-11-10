@@ -1,6 +1,9 @@
+import 'dart:async';
+import 'dart:collection';
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_fe/blocs/crud_training.dart';
 import 'package:flutter_fe/blocs/crud_visit.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
@@ -12,8 +15,7 @@ import 'widgets/ui_attend.dart';
 import '../blocs/crud_ticket.dart';
 
 class HomeScreen extends StatefulWidget {
-  final Injector _injector;
-  const HomeScreen(this._injector, {Key? key}) : super(key: key);
+  const HomeScreen({Key? key}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => HomeScreenState();
@@ -26,12 +28,15 @@ class HomeScreenState extends State<HomeScreen> {
 
   late final CrudTicketBloc _ticketBloc;
   late final CrudVisitBloc _visitBloc;
+  late final CrudTrainingBloc _trainingBloc;
 
   @override
   void initState() {
     super.initState();
-    _ticketBloc = widget._injector.get<CrudTicket>().bloc();
-    _visitBloc = widget._injector.get<CrudVisit>().bloc();
+    final injector = Injector();
+    _trainingBloc = injector.get<CrudTraining>().bloc();
+    _ticketBloc = injector.get<CrudTicket>().bloc();
+    _visitBloc = injector.get<CrudVisit>().bloc();
     _ticketBloc.crudTicket.loadTickets();
     _visitBloc.crudVisit.loadVisits(DateTime.now().subtract(const Duration(days: 14)), 10);
   }
@@ -39,6 +44,9 @@ class HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     super.dispose();
+    _ticketBloc.dispose();
+    _visitBloc.dispose();
+    _trainingBloc.dispose();
   }
 
   @override
@@ -57,6 +65,7 @@ class HomeScreenState extends State<HomeScreen> {
               initialData: _ticketBloc.crudTicket.tickets,
               builder: (BuildContext context, AsyncSnapshot<List<CrudEntityTicket>> ticketsSnapshot) => Column(
                 children: [
+                  if (ticketsSnapshot.requireData.isNotEmpty) Row(children: const [Divider(), Text('Абонементы')]),
                   for (var ticket in ticketsSnapshot.requireData)
                     UiSubscription(ticket),
                 ],)),
@@ -68,7 +77,7 @@ class HomeScreenState extends State<HomeScreen> {
               DateTime now = DateTime.now();
               for (var visit in visitsSnapshot.requireData) {
                 var training = visit.training!;
-                var widget = UiAttend(name: training.trainingType.trainingName, date: training.time, marked: visit.markSelf);
+                var widget = UiAttend(visit);
                 (training.time.isBefore(now) ? prevWidgets : nextWidgets).add(widget);
               }
               return Column(children: [
@@ -85,7 +94,7 @@ class HomeScreenState extends State<HomeScreen> {
         key: _keyFAB,
         onPressed: _showAddMenu,
         tooltip: 'Add',
-        child: Icon(Icons.add),
+        child: const Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
@@ -103,110 +112,102 @@ class HomeScreenState extends State<HomeScreen> {
       position: RelativeRect.fromLTRB(position.dx - size.width, position.dy - size.height, position.dx - size.width, position.dy - size.height),
       // position: RelativeRect.fromLTRB(100, 100, 200, 200),
       items: [
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 1,
           child: Text("Записаться"),
         ),
-        PopupMenuItem(
+        const PopupMenuItem(
           value: 2,
           child: Text("Отметиться"),
         ),
+/*
         PopupMenuItem(
           value: 3,
           child: Text("Купить еду"),
         ),
+*/
       ],
       elevation: 8.0,
     );
-    developer.log("Menu item $result selected");
+    log.finer("Menu item $result selected");
     if (result == 1) {
-      _onAddTrain(_keyFAB.currentContext!);
+      _onAddTraining(_keyFAB.currentContext!, result == 2);
     }
   }
 
-  _onAddTrain(BuildContext context) async {
+  Future<void> _onAddTraining(BuildContext context, bool past) async {
+    DateTime now = DateTime.now();
+    DateTime from, to;
+    if (past) {
+      to = now;
+      from = now.subtract(Duration(days: 3));
+    } else {
+      from = now;
+      to = now.add(Duration(days: 3));
+    }
+
+    List<CrudEntityTraining> allTrainings = [];
+
+    StreamController<List<CrudEntityTrainingType>> trainingTypesCtrl = StreamController<List<CrudEntityTrainingType>>();
+    StreamController<List<CrudEntityTraining>> trainingsCtrl = StreamController<List<CrudEntityTraining>>();
+    List<CrudEntityTrainingType> trainingTypes = [];
+    List<CrudEntityTraining> trainings = [];
+    Sink<List<CrudEntityTrainingType>> trainingTypesIn = trainingTypesCtrl.sink;
+    Stream<List<CrudEntityTrainingType>> trainingTypesOut = trainingTypesCtrl.stream;
+
+    _trainingBloc.loadTrainings(from, to)
+        .then((trainings) {
+      allTrainings = trainings;
+      Set<CrudEntityTrainingType> loadedTypes = HashSet<CrudEntityTrainingType>();
+      for (var training in allTrainings) {
+        loadedTypes.add(training.trainingType);
+      }
+      trainingTypes = List.of(loadedTypes, growable: false);
+      trainingTypes.sort();
+      trainingTypesIn.add(trainingTypes);
+      // Scrollable.ensureVisible(context);
+    });
+
+    void onTrainingTypeChange(int index) {
+      trainings.clear();
+      var trainingType = trainingTypes[index];
+      for (var training in allTrainings) {
+        if (trainingType == training.trainingType) {
+          trainings.add(training);
+        }
+      }
+    }
+
     var result = await showDialog(context: context,
         builder: (BuildContext c) {
           return SimpleDialog(
-            title: Text('Выберите тренировку'),
-            elevation: 5,
-            children: [
-              Container(
-          height: 300,
-          child:
-              Row(
-                children: [
-                  Flexible(child: WheelListSelector(items: [
-                    'Кроссфит',
-                    'Растяжка',
-                    'Индивидуальная',
-                  ],)),
-                  Flexible(child: WheelListSelector(items: [
-                    'Понедельник, 10:00',
-                    'Понедельник, 12:00',
-                    'Вторник 8:00',
-                    'Среда 10:00',
-                  ],)),
-                ],
-              ),
-          )
-          ]
+              title: const Text('Выберите тренировку'),
+              elevation: 5,
+              children: [
+                SizedBox(
+                  height: 300,
+                  child:
+                  Row(
+                    children: [
+                      Flexible(
+                          child: WheelListSelector(
+                            initialData: trainingTypes,
+                            dataStream: trainingTypesOut,
+                            childBuilder: (context, index) => Text(trainingTypes[index].trainingName),
+                            onSelectedItemChanged: onTrainingTypeChange,
+                          )),
+                      Flexible(child: WheelListSelector(items: [
+                        'Понедельник, 10:00',
+                        'Понедельник, 12:00',
+                        'Вторник 8:00',
+                        'Среда 10:00',
+                      ],)),
+                    ],
+                  ),
+                )
+              ]
           );
         });
-    developer.log("Dialog result: $result");
+    log.finer("Dialog result: $result");
   }
-
-/*
-              ListWheelScrollView(
-                itemExtent: 42,
-                children: [
-                ],
-                // restorationId: ,
-                onSelectedItemChanged: (item) => developer.log("Item selected $item"),
-              )
-*/
-
-/*
-  _showAddTrainP(BuildContext context) {
-    new Picker(
-        adapter: PickerDataAdapter(data: [
-          new PickerItem(text: Text('Кроссфит'), value: Icons.add, children: [
-            new PickerItem(text: Icon(Icons.more)),
-            new PickerItem(text: Icon(Icons.aspect_ratio)),
-            new PickerItem(text: Icon(Icons.android)),
-            new PickerItem(text: Icon(Icons.menu)),
-          ]),
-          new PickerItem(text: Text('Растяжка'), value: Icons.title, children: [
-            new PickerItem(text: Icon(Icons.more_vert)),
-            new PickerItem(text: Icon(Icons.ac_unit)),
-            new PickerItem(text: Icon(Icons.access_alarm)),
-            new PickerItem(text: Icon(Icons.account_balance)),
-          ]),
-          new PickerItem(text: Icon(Icons.face), value: Icons.face, children: [
-            new PickerItem(text: Icon(Icons.add_circle_outline)),
-            new PickerItem(text: Icon(Icons.add_a_photo)),
-            new PickerItem(text: Icon(Icons.access_time)),
-            new PickerItem(text: Icon(Icons.adjust)),
-          ]),
-          new PickerItem(text: Icon(Icons.linear_scale), value: Icons.linear_scale, children: [
-            new PickerItem(text: Icon(Icons.assistant_photo)),
-            new PickerItem(text: Icon(Icons.account_balance)),
-            new PickerItem(text: Icon(Icons.airline_seat_legroom_extra)),
-            new PickerItem(text: Icon(Icons.airport_shuttle)),
-            new PickerItem(text: Icon(Icons.settings_bluetooth)),
-          ]),
-          new PickerItem(text: Icon(Icons.close), value: Icons.close),
-        ]),
-        title: Text(""),
-        cancel: Text(""),
-        confirm: Text(""),
-        onConfirm: (Picker picker, List value) {
-          print(value.toString());
-          print(picker.getSelectedValues());
-        }
-    ).showDialog(context);
-        // .show(_scaffoldKey.currentState); Scaffold.of(context)
-  }
-*/
-
 }

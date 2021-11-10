@@ -34,8 +34,9 @@ class MasterTrainsScreen extends StatelessWidget {
           indent: 20,
           endIndent: 20,
         ),
-        UiAttend(name: 'Павел М.', marked: true),
-        UiAttend(name: 'Рома Р.', marked: false)
+        // todo
+        // UiAttend(name: 'Павел М.', marked: true),
+        // UiAttend(name: 'Рома Р.', marked: false)
       ],
     );
   }

@@ -26,7 +26,8 @@ class AttendsMonthScreen extends StatelessWidget {
 
           // _buildRow(["Пн","Вт","Ср","Чт","Пт","Сб","Вс",]),
           // ..._buildMonth("Август", 3, 1, 32),
-          UiAttend(name: 'Кроссфит', date: DateTime.now().subtract(Duration(days: 3, minutes: 10)), marked: true),
+          // todo
+          // UiAttend(name: 'Кроссфит', date: DateTime.now().subtract(Duration(days: 3, minutes: 10)), marked: true),
         ],
       );
   }

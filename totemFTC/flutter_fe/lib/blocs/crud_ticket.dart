@@ -31,10 +31,10 @@ class CrudTicket {
   }
 
   Future<List<CrudEntityTicket>> loadTickets() async {
-    tickets = (await _backend.get('/api/tickets/byUser') as List)
+    tickets = (await _backend.requestJson('GET', '/api/tickets/byUser') as List)
         .map((item) => CrudEntityTicket.fromJson(item)).toList();
     log.fine('Tickets received: $tickets');
-    tickets.forEach((element) => log.fine('Type: ${element.ticketType.name}'));
+    // tickets.forEach((element) => log.fine('Type: ${element.ticketType.name}'));
     _ticketsStateIn.add(tickets);
     return tickets;
   }

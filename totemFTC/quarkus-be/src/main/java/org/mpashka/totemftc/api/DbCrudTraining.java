@@ -30,6 +30,7 @@ public class DbCrudTraining {
 
     private PreparedQuery<RowSet<Row>> select;
     private PreparedQuery<RowSet<Row>> selectByDate;
+    private PreparedQuery<RowSet<Row>> selectByDateInterval;
     private PreparedQuery<RowSet<Row>> selectTrainingTypes;
     private PreparedQuery<RowSet<Row>> insert;
     private PreparedQuery<RowSet<Row>> update;
@@ -45,6 +46,11 @@ public class DbCrudTraining {
                 "JOIN user_info u ON t.trainer = u.user_id " +
                 "JOIN training_type tt on t.training_type = tt.training_type " +
                 "WHERE date(t.training_time) = $1 " +
+                "ORDER BY t.training_time");
+        selectByDateInterval = client.preparedQuery("SELECT * from training t " +
+                "JOIN user_info u ON t.trainer = u.user_id " +
+                "JOIN training_type tt on t.training_type = tt.training_type " +
+                "WHERE t.training_time >= $1 AND t.training_time <= $2 " +
                 "ORDER BY t.training_time");
         selectTrainingTypes = client.preparedQuery("SELECT * FROM training_type");
         insert = client.preparedQuery("INSERT INTO training (training_time, trainer, training_type) VALUES ($1, $2, $3) RETURNING training_id");
@@ -73,6 +79,18 @@ public class DbCrudTraining {
                             .toArray(Entity[]::new)
                 )
                 .onFailure().transform(e -> new RuntimeException("Error getByDate", e))
+                ;
+    }
+
+    public Uni<Entity[]> getByDateInterval(LocalDateTime from, LocalDateTime to) {
+        return selectByDateInterval
+                .execute(Tuple.of(from, to))
+                .onItem().transform(set ->
+                    StreamSupport.stream(set.spliterator(), false)
+                            .map(r -> new Entity().loadFromDb(r))
+                            .toArray(Entity[]::new)
+                )
+                .onFailure().transform(e -> new RuntimeException("Error getByDateInterval", e))
                 ;
     }
 

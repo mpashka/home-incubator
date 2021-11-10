@@ -56,14 +56,14 @@ public class DbCrudVisit {
                 "FETCH FIRST $3 ROWS ONLY) AS t " +
                 "ORDER BY t.training_time");
         insert = client.preparedQuery("INSERT INTO training_visit (training_id, user_id, ticket_user_id, visit_comment, visit_mark_schedule, visit_mark_self, visit_mark_master) " +
-                "VALUES ($1, $2, $3, $4, $5, $6, $7)");
+                "VALUES ($1, $2, $3, $4, $5, $6::mark_type_enum, $7::mark_type_enum)");
         insertMarks = client.preparedQuery("INSERT INTO training_visit (training_id, user_id, ticket_user_id, visit_comment, " +
                 "visit_mark_schedule, visit_mark_self, visit_mark_master) " +
-                "VALUES ($1, $2, $3, $4, $5, $6, $7)");
+                "VALUES ($1, $2, $3, $4, $5, $6::mark_type_enum, $7::mark_type_enum)");
         updateComment = client.preparedQuery("UPDATE training_visit SET visit_comment=$4 WHERE training_id=$1 AND user_id=$2 AND ticket_user_id=$3");
         updateSchedule = client.preparedQuery("UPDATE training_visit SET visit_mark_schedule=$4 WHERE training_id=$1 AND user_id=$2 AND ticket_user_id=$3");
-        updateSelf = client.preparedQuery("UPDATE training_visit SET visit_mark_self=$4 WHERE training_id=$1 AND user_id=$2 AND ticket_user_id=$3");
-        updateMaster = client.preparedQuery("UPDATE training_visit SET visit_mark_master=$4 WHERE training_id=$1 AND user_id=$2 AND ticket_user_id=$3");
+        updateSelf = client.preparedQuery("UPDATE training_visit SET visit_mark_self=$4::mark_type_enum WHERE training_id=$1 AND user_id=$2 AND ticket_user_id=$3");
+        updateMaster = client.preparedQuery("UPDATE training_visit SET visit_mark_master=$4::mark_type_enum WHERE training_id=$1 AND user_id=$2 AND ticket_user_id=$3");
         delete = client.preparedQuery("DELETE FROM training_visit WHERE training_id=$1 AND user_id=$2 AND ticket_user_id=$3");
     }
 
@@ -118,35 +118,35 @@ public class DbCrudVisit {
                                 insertMarks
                                         .execute(Tuple.from(asList(
                                                 entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), entityVisit.comment,
-                                                markSchedule, false, false)))
+                                                markSchedule, EntityVisitMark.unmark.name(), EntityVisitMark.unmark.name())))
                                         .onItem().transform(u -> null)
                 )
                 .onFailure().transform(e -> new RuntimeException("Error update", e))
                 ;
     }
 
-    public Uni<Void> updateMarkSelf(EntityVisit entityVisit, boolean markSelf) {
-        return updateSelf.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), markSelf))
+    public Uni<Void> updateMarkSelf(EntityVisit entityVisit, EntityVisitMark markSelf) {
+        return updateSelf.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), markSelf.name()))
                 .onItem().transformToUni(updateResult ->
                         updateResult.rowCount() > 0 ? Uni.createFrom().<Void>item(null) :
                                 insertMarks
                                         .execute(Tuple.from(asList(
                                                 entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), entityVisit.comment,
-                                                false, markSelf, false)))
+                                                false, markSelf.name(), EntityVisitMark.unmark.name())))
                                         .onItem().transform(u -> null)
                 )
                 .onFailure().transform(e -> new RuntimeException("Error update", e))
                 ;
     }
 
-    public Uni<Void> updateMarkMaster(EntityVisit entityVisit, boolean markMaster) {
+    public Uni<Void> updateMarkMaster(EntityVisit entityVisit, EntityVisitMark markMaster) {
         return updateMaster.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), markMaster))
                 .onItem().transformToUni(updateResult ->
                         updateResult.rowCount() > 0 ? Uni.createFrom().item((Void) null) :
                                 insertMarks
                                         .execute(Tuple.from(asList(
                                                 entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), entityVisit.comment,
-                                                false, false, markMaster)))
+                                                false, EntityVisitMark.unmark.name(), markMaster.name())))
                                         .onItem().transform(u -> null)
                 )
                 .onFailure().transform(e -> new RuntimeException("Error update", e))
@@ -167,8 +167,8 @@ public class DbCrudVisit {
         private String comment;
 //        private Integer ticketId;
         private boolean markSchedule;
-        private boolean markSelf;
-        private boolean markMaster;
+        private EntityVisitMark markSelf;
+        private EntityVisitMark markMaster;
         private DbCrudTraining.Entity training;
         private DbCrudTicket.EntityTicket ticket;
 
@@ -180,8 +180,8 @@ public class DbCrudVisit {
             }
             this.comment = row.getString("visit_comment");
             this.markSchedule = row.getBoolean("visit_mark_schedule");
-            this.markSelf = row.getBoolean("visit_mark_self");
-            this.markMaster = row.getBoolean("visit_mark_master");
+            this.markSelf = EntityVisitMark.valueOf(row.getString("visit_mark_self"));
+            this.markMaster = EntityVisitMark.valueOf(row.getString("visit_mark_master"));
             if (training) {
                 this.training = new DbCrudTraining.Entity().loadFromDb(row);
             }
@@ -191,4 +191,7 @@ public class DbCrudVisit {
             return this;
         }
     }
+
+    public enum EntityVisitMark {on, off, unmark};
 }
+

@@ -55,18 +55,18 @@ class MyApp extends StatelessWidget {
         log.info('New route received: ${settings.name}, ${settings.arguments} / $settings');
 
         if (!initializer.isInitialized()) {
-          return MaterialPageRoute(builder: (context) => InitScreen(initializer));
+          return MaterialPageRoute(builder: (context) => const InitScreen());
         }
 
         if (!session.isLoggedIn()) {
-          return MaterialPageRoute(builder: (context) => LoginScreen(injector));
+          return MaterialPageRoute(builder: (context) => const LoginScreen());
         } else if (settings.name == '/login') {
-          return MaterialPageRoute(builder: (context) => HomeScreen(injector));
+          return MaterialPageRoute(builder: (context) => const HomeScreen());
         } else {
           switch (settings.name) {
-            case '/': return MaterialPageRoute(builder: (context) => HomeScreen(injector));
-            case '/login': return MaterialPageRoute(builder: (context) => LoginScreen(injector));
-            case '/init': return MaterialPageRoute(builder: (context) => InitScreen(initializer));
+            case '/': return MaterialPageRoute(builder: (context) => const HomeScreen());
+            case '/login': return MaterialPageRoute(builder: (context) => const LoginScreen());
+            case '/init': return MaterialPageRoute(builder: (context) => const InitScreen());
             case '/about': return MaterialPageRoute(builder: (context) => const AboutScreen());
             case '/subscriptions': return MaterialPageRoute(builder: (context) => SubscriptionsScreen());
             case '/trains': return MaterialPageRoute(builder: (context) => AttendsScreen());

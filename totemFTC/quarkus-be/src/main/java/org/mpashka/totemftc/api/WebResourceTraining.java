@@ -14,8 +14,10 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Path("/api")
 @Authenticated
@@ -56,6 +58,13 @@ public class WebResourceTraining {
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<DbCrudTraining.Entity[]> byDate(LocalDate date) {
         return dbTraining.getByDate(date);
+    }
+
+    @GET
+    @Path("training/byDateInterval")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<DbCrudTraining.Entity[]> byDateInterval(@QueryParam("from") LocalDateTime from, @QueryParam("to") LocalDateTime to) {
+        return dbTraining.getByDateInterval(from, to);
     }
 
     @DELETE

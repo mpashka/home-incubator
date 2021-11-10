@@ -33,21 +33,25 @@ class CrudVisit {
   }
 
   Future<List<CrudEntityVisit>> loadVisits(DateTime from, int rows) async {
-    visits = (await _backend.get('/api/visit/byUser?from=${Uri.encodeComponent(dateTimeFormat.format(from))}&rows=$rows') as List)
+    visits = (await _backend.requestJson('GET', '/api/visit/byUser', params: {'from': dateTimeFormat.format(from), 'rows': rows}) as List)
         .map((item) => CrudEntityVisit.fromJson(item)).toList();
     _visitsStateIn.add(visits);
     return visits;
   }
+
+  void update() {
+    _visitsStateIn.add(visits);
+  }
   
-  dispose() {
+  void dispose() {
     
   }
 
-  clear() {
+  void clear() {
     visits = [];
   }
-  
-  bloc() {
+
+  CrudVisitBloc bloc() {
     return CrudVisitBloc(this);
   }
 
@@ -60,6 +64,18 @@ class CrudVisitBloc extends BlocBase {
   CrudVisitBloc(this.crudVisit);
 
   Stream<List<CrudEntityVisit>> get visitsState => crudVisit._visitsState;
+  
+  Future<void> markSchedule(CrudEntityVisit visit, bool mark) async {
+    await crudVisit._backend.request('PUT', '/api/visit/markSchedule/$mark', body: visit);
+    visit.markSchedule = mark;
+    crudVisit.update();
+  }
+
+  Future<void> markSelf(CrudEntityVisit visit, CrudEntityVisitMark mark) async {
+    await crudVisit._backend.request('PUT', '/api/visit/markSelf/$mark', body: visit);
+    visit.markSelf = mark;
+    crudVisit.update();
+  }
 
   @override
   void dispose() {
@@ -90,8 +106,9 @@ class CrudEntityVisit {
   CrudEntityUser? user;
   String? comment;
   bool markSchedule;
-  bool markSelf;
-  bool markMaster;
+  CrudEntityVisitMark markSelf;
+  CrudEntityVisitMark markMaster;
+  /// Training is null if we fetch visits for specific training
   CrudEntityTraining? training;
   CrudEntityTicket? ticket;
 
@@ -101,4 +118,8 @@ class CrudEntityVisit {
 
   factory CrudEntityVisit.fromJson(Map<String, dynamic> json) => _$CrudEntityVisitFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityVisitToJson(this);
+}
+
+enum CrudEntityVisitMark {
+  on, off, unmark
 }

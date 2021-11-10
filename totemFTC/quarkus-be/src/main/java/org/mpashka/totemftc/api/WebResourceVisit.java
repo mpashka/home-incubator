@@ -75,14 +75,14 @@ public class WebResourceVisit {
     @PUT
     @Path("/markSelf/{markSelf}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Uni<Void> updateMarkSelf(DbCrudVisit.EntityVisit visit, @PathParam("markSelf") boolean markSelf) {
+    public Uni<Void> updateMarkSelf(DbCrudVisit.EntityVisit visit, @PathParam("markSelf") DbCrudVisit.EntityVisitMark markSelf) {
         return dbVisit.updateMarkSelf(visit, markSelf);
     }
 
     @PUT
     @Path("/markMaster/{markMaster}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Uni<Void> updateMarkMaster(DbCrudVisit.EntityVisit visit, @PathParam("markMaster") boolean markMaster) {
+    public Uni<Void> updateMarkMaster(DbCrudVisit.EntityVisit visit, @PathParam("markMaster") DbCrudVisit.EntityVisitMark markMaster) {
         return dbVisit.updateMarkMaster(visit, markMaster);
     }
 }

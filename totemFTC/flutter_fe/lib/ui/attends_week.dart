@@ -43,7 +43,8 @@ class AttendsWeekScreen extends StatelessWidget {
           // physics: const FixedExtentScrollPhysics(),
           // controller: FixedExtentScrollController(),
         ),
-        UiAttend(name: 'Кроссфит', date: DateTime.now().subtract(Duration(days: 3, minutes: 10)), marked: true),
+        // todo
+        // UiAttend(name: 'Кроссфит', date: DateTime.now().subtract(Duration(days: 3, minutes: 10)), marked: true),
       ],
     );
   }
