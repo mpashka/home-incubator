@@ -38,15 +38,15 @@ class BlocProvider extends StatefulWidget {
   }
   
   T dynBlocList<A, T extends BlocBaseList<A>>() {
-    return (getOrCreateBlocList() as dynamic) as T;
+    return (getOrCreateBlocList<A>() as dynamic) as T;
   }
 
   static T blocList<A, T extends BlocBaseList<A>>(BuildContext context) {
-    return (of(context).getOrCreateBlocList() as dynamic) as T;
+    return (of(context).getOrCreateBlocList<A>() as dynamic) as T;
   }
 
   Widget _streamBuilderList<T>(Widget Function(List<T> data) builder) {
-    BlocBaseList<T> bloc = getOrCreateBlocList();
+    BlocBaseList<T> bloc = getOrCreateBlocList<T>();
     return StreamBuilder<List<T>>(
       stream: bloc.stateOut,
       initialData: bloc.state,
@@ -61,6 +61,7 @@ class BlocProvider extends StatefulWidget {
       switch (dataType) {
         case CrudEntityTraining: blocList = CrudTrainingBloc(); break;
         case CrudEntityVisit: blocList = CrudVisitBloc(); break;
+        case CrudEntityTicket: blocList = CrudTicketBloc(); break;
         default: throw Exception('Internal error. Unknown list type $dataType');
       }
     }
