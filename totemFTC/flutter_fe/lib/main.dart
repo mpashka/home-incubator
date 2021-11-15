@@ -5,11 +5,10 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
 import 'blocs/session.dart';
 import 'ui/screen_home.dart';
-import 'ui/my_theme.dart';
-import 'ui/screen_attends.dart';
+import 'ui/screen_trainings.dart';
 import 'ui/screen_init.dart';
-import 'ui/screen_master_people.dart';
-import 'ui/screen_master_trains.dart';
+import 'ui/screen_master_users.dart';
+import 'ui/screen_master_trainings.dart';
 import 'ui/screen_purchases.dart';
 import 'ui/screen_subscriptions.dart';
 import 'ui/screen_login.dart';
@@ -55,27 +54,33 @@ class MyApp extends StatelessWidget {
         log.info('New route received: ${settings.name}, ${settings.arguments} / $settings');
 
         if (!initializer.isInitialized()) {
-          return MaterialPageRoute(builder: (context) => const InitScreen());
+          return MaterialPageRoute(builder: (context) => ScreenInit());
         }
 
         if (!session.isLoggedIn()) {
-          return MaterialPageRoute(builder: (context) => const LoginScreen());
+          return MaterialPageRoute(builder: (context) => ScreenLogin());
         } else if (settings.name == '/login') {
-          return MaterialPageRoute(builder: (context) => const HomeScreen());
+          return MaterialPageRoute(builder: (context) => ScreenHome());
         } else {
           switch (settings.name) {
-            case '/': return MaterialPageRoute(builder: (context) => const HomeScreen());
-            case '/login': return MaterialPageRoute(builder: (context) => const LoginScreen());
-            case '/init': return MaterialPageRoute(builder: (context) => const InitScreen());
-            case '/about': return MaterialPageRoute(builder: (context) => const AboutScreen());
-            case '/subscriptions': return MaterialPageRoute(builder: (context) => SubscriptionsScreen());
-            case '/trains': return MaterialPageRoute(builder: (context) => AttendsScreen());
-            case '/purchases': return MaterialPageRoute(builder: (context) => PurchasesScreen());
-            case '/master_trains': return MaterialPageRoute(builder: (context) => MasterTrainsScreen());
-            case '/master_people': return MaterialPageRoute(builder: (context) => MasterPeopleScreen());
+            case '/': return MaterialPageRoute(builder: (context) => ScreenHome());
+            case '/login': return MaterialPageRoute(builder: (context) => ScreenLogin());
+            case '/init': return MaterialPageRoute(builder: (context) => ScreenInit());
+            case '/about': return MaterialPageRoute(builder: (context) => ScreenAbout());
+            case '/tickets': return MaterialPageRoute(builder: (context) => ScreenTickets());
+            case '/trainings': return MaterialPageRoute(builder: (context) => ScreenTrainings());
+            case '/purchases': return MaterialPageRoute(builder: (context) => ScreenPurchases());
+            case '/master_trainings': return MaterialPageRoute(builder: (context) => ScreenMasterTrainings());
+            case '/master_users': return MaterialPageRoute(builder: (context) => ScreenMasterUsers());
           }
         }
       },
+    );
+  }
+
+  uiCreateTheme() {
+    return ThemeData(
+      primarySwatch: Colors.blue,
     );
   }
 

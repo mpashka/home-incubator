@@ -1,72 +1,21 @@
 import 'dart:async';
 import 'dart:core';
 
+import 'package:flutter_fe/blocs/bloc_provider.dart';
 import 'package:flutter_fe/blocs/crud_api.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
 
-import 'base.dart';
 import 'crud_training.dart';
 import 'crud_user.dart';
 
 part 'crud_ticket.g.dart';
 
-class CrudTicket {
-  static final Logger log = Logger('CrudTicket');
-
-  final CrudApi _backend;
-
-  final StreamController<List<CrudEntityTicket>> _ticketsController = StreamController<List<CrudEntityTicket>>();
-  late final Sink<List<CrudEntityTicket>> _ticketsStateIn;
-  late final Stream<List<CrudEntityTicket>> _ticketsState;
-  List<CrudEntityTicket> tickets = [];
-
-  CrudTicket(Injector injector):
-        _backend = injector.get<CrudApi>()
-  {
-    _ticketsState = _ticketsController.stream.asBroadcastStream();
-    _ticketsStateIn = _ticketsController.sink;
-
-  }
-
-  Future<List<CrudEntityTicket>> loadTickets() async {
-    tickets = (await _backend.requestJson('GET', '/api/tickets/byUser') as List)
+class CrudTicketBloc extends BlocBaseList<CrudEntityTicket> {
+  Future<void> loadTickets() async {
+    state = (await backend.requestJson('GET', '/api/tickets/byUser') as List)
         .map((item) => CrudEntityTicket.fromJson(item)).toList();
-    log.fine('Tickets received: $tickets');
-    // tickets.forEach((element) => log.fine('Type: ${element.ticketType.name}'));
-    _ticketsStateIn.add(tickets);
-    return tickets;
-  }
-  
-  dispose() {
-    
-  }
-
-  clear() {
-    tickets = [];
-  }
-  
-  bloc() {
-    return CrudTicketBloc(this);
-  }
-
-}
-
-class CrudTicketBloc extends BlocBase {
-  final CrudTicket crudTicket;
-  // StreamSubscription? _loginStateSubscription;
-
-  CrudTicketBloc(this.crudTicket);
-
-  Stream<List<CrudEntityTicket>> get ticketsState => crudTicket._ticketsState;
-
-  @override
-  void dispose() {
-    // if (_loginStateSubscription != null) {
-    //   _loginStateSubscription!.cancel();
-    // }
-    // _crudTicket._ticketsState.
   }
 }
 

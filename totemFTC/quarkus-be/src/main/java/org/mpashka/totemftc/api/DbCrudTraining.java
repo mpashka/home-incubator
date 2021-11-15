@@ -38,23 +38,18 @@ public class DbCrudTraining {
 
     @PostConstruct
     void init() {
-        select = client.preparedQuery("SELECT * from training t " +
-                "JOIN user_info u ON t.trainer = u.user_id " +
-                "JOIN training_type tt on t.training_type = tt.training_type " +
-                "ORDER BY t.training_time");
-        selectByDate = client.preparedQuery("SELECT * from training t " +
-                "JOIN user_info u ON t.trainer = u.user_id " +
-                "JOIN training_type tt on t.training_type = tt.training_type " +
-                "WHERE date(t.training_time) = $1 " +
-                "ORDER BY t.training_time");
-        selectByDateInterval = client.preparedQuery("SELECT * from training t " +
-                "JOIN user_info u ON t.trainer = u.user_id " +
-                "JOIN training_type tt on t.training_type = tt.training_type " +
-                "WHERE t.training_time >= $1 AND t.training_time <= $2 " +
-                "ORDER BY t.training_time");
+        String sql = "SELECT * FROM training t, " +
+                "   LATERAL (SELECT row_to_json(ut.*) trainer FROM user_info ut WHERE ut.user_id=t.trainer_id) ut, " +
+                "   LATERAL (SELECT row_to_json(trt.*) training_type_obj FROM training_type trt WHERE trt.training_type=t.training_type) trt " +
+//                "JOIN training_type tt on t.training_type = tt.training_type " +
+                " <where> " +
+                "ORDER BY t.training_time";
+        select = client.preparedQuery(sql.replace("<where>", ""));
+        selectByDate = client.preparedQuery(sql.replace("<where>", "WHERE date(t.training_time) = $1"));
+        selectByDateInterval = client.preparedQuery(sql.replace("<where>", "WHERE t.training_time >= $1 AND t.training_time <= $2 "));
         selectTrainingTypes = client.preparedQuery("SELECT * FROM training_type");
-        insert = client.preparedQuery("INSERT INTO training (training_time, trainer, training_type) VALUES ($1, $2, $3) RETURNING training_id");
-        update = client.preparedQuery("UPDATE training SET training_time=$2, trainer=$3, training_type=$4 WHERE training_id=$1");
+        insert = client.preparedQuery("INSERT INTO training (training_time, trainer_id, training_type) VALUES ($1, $2, $3) RETURNING training_id");
+        update = client.preparedQuery("UPDATE training SET training_time=$2, trainer_id=$3, training_type=$4 WHERE training_id=$1");
         delete = client.preparedQuery("DELETE FROM training WHERE training_id=$1");
     }
 
@@ -142,10 +137,8 @@ public class DbCrudTraining {
         public Entity loadFromDb(Row row) {
             this.id = row.getInteger("training_id");
             this.time = row.getLocalDateTime("training_time");
-            this.trainer = new DbUser.EntityUser().loadFromDb(row);
-            if (row.getString("training_type") != null) {
-                this.trainingType = new EntityTrainingType().loadFromDb(row);
-            }
+            this.trainer = new DbUser.EntityUser().loadFromDb(row.getJsonObject("trainer"));
+            this.trainingType = new EntityTrainingType().loadFromDb(row.getJsonObject("training_type_obj"));
             this.comment = row.getString("training_comment");
             return this;
         }

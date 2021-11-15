@@ -16,10 +16,6 @@ class ModuleContainer {
     injector.map((i) => Initializer(injector), isSingleton: true);
     injector.map((i) => Session(injector), isSingleton: true);
     injector.map((i) => CrudApi(injector), isSingleton: true);
-    injector.map((i) => CrudUser(injector), isSingleton: true);
-    injector.map((i) => CrudTraining(injector), isSingleton: true);
-    injector.map((i) => CrudTicket(injector), isSingleton: true);
-    injector.map((i) => CrudVisit(injector), isSingleton: true);
     return injector;
   }
 }

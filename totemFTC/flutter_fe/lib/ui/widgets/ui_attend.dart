@@ -1,7 +1,7 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_fe/blocs/bloc_provider.dart';
+import 'package:flutter_fe/blocs/session.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
@@ -11,32 +11,25 @@ import '../../blocs/crud_visit.dart';
 import '../../blocs/crud_training.dart';
 
 @immutable
-class UiAttend extends StatefulWidget {
+class UiAttend extends StatelessWidget {
+
+  static final Logger log = Logger('UiAttend');
+
+  final _dateTimeFormat = DateFormat('EEE,dd HH:mm');
+
   final CrudEntityVisit _visit;
-  const UiAttend(this._visit, {Key? key}) : super(key: key);
-
-  @override
-  State createState() => UiAttendState();
-}
-
-class UiAttendState extends State<UiAttend> {
-  static final Logger log = Logger('UiAttendState');
-
-  static final format = DateFormat('yyyy-MM-dd kk:mm');
-
-  late final CrudEntityVisit _visit;
+  late final Session _session;
   late final CrudVisitBloc _visitBloc;
 
-  UiAttendState() {
-    _visit = widget._visit;
-    final injector = Injector();
-    _visitBloc = injector.get<CrudVisit>().bloc();
+
+  UiAttend(this._visit) {
+    _session = Injector().get<Session>();
   }
-
-
 
   @override
   Widget build(BuildContext context) {
+    _visitBloc = BlocProvider.blocList(context);
+
     final CrudEntityTraining training = _visit.training!;
     bool past = training.time.isBefore(DateTime.now());
     IconData visitIcon = _visit.markSchedule ? MdiIcons.clockOutline : MdiIcons.checkboxBlankCircleOutline;
@@ -59,8 +52,8 @@ class UiAttendState extends State<UiAttend> {
 
     var listTile = ListTile(
         leading: Row(
-            // mainAxisAlignment: MainAxisAlignment.start,
-            // crossAxisAlignment: CrossAxisAlignment.start,
+          // mainAxisAlignment: MainAxisAlignment.start,
+          // crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               // Training - specific icon
@@ -68,9 +61,15 @@ class UiAttendState extends State<UiAttend> {
               Icon(visitIcon),
             ]
         ),
-        title: Text('${training.trainingType.trainingName} ${format.format(training.time)}'),
-        trailing: const Icon(Icons.more_vert),
-      );
+        title: Text('${training.trainingType.trainingName} (${training.trainer.nickName})'),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(_dateTimeFormat.format(training.time)),
+            const Icon(Icons.more_vert),
+          ],
+        )
+    );
 
     return GestureDetector(
       child: listTile,
@@ -115,6 +114,7 @@ class UiAttendState extends State<UiAttend> {
       elevation: 8.0,
     );
     log.finer("Menu item $result selected");
+    _visit.user = _session.user;
 
     switch (result) {
       case 1: _visitBloc.markSelf(_visit, CrudEntityVisitMark.on); break;

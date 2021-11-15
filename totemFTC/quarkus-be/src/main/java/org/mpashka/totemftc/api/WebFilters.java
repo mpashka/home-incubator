@@ -2,6 +2,7 @@ package org.mpashka.totemftc.api;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.quarkus.arc.profile.IfBuildProfile;
+import io.quarkus.runtime.configuration.ProfileManager;
 import org.jboss.resteasy.reactive.RestResponse;
 import org.jboss.resteasy.reactive.server.ServerResponseFilter;
 
@@ -25,7 +26,6 @@ public class WebFilters {
     private String indexHtml;
 
     @PostConstruct
-    @IfBuildProfile("prod")
     void init() throws IOException {
         InputStream in = WebFilters.class.getResourceAsStream("/META-INF/resources/index.html");
         if (in == null) {
@@ -38,7 +38,7 @@ public class WebFilters {
 
     @ServerResponseFilter
     public void getFilter(ContainerResponseContext responseContext) {
-        if (responseContext.getStatus() == HttpResponseStatus.NOT_FOUND.code()) {
+        if (responseContext.getStatus() == HttpResponseStatus.NOT_FOUND.code() && ProfileManager.getActiveProfile().equals("prod")) {
             responseContext.setStatusInfo(RestResponse.Status.OK);
             responseContext.setEntity(indexHtml, null, MediaType.TEXT_HTML_TYPE);
         }
@@ -50,4 +50,6 @@ public class WebFilters {
             responseContext.getHeaders().putSingle(HttpHeaders.CONTENT_TYPE, TYPE_JSON_UTF8);
         }
     }
+
+
 }

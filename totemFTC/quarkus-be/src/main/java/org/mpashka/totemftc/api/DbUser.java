@@ -59,7 +59,7 @@ public class DbUser {
                 "   LEFT OUTER JOIN (SELECT user_id, array_agg(json_build_object('image_id', i.image_id, 'content_type', i.content_type)) AS images FROM user_image i GROUP BY user_id) i ON u.user_id = i.user_id";
         selectUsers = client.preparedQuery(selectUserSql);
         selectTrainers = client.preparedQuery(selectUserSql +
-                " WHERE cardinality(u.training_types) > 0" +
+                " WHERE cardinality(u.user_training_types) > 0" +
                 "   AND u.user_type IN ('trainer', 'admin') ");
         selectUser = client.preparedQuery("SELECT * " +
                 " FROM user_info u, " +
@@ -85,7 +85,7 @@ public class DbUser {
         insertPhone = client.preparedQuery("INSERT INTO user_phone (phone, user_id, confirmed) VALUES ($1, $2, $3)");
         insertImage = client.preparedQuery("INSERT INTO user_image (user_id, image, content_type) VALUES ($1, $2, $3) RETURNING image_id");
         updateUser = client.preparedQuery("UPDATE user_info " +
-                "SET first_name=$2, last_name=$3, nick_name=$4, primary_image=$5, user_type=$6, training_types=$7 " +
+                "SET first_name=$2, last_name=$3, nick_name=$4, primary_image=$5, user_type=$6, user_training_types=$7 " +
                 "WHERE user_id=$1");
         updateMainImage = client.preparedQuery("UPDATE user_info SET primary_image=$2 WHERE user_id = $1");
         updateMainImageIfAbsent = client.preparedQuery("UPDATE user_info SET primary_image=$2 WHERE user_id=$1 AND primary_image is NULL");
@@ -334,7 +334,23 @@ public class DbUser {
                 log.warn("Unknown user type {}", userType, e);
                 this.type = UserType.guest;
             }
-            this.trainingTypes = row.getArrayOfStrings("training_types");
+            this.trainingTypes = row.getArrayOfStrings("user_training_types");
+            return this;
+        }
+
+        public EntityUser loadFromDb(JsonObject row) {
+            this.userId = row.getInteger("user_id");
+            this.firstName = row.getString("first_name");
+            this.lastName = row.getString("last_name");
+            this.nickName = row.getString("nick_name");
+            String userType = row.getString("user_type");
+            try {
+                this.type = UserType.valueOf(userType);
+            } catch (IllegalArgumentException e) {
+                log.warn("Unknown user type {}", userType, e);
+                this.type = UserType.guest;
+            }
+            this.trainingTypes = row.getJsonArray("user_training_types").stream().toArray(String[]::new);
             return this;
         }
 

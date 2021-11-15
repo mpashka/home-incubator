@@ -4,7 +4,7 @@ import 'drawer.dart';
 import 'widgets/ui_attend.dart';
 import 'widgets/ui_workout.dart';
 
-class MasterTrainsScreen extends StatelessWidget {
+class ScreenMasterTrainings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {

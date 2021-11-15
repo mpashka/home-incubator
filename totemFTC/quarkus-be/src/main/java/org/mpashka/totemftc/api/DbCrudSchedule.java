@@ -35,11 +35,11 @@ public class DbCrudSchedule {
     @PostConstruct
     void init() {
         select = client.preparedQuery("SELECT * from training_schedule t " +
-                "JOIN user_info u ON t.trainer = u.user_id " +
+                "JOIN user_info u ON t.trainer_id = u.user_id " +
                 "JOIN training_type tt on t.training_type = tt.training_type " +
                 "ORDER BY t.training_time");
-        insert = client.preparedQuery("INSERT INTO training_schedule (training_time, trainer, training_type) VALUES ($1, $2, $3) RETURNING training_schedule_id");
-        update = client.preparedQuery("UPDATE training_schedule SET training_time=$2, trainer=$3, training_type=$4 WHERE training_schedule_id=$1");
+        insert = client.preparedQuery("INSERT INTO training_schedule (training_time, trainer_id, training_type) VALUES ($1, $2, $3) RETURNING training_schedule_id");
+        update = client.preparedQuery("UPDATE training_schedule SET training_time=$2, trainer_id=$3, training_type=$4 WHERE training_schedule_id=$1");
         delete = client.preparedQuery("DELETE FROM training_schedule WHERE training_schedule_id=$1");
     }
 

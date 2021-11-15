@@ -24,3 +24,5 @@ int compareId(int result, int aId, int bId) {
   if (aId == bId) return 0;
   return aId > bId ? 1 : -1;
 }
+
+Type typeOf<T>() => T;

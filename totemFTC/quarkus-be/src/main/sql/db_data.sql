@@ -13,14 +13,14 @@ INSERT INTO training_type (training_type, name) VALUES
                                                     ('yoga',    'Йога'),
                                                     ('massage', 'Массаж');
 
-INSERT INTO user_info (user_id, first_name, last_name, nick_name, user_type, training_types) VALUES
+INSERT INTO user_info (user_id, first_name, last_name, nick_name, user_type, user_training_types) VALUES
                                                                                  (1000, 'Ринат', 'Фаттяхудинов', 'Ринат', 'admin', ARRAY['func']),
                                                                                  (1001, 'Нина', 'Елизова', 'Нина', 'trainer', ARRAY['func', 'stretch']),
                                                                                  (1002, 'Ильза', 'Зырянова', 'Ильза', 'trainer', ARRAY['func', 'stretch', 'yoga']);
 INSERT INTO user_email (email, user_id, confirmed) VALUES
     ('rinchik_g@mail.ru', 1000, true);
 
-INSERT INTO ticket_type (training_types,ticket_name,ticket_cost,ticket_visits,ticket_days) VALUES
+INSERT INTO ticket_type (ticket_training_types,ticket_name,ticket_cost,ticket_visits,ticket_days) VALUES
     (ARRAY['func', 'stretch'], 'Групповые 1',    600,  1,   1),
     (ARRAY['func', 'stretch'], 'Групповые 8',   4200,  8,  65),
     (ARRAY['func', 'stretch'], 'Групповые 12',  6000, 12,  90),

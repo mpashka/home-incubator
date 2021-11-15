@@ -7,9 +7,9 @@ import 'widgets/scroll_list_selector.dart';
 import 'widgets/ui_subscription.dart';
 import 'widgets/ui_attend.dart';
 
-class AboutScreen extends StatelessWidget {
+class ScreenAbout extends StatelessWidget {
 
-  const AboutScreen({Key? key}) : super(key: key);
+  const ScreenAbout({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

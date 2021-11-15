@@ -4,9 +4,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'package:flutter_simple_dependency_injection/injector.dart';
-import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
 
+import '../misc/utils.dart';
 import '../misc/configuration.dart';
 
 class CrudApi {
@@ -39,7 +39,7 @@ class CrudApi {
       var responseStream = await _httpClient.send(request);
       log.fine('Received streamed response: ${responseStream.statusCode}');
       http.Response response = await http.Response.fromStream(responseStream);
-      if (response.statusCode != 200) {
+      if (response.statusCode != 200 && response.statusCode != 204) {
         log.severe('Backend error get $apiUri ${response.statusCode}\n${response.body}');
         throw ApiException('Server error ${response.statusCode}', response.body);
       }
@@ -74,14 +74,12 @@ class ApiException implements Exception {
   const ApiException(this.title, this.message);
 }
 
-final _dateTimeFormatter = DateFormat('yyyy-MM-dd HH:mm');
-final _dateFormatter = DateFormat('yyyy-MM-dd');
-DateTime dateTimeFromJson(String date) => _dateTimeFormatter.parse(date);
-String dateTimeToJson(DateTime date) => _dateTimeFormatter.format(date);
-DateTime? dateTimeFromJson_(String? date) => date != null ? _dateTimeFormatter.parse(date) : null;
-String? dateTimeToJson_(DateTime? date) => date != null ? _dateTimeFormatter.format(date) : null;
-DateTime dateFromJson(String date) => _dateFormatter.parse(date);
-String dateToJson(DateTime date) => _dateFormatter.format(date);
+DateTime dateTimeFromJson(String date) => dateTimeFormat.parse(date);
+String dateTimeToJson(DateTime date) => dateTimeFormat.format(date);
+DateTime? dateTimeFromJson_(String? date) => date != null ? dateTimeFormat.parse(date) : null;
+String? dateTimeToJson_(DateTime? date) => date != null ? dateTimeFormat.format(date) : null;
+DateTime dateFromJson(String date) => dateFormat.parse(date);
+String dateToJson(DateTime date) => dateFormat.format(date);
 
 // @JsonKey(name: 'registration_date_millis')
 // @JsonKey(defaultValue: false)

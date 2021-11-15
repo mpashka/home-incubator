@@ -4,14 +4,14 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 
 import '../misc/configuration.dart';
 
-class InitScreen extends StatefulWidget {
-  const InitScreen({Key? key}) : super(key: key);
+class ScreenInit extends StatefulWidget {
+  const ScreenInit({Key? key}) : super(key: key);
 
   @override
-  State createState() => InitScreenState();
+  State createState() => ScreenInitState();
 }
 
-class InitScreenState extends State<InitScreen> {
+class ScreenInitState extends State<ScreenInit> {
 
 
   @override

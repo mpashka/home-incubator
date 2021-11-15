@@ -28,6 +28,7 @@ public class DbCrudVisit {
 
     private PreparedQuery<RowSet<Row>> selectByTraining;
     private PreparedQuery<RowSet<Row>> selectByUser;
+    private PreparedQuery<RowSet<Row>> selectByTicket;
     private PreparedQuery<RowSet<Row>> insert;
     private PreparedQuery<RowSet<Row>> insertMarks;
     private PreparedQuery<RowSet<Row>> updateComment;
@@ -43,18 +44,34 @@ public class DbCrudVisit {
                 "LEFT OUTER JOIN training_ticket tti ON v.ticket_id = tti.ticket_id " +
                 "LEFT OUTER JOIN (SELECT ticket_id, COUNT(*) training_visit_count FROM training_visit GROUP BY ticket_id) vc ON tti.ticket_id=vc.ticket_id " +
                 "WHERE v.training_id=$1 " +
-                "ORDER BY u.nick_name");
-        selectByUser = client.preparedQuery("SELECT * FROM " +
-                "(SELECT * FROM training_visit v " +
-                "JOIN training t ON v.training_id = t.training_id " +
-                "LEFT OUTER JOIN training_ticket tti ON v.ticket_id = tti.ticket_id " +
-                "LEFT OUTER JOIN (SELECT ticket_id, COUNT(*) training_visit_count FROM training_visit GROUP BY ticket_id) vc ON tti.ticket_id=vc.ticket_id " +
-                "JOIN training_type tty ON t.training_type = tty.training_type " +
-                "WHERE v.user_id=$1 " +
-                "   AND t.training_time >= $2 " +
-                "ORDER BY t.training_time DESC " +
-                "FETCH FIRST $3 ROWS ONLY) AS t " +
-                "ORDER BY t.training_time");
+                "ORDER BY u.last_name, u.first_name, u.nick_name");
+        selectByUser = client.preparedQuery(
+                "SELECT * " +
+                        "FROM training_visit v " +
+                        "         LEFT OUTER JOIN training_ticket tti ON v.ticket_id = tti.ticket_id " +
+                        "         LEFT OUTER JOIN ticket_type tit ON tit.ticket_type_id = tti.ticket_type_id " +
+                        "         LEFT OUTER JOIN (SELECT ticket_id, COUNT(*) training_visit_count FROM training_visit GROUP BY ticket_id) vc ON tti.ticket_id=vc.ticket_id, " +
+                        "     LATERAL ( " +
+                        "         SELECT * " +
+                        "         FROM training t, " +
+                        "              LATERAL (SELECT row_to_json(ut.*) trainer FROM user_info ut WHERE ut.user_id=t.trainer_id) ut, " +
+                        "              LATERAL (SELECT row_to_json(trt.*) training_type_obj FROM training_type trt WHERE trt.training_type=t.training_type) trt " +
+                        "         WHERE v.training_id = t.training_id) t " +
+                        "WHERE v.user_id=$1 " +
+                        "   AND t.training_time >= $2 " +
+                        "ORDER BY t.training_time");
+        selectByTicket = client.preparedQuery(
+                "SELECT * " +
+                        "FROM training_visit v, " +
+                        "   (SELECT COUNT(*) training_visit_count FROM training_visit WHERE ticket_id=$1) tvc, " +
+                        "     LATERAL ( " +
+                        "         SELECT * " +
+                        "         FROM training t, " +
+                        "              LATERAL (SELECT row_to_json(ut.*) trainer FROM user_info ut WHERE ut.user_id=t.trainer_id) ut, " +
+                        "              LATERAL (SELECT row_to_json(trt.*) training_type_obj FROM training_type trt WHERE trt.training_type=t.training_type) trt " +
+                        "         WHERE v.training_id = t.training_id) t " +
+                        "WHERE v.ticket_id=$1 " +
+                        "ORDER BY t.training_time");
         insert = client.preparedQuery("INSERT INTO training_visit (training_id, user_id, ticket_user_id, visit_comment, visit_mark_schedule, visit_mark_self, visit_mark_master) " +
                 "VALUES ($1, $2, $3, $4, $5, $6::mark_type_enum, $7::mark_type_enum)");
         insertMarks = client.preparedQuery("INSERT INTO training_visit (training_id, user_id, ticket_user_id, visit_comment, " +
@@ -79,15 +96,27 @@ public class DbCrudVisit {
                 ;
     }
 
-    public Uni<EntityVisit[]> getByUser(int userId, LocalDateTime from, int rows) {
+    public Uni<EntityVisit[]> getByUser(int userId, LocalDateTime from) {
         return selectByUser
-                .execute(Tuple.of(userId, from, rows))
+                .execute(Tuple.of(userId, from))
                 .onItem().transform(set ->
                     StreamSupport.stream(set.spliterator(), false)
                             .map(r -> new EntityVisit().loadFromDb(r, false, true, true))
                             .toArray(EntityVisit[]::new)
                 )
                 .onFailure().transform(e -> new RuntimeException("Error getByTraining", e))
+                ;
+    }
+
+    public Uni<EntityVisit[]> getByTicket(int ticketId) {
+        return selectByTicket
+                .execute(Tuple.of(ticketId))
+                .onItem().transform(set ->
+                    StreamSupport.stream(set.spliterator(), false)
+                            .map(r -> new EntityVisit().loadFromDb(r, false, true, false))
+                            .toArray(EntityVisit[]::new)
+                )
+                .onFailure().transform(e -> new RuntimeException("Error getByTicket", e))
                 ;
     }
 
@@ -112,9 +141,10 @@ public class DbCrudVisit {
     }
 
     public Uni<Void> updateMarkSchedule(EntityVisit entityVisit, boolean markSchedule) {
+//        log.debug("updateMarkSchedule Visit: {}, Training: {} ", entityVisit, entityVisit.training, );
         return updateSchedule.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), markSchedule))
                 .onItem().transformToUni(updateResult ->
-                        updateResult.rowCount() > 0 ? Uni.createFrom().<Void>item(null) :
+                        updateResult.rowCount() > 0 ? Uni.createFrom().voidItem() :
                                 insertMarks
                                         .execute(Tuple.from(asList(
                                                 entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), entityVisit.comment,
@@ -127,12 +157,14 @@ public class DbCrudVisit {
 
     public Uni<Void> updateMarkSelf(EntityVisit entityVisit, EntityVisitMark markSelf) {
         return updateSelf.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), markSelf.name()))
+                .onItem().invoke(updateResult -> log.info("Mark self {} {} row count {}", entityVisit, markSelf, updateResult.rowCount()))
                 .onItem().transformToUni(updateResult ->
-                        updateResult.rowCount() > 0 ? Uni.createFrom().<Void>item(null) :
+                        updateResult.rowCount() > 0 ? Uni.createFrom().voidItem() :
                                 insertMarks
                                         .execute(Tuple.from(asList(
                                                 entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), entityVisit.comment,
                                                 false, markSelf.name(), EntityVisitMark.unmark.name())))
+                                        .onItem().invoke(insertResult -> log.info("Mark self {} {} insert row count {}", entityVisit, markSelf, insertResult.rowCount()))
                                         .onItem().transform(u -> null)
                 )
                 .onFailure().transform(e -> new RuntimeException("Error update", e))
@@ -142,7 +174,7 @@ public class DbCrudVisit {
     public Uni<Void> updateMarkMaster(EntityVisit entityVisit, EntityVisitMark markMaster) {
         return updateMaster.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), markMaster))
                 .onItem().transformToUni(updateResult ->
-                        updateResult.rowCount() > 0 ? Uni.createFrom().item((Void) null) :
+                        updateResult.rowCount() > 0 ? Uni.createFrom().voidItem() :
                                 insertMarks
                                         .execute(Tuple.from(asList(
                                                 entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), entityVisit.comment,
@@ -161,6 +193,7 @@ public class DbCrudVisit {
     }
 
     public static class EntityVisit {
+        // todo [!] this is bad. either introduce new entity or use training
         private int trainingId;
 //        private int userId;
         private DbUser.EntityUser user;

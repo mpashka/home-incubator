@@ -2,16 +2,14 @@ import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_fe/blocs/bloc_provider.dart';
 
 class WheelListSelector<E> extends StatelessWidget {
 
   final WidgetBuilder<E> _childBuilder;
-  final ValueChanged<E>? onSelectedItemChanged;
-  final List<E> initialData;
-  final Stream<List<E>> dataStream;
+  final WidgetValueChanged<E>? onSelectedItemChanged;
 
-  const WheelListSelector({Key? key, required this.initialData, required this.dataStream,
-    required WidgetBuilder<E> childBuilder, this.onSelectedItemChanged}) :
+  const WheelListSelector({Key? key, required WidgetBuilder<E> childBuilder, this.onSelectedItemChanged}) :
         _childBuilder = childBuilder,
         super(key: key);
 
@@ -22,44 +20,37 @@ class WheelListSelector<E> extends StatelessWidget {
     return Stack(
       children: [
         Positioned.fill(
-            child: StreamBuilder(
-              initialData: initialData,
-              stream: dataStream,
-              builder: (BuildContext context, AsyncSnapshot<List<E>> items) {
-                return ListWheelScrollView.useDelegate(
-                    onSelectedItemChanged: (itemIndex) {
-                      developer.log("Item selected: $itemIndex");
-                      HapticFeedback.selectionClick();
-                      var onSelectedItemChanged = this.onSelectedItemChanged;
-                      if (onSelectedItemChanged != null) {
-                        var item = items.requireData[itemIndex];
-                        onSelectedItemChanged(item);
-                      }
-                    },
-                    itemExtent: 30,
-                    physics: const FixedExtentScrollPhysics(),
-                    squeeze: 1.45,
-                    diameterRatio: 1.07,
-                    perspective: 0.003,
-                    overAndUnderCenterOpacity: 0.447,
-                    // diameterRatio: 1.5,
-                    // perspective: 0.01,
-                    // scrollBehavior: ,
-                    // useMagnifier: true,
-                    // magnification: 1.2,
+            child: BlocProvider.streamBuilderList<E>((data) => ListWheelScrollView.useDelegate(
+                onSelectedItemChanged: (itemIndex) {
+                  developer.log("Item selected: $itemIndex");
+                  HapticFeedback.selectionClick();
+                  var onSelectedItemChanged = this.onSelectedItemChanged;
+                  if (onSelectedItemChanged != null) {
+                    var item = data[itemIndex];
+                    onSelectedItemChanged(context, itemIndex, item);
+                  }
+                },
+                itemExtent: 30,
+                physics: const FixedExtentScrollPhysics(),
+                squeeze: 1.45,
+                diameterRatio: 1.07,
+                perspective: 0.003,
+                overAndUnderCenterOpacity: 0.447,
+                // diameterRatio: 1.5,
+                // perspective: 0.01,
+                // scrollBehavior: ,
+                // useMagnifier: true,
+                // magnification: 1.2,
 /*
                     children: [
                       for (var item in items.requireData) Text(item),
                     ]);
 */
-                    childDelegate: ListWheelChildBuilderDelegate(
-                      childCount: items.requireData.length,
-                      builder: (context, index) => _childBuilder(context, index, items.requireData[index]),
-                    )
-                );
-              },
-            )
-        ),
+                childDelegate: ListWheelChildBuilderDelegate(
+                  childCount: data.length,
+                  builder: (context, index) => _childBuilder(context, index, data[index]),
+                )
+            ))),
         IgnorePointer(
           child: Center(
             child: ConstrainedBox(
@@ -84,3 +75,4 @@ class WheelListSelector<E> extends StatelessWidget {
 }
 
 typedef WidgetBuilder<E> = Widget? Function(BuildContext context, int index, E data);
+typedef WidgetValueChanged<E> = Function(BuildContext context, int index, E data);

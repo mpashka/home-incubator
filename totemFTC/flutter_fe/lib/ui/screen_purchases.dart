@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'drawer.dart';
 import 'widgets/scroll_list_selector.dart';
 
-class PurchasesScreen extends StatelessWidget {
+class ScreenPurchases extends StatelessWidget {
   static final format = DateFormat('yyyy-MM-dd kk:mm');
 
   @override

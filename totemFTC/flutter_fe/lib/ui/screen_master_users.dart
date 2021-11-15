@@ -5,7 +5,7 @@ import 'widgets/ui_subscription.dart';
 import 'widgets/ui_attend.dart';
 import 'widgets/ui_person.dart';
 
-class MasterPeopleScreen extends StatelessWidget {
+class ScreenMasterUsers extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {

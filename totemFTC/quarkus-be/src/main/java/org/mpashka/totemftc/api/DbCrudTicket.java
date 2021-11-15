@@ -41,18 +41,18 @@ public class DbCrudTicket {
     void init() {
         selectTicketType = client.preparedQuery("SELECT tit.*, array_agg(row_to_json(trt.*)) AS training_types_obj " +
                 "FROM ticket_type tit " +
-                "JOIN training_type trt ON trt.training_type=ANY(tit.training_types) " +
+                "JOIN training_type trt ON trt.training_type=ANY(tit.ticket_training_types) " +
                 "GROUP BY tit.ticket_type_id");
-        insertTicketType = client.preparedQuery("INSERT INTO ticket_type (training_types, ticket_name, ticket_cost, ticket_visits, ticket_days) VALUES ($1, $2, $3, $4, $5) RETURNING ticket_type_id");
-        updateTicketType = client.preparedQuery("UPDATE ticket_type SET training_types=$2, ticket_name=$3, ticket_cost=$4, ticket_visits=$5, ticket_days=$6 WHERE ticket_type_id=$1");
+        insertTicketType = client.preparedQuery("INSERT INTO ticket_type (ticket_training_types, ticket_name, ticket_cost, ticket_visits, ticket_days) VALUES ($1, $2, $3, $4, $5) RETURNING ticket_type_id");
+        updateTicketType = client.preparedQuery("UPDATE ticket_type SET ticket_training_types=$2, ticket_name=$3, ticket_cost=$4, ticket_visits=$5, ticket_days=$6 WHERE ticket_type_id=$1");
         deleteTicketType = client.preparedQuery("DELETE FROM ticket_type WHERE ticket_type_id=$1");
 
         selectTicketsByUser = client.preparedQuery("SELECT * FROM training_ticket t " +
                 "JOIN ticket_type tit ON tit.ticket_type_id=t.ticket_type_id " +
 //                "JOIN (SELECT array_agg(row_to_json(tt.*)) AS training_types_obj FROM training_type tt WHERE tt.training_type=ANY(t.training_types)) training_type trt ON trt.training_type=" +
-                "JOIN (SELECT tit.ticket_type_id, array_agg(row_to_json(trt.*)) AS training_types_obj " +
+                "JOIN (SELECT tit.ticket_type_id, array_agg(row_to_json(trt.*)) AS ticket_training_types_obj " +
                 "       FROM ticket_type tit " +
-                "       JOIN training_type trt ON trt.training_type=ANY(tit.training_types) " +
+                "       JOIN training_type trt ON trt.training_type=ANY(tit.ticket_training_types) " +
                 "       GROUP BY tit.ticket_type_id) trto ON trto.ticket_type_id=tit.ticket_type_id " +
                 "LEFT OUTER JOIN (SELECT ticket_id, COUNT(*) training_visit_count FROM training_visit GROUP BY ticket_id) vc ON t.ticket_id=vc.ticket_id " +
                 "WHERE t.user_id=$1");
@@ -174,7 +174,7 @@ public class DbCrudTicket {
             this.cost = row.getInteger("ticket_cost");
             this.visits = row.getInteger("ticket_visits");
             this.days = row.getInteger("ticket_days");
-            Object[] trainingTypesObjs = row.getArrayOfJsons("training_types_obj");
+            Object[] trainingTypesObjs = row.getArrayOfJsons("ticket_training_types_obj");
             this.trainingTypes = trainingTypesObjs == null ? null : Arrays.stream(trainingTypesObjs)
                     .map(tt -> new DbCrudTraining.EntityTrainingType().loadFromDb((JsonObject) tt))
                     .toArray(DbCrudTraining.EntityTrainingType[]::new);

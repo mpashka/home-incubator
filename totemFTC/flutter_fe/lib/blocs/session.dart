@@ -12,7 +12,7 @@ import 'package:http/http.dart' as http;
 
 import '../misc/configuration.dart';
 import '../misc/utils.dart';
-import 'base.dart';
+import 'bloc_provider.dart';
 import 'login_helper.dart' if (dart.library.js) 'login_helper_js.dart' as login_helper;
 
 part 'session.g.dart';

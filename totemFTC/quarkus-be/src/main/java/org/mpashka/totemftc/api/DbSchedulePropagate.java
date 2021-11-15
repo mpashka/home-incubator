@@ -45,7 +45,7 @@ public class DbSchedulePropagate {
     private void init() {
         selectSchedule = client.preparedQuery("SELECT * from training_schedule t");
         selectTraining = client.preparedQuery("SELECT * from training t WHERE training_time>$1 and training_time<$2");
-        insertTraining = client.preparedQuery("INSERT INTO training (training_schedule_id, training_time, trainer, training_type) VALUES ($1, $2, $3, $4) RETURNING training_time, training_type");
+        insertTraining = client.preparedQuery("INSERT INTO training (training_schedule_id, training_time, trainer_id, training_type) VALUES ($1, $2, $3, $4) RETURNING training_time, training_type");
     }
 
     @Scheduled(cron="0 30 0 * * ?")
@@ -114,7 +114,7 @@ public class DbSchedulePropagate {
         public EntitySchedule loadFromDb(Row row) {
             this.id = row.getInteger("training_schedule_id");
             this.time = row.getLocalDateTime("training_time");
-            this.trainerId = row.getInteger("trainer");
+            this.trainerId = row.getInteger("trainer_id");
             this.trainingType = row.getString("training_type");
             return this;
         }
@@ -142,7 +142,7 @@ public class DbSchedulePropagate {
             this.id = row.getInteger("training_id");
             this.scheduleId = row.getInteger("training_schedule_id");
             this.time = row.getLocalDateTime("training_time");
-            this.trainerId = row.getInteger("trainer");
+            this.trainerId = row.getInteger("trainer_id");
             this.trainingType = row.getString("training_type");
             this.comment = row.getString("training_comment");
             return this;

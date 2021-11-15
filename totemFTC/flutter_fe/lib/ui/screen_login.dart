@@ -13,14 +13,14 @@ import 'widgets/scroll_list_selector.dart';
 import 'widgets/ui_subscription.dart';
 import 'widgets/ui_attend.dart';
 
-class LoginScreen extends StatefulWidget {
-  const LoginScreen({Key? key}) : super(key: key);
+class ScreenLogin extends StatefulWidget {
+  const ScreenLogin({Key? key}) : super(key: key);
 
   @override
-  State<LoginScreen> createState() => LoginScreenState();
+  State<ScreenLogin> createState() => ScreenLoginState();
 }
 
-class LoginScreenState extends State<LoginScreen> {
+class ScreenLoginState extends State<ScreenLogin> {
   static final Logger log = Logger('LoginScreenState');
 
   late final SessionBloc _session;

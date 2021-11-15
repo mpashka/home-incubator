@@ -1,55 +1,52 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:core';
 
+import 'package:flutter/material.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
 
-import 'crud_user.dart';
-import 'crud_api.dart';
 import '../misc/utils.dart';
+import 'bloc_provider.dart';
+import 'crud_api.dart';
+import 'crud_user.dart';
 
 part 'crud_training.g.dart';
 
-class CrudTraining {
-  static final Logger log = Logger('CrudTraining');
+class CrudTrainingBloc extends BlocBaseList<CrudEntityTraining> {}
 
-  final CrudApi _backend;
+class CrudTrainingTypeBloc extends BlocBaseList<CrudEntityTrainingType> {
+  BlocProvider blocProvider;
+  List<CrudEntityTraining> _allTrainings = [];
+  CrudEntityTraining? selectedTraining;
 
-  // List<CrudEntityTicket> _tickets = [];
+  CrudTrainingTypeBloc(this.blocProvider);
 
-  CrudTraining(Injector injector): _backend = injector.get<CrudApi>();
+  Future<void> loadTrainings(DateTimeRange range, {List<CrudEntityTrainingType>? types}) async {
+    _allTrainings = (await backend.requestJson('GET', '/api/training/byDateInterval', params: {
+      'from': dateTimeFormat.format(range.start), 'to': dateTimeFormat.format(range.end)}) as List)
+        .map((item) => CrudEntityTraining.fromJson(item))
+        .toList();
 
-/*
-  Future<List<CrudEntityTicket>> loadTickets(int userId) async {
-    _tickets = (await _backend.get('/api/tickets/byUser/$userId') as List)
-        .map((item) => CrudEntityTicket.fromJson(item)).toList();
-    return _tickets;
-  }
-*/
-
-  void clear() {
-    // _tickets = [];
-  }
-
-  CrudTrainingBloc bloc() {
-    return CrudTrainingBloc(this);
-  }
-}
-
-class CrudTrainingBloc {
-  CrudTraining crudTraining;
-
-  CrudTrainingBloc(this.crudTraining);
-
-  void dispose() {
-
+    Set<CrudEntityTrainingType> trainingTypesSet = HashSet<CrudEntityTrainingType>();
+    _allTrainings.forEach((training) => trainingTypesSet.add(training.trainingType));
+    if (types != null) trainingTypesSet.retainAll(types);
+    var trainingTypes = List.of(trainingTypesSet, growable: false);
+    trainingTypes.sort();
+    state = trainingTypes;
+    if (trainingTypes.isNotEmpty) onTrainingTypeChange(trainingTypes[0]);
   }
 
-  Future<List<CrudEntityTraining>> loadTrainings(DateTime from, DateTime to) async {
-    return (await crudTraining._backend.requestJson('GET', '/api/training/byDateInterval',
-        params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
-        .map((item) => CrudEntityTraining.fromJson(item)).toList();
+  Future<void> onTrainingTypeChange(CrudEntityTrainingType trainingType) async {
+    var trainings = <CrudEntityTraining>[];
+    _allTrainings.forEach((training) {
+      if (trainingType == training.trainingType) {
+        trainings.add(training);
+      }
+    });
+    blocProvider.dynBlocList<CrudEntityTraining, CrudTrainingBloc>().state = trainings;
+    selectedTraining = trainings.isNotEmpty ? trainings[0] : null;
   }
 }
 
@@ -62,10 +59,27 @@ class CrudEntityTraining implements Comparable<CrudEntityTraining> {
   CrudEntityTrainingType trainingType;
   String? comment;
 
-  CrudEntityTraining({required this.id, required this.time, required this.trainer,
-    required this.trainingType, this.comment});
-  factory CrudEntityTraining.fromJson(Map<String, dynamic> json) => _$CrudEntityTrainingFromJson(json);
+  CrudEntityTraining(
+      {required this.id,
+      required this.time,
+      required this.trainer,
+      required this.trainingType,
+      this.comment});
+
+  factory CrudEntityTraining.fromJson(Map<String, dynamic> json) =>
+      _$CrudEntityTrainingFromJson(json);
+
   Map<String, dynamic> toJson() => _$CrudEntityTrainingToJson(this);
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CrudEntityTraining &&
+          runtimeType == other.runtimeType &&
+          id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 
   @override
   int compareTo(CrudEntityTraining other) {
@@ -83,7 +97,8 @@ class CrudEntityTrainingType implements Comparable<CrudEntityTrainingType> {
   String trainingName;
 
   CrudEntityTrainingType({required this.trainingType, required this.trainingName});
-  factory CrudEntityTrainingType.fromJson(Map<String, dynamic> json) => _$CrudEntityTrainingTypeFromJson(json);
+
+  factory CrudEntityTrainingType.fromJson(Map<String, dynamic> json) =>_$CrudEntityTrainingTypeFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityTrainingTypeToJson(this);
 
   @override

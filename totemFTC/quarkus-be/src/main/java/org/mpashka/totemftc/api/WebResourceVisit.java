@@ -35,8 +35,15 @@ public class WebResourceVisit {
     @GET
     @Path("byUser")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<DbCrudVisit.EntityVisit[]> listByUser(@QueryParam("from") LocalDateTime from, @QueryParam("rows") int rows) {
-        return dbVisit.getByUser(requestParameters.getSession().getUserId(), from, rows);
+    public Uni<DbCrudVisit.EntityVisit[]> listByUser(@QueryParam("from") LocalDateTime from) {
+        return dbVisit.getByUser(requestParameters.getSession().getUserId(), from);
+    }
+
+    @GET
+    @Path("byTicket/{ticketId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<DbCrudVisit.EntityVisit[]> listByTicket(@PathParam("ticketId") int ticketId) {
+        return dbVisit.getByTicket(ticketId);
     }
 
     @GET

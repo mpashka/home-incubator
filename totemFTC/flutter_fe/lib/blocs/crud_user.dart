@@ -59,6 +59,17 @@ class CrudEntityUser implements Comparable<CrudEntityUser> {
   factory CrudEntityUser.fromJson(Map<String, dynamic> json) => _$CrudEntityUserFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityUserToJson(this);
 
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CrudEntityUser &&
+          runtimeType == other.runtimeType &&
+          userId == other.userId;
+
+  @override
+  int get hashCode => userId.hashCode;
+
   @override
   int compareTo(CrudEntityUser other) {
     if (userId == other.userId) return 0;
