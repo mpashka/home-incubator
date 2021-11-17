@@ -23,25 +23,14 @@ class BlocProvider extends StatefulWidget {
   @override
   BlocProviderState createState() => BlocProviderState();
 
-  static Widget streamBuilder<T>({required Widget Function(List<T> data) builder, String? name, BlocBaseList<T>? bloc}) {
-    if (name == null && bloc == null) {
-      Type dataType = typeOf<T>();
-      switch (dataType) {
-        case CrudEntityTrainingType: name = 'CrudTrainingTypeBloc'; break;
-        case CrudEntityTraining: name = 'CrudTrainingBloc'; break;
-        case CrudEntityVisit: name = 'CrudVisitBloc'; break;
-        case CrudEntityTicket: name = 'CrudTicketBloc'; break;
-        default: throw Exception('Internal error. Unknown list type $dataType');
-      }
-    }
-
-    Widget streamBuilder(BlocBaseList<T> bloc)  => StreamBuilder<List<T>>(
-      stream: bloc.stateOut,
+  static Widget streamBuilder<T, B extends BlocBaseState<T>>({required Widget Function(T data) builder, String? name, B? bloc}) {
+    Widget streamBuilder(B bloc) => StreamBuilder<T>(
+      stream: bloc._stateOut,
       initialData: bloc.state,
-      builder: (BuildContext context, AsyncSnapshot<List<T>> snapshot) => builder(snapshot.requireData),
+      builder: (BuildContext context, AsyncSnapshot<T> snapshot) => builder(snapshot.requireData),
     );
 
-    return bloc != null ? streamBuilder(bloc) : Builder(builder: (ctx) => streamBuilder(of(ctx).getBloc(name)));
+    return bloc != null ? streamBuilder(bloc) : Builder(builder: (ctx) => streamBuilder(of(ctx).getBloc<B>(name)));
   }
 
   static BlocProviderState of(BuildContext context) {
@@ -88,16 +77,6 @@ class BlocProviderState extends State<BlocProvider> {
 
   T getBloc<T extends BlocBase>([String? name]) {
     name ??= typeOf<T>().toString();
-    if (name == null) {
-      Type dataType = typeOf<T>();
-      switch (dataType) {
-        case CrudEntityTrainingType: name = 'CrudTrainingTypeBloc'; break;
-        case CrudEntityTraining: name = 'CrudTrainingBloc'; break;
-        case CrudEntityVisit: name = 'CrudVisitBloc'; break;
-        case CrudEntityTicket: name = 'CrudTicketBloc'; break;
-        default: throw Exception('Internal error. Unknown list type $dataType');
-      }
-    }
     BlocBase? bloc = blocs[name];
     if (bloc == null) {
       throw Exception('Internal error. Bloc <$name> not found}');
@@ -124,24 +103,24 @@ abstract class BlocBase {
   void dispose();
 }
 
-abstract class BlocBaseList<T> extends BlocBase {
+abstract class BlocBaseState<T> extends BlocBase {
   late final Logger log;
 
   late final CrudApi backend;
   late final Session session;
 
-  final StreamController<List<T>> _streamController = StreamController<List<T>>();
-  late final Sink<List<T>> stateIn;
-  late final Stream<List<T>> stateOut;
-  List<T> _state = [];
+  final StreamController<T> _streamController = StreamController<T>();
+  late final Sink<T> stateIn;
+  late final Stream<T> _stateOut;
+  T _state;
 
-  BlocBaseList() {
+  BlocBaseState(this._state) {
     log = Logger('${runtimeType.toString()}<${typeOf<T>()}>');
     log.fine('Init');
     Injector injector = Injector();
     backend = injector.get<CrudApi>();
     session = injector.get<Session>();
-    stateOut = _streamController.stream/*.asBroadcastStream()*/;
+    _stateOut = _streamController.stream.asBroadcastStream();
     stateIn = _streamController.sink;
   }
 
@@ -151,15 +130,20 @@ abstract class BlocBaseList<T> extends BlocBase {
     _streamController.close();
   }
 
-  List<T> get state => _state;
+  T get state => _state;
 
-  set state(List<T> state) {
+  Stream<T> get stateOut {
+    log.fine("Get stream");
+    return _stateOut;
+  }
+
+  set state(T state) {
     _state = state;
     stateIn.add(state);
-    log.fine('Update list state [${state.length}]: $state');
+    log.fine('Update state: $state');
   }
+}
 
-  void clear() {
-    state = [];
-  }
+abstract class BlocBaseList<T> extends BlocBaseState<List<T>> {
+  BlocBaseList(): super([]);
 }

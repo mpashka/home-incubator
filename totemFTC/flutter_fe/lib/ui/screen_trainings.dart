@@ -11,6 +11,7 @@ import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
 
 import 'screen_base.dart';
+import 'widgets/ui_divider.dart';
 
 class ScreenTrainings extends StatefulWidget {
   @override
@@ -26,26 +27,26 @@ class ScreenTrainingsState extends State<ScreenTrainings> {
 
   @override
   Widget build(BuildContext context) {
-    final now = DateTime.now();
-    final DateTime firstDay = now.subtract(Duration(days: now.weekday - 1 + 7*(weeks-1)));
-    late final CrudVisitBloc visitBloc;
-
+    late final CrudVisitBlocFiltered filteredVisitBloc;
     return BlocProvider(
         init: (blocProvider) {
           // _session = Injector().get<Session>();
-          visitBloc = blocProvider.addBloc(bloc: CrudVisitBloc());
+          final now = DateTime.now();
+          final DateTime firstDay = now.subtract(Duration(days: now.weekday - 1 + 7*(weeks-1)));
+          final CrudVisitBloc visitBloc = blocProvider.addBloc(bloc: CrudVisitBloc());
           visitBloc.loadVisits(DateTime(firstDay.year, firstDay.month), 10);
+          filteredVisitBloc = blocProvider.addBloc(bloc: CrudVisitBlocFiltered(visitBloc, firstDay));
         },
         child: UiScreen(
-          body: BlocProvider.streamBuilder<CrudEntityVisit>(builder: (data) {
-            UiVisits uiVisits = UiVisits(visitBloc, firstDay);
+          body: BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(builder: (data) {
             return Column(children: [
               UiCalendar(
                 weeks: weeks,
                 selectedDates: data.map((v) => v.training!.time).map((t) => DateTime(t.year, t.month, t.day)).toSet(),
-                onFilterChange: uiVisits.onFilterChange,
+                onFilterChange: filteredVisitBloc.onFilterChange,
               ),
-              uiVisits,
+              UiDivider('Посещения'),
+              UiVisits(),
             ]);}),
           floatingActionButton: FloatingActionButton(
           key: _keyFAB,

@@ -8,7 +8,7 @@ class WheelListSelector<E> extends StatelessWidget {
 
   final WidgetBuilder<E> _childBuilder;
   final WidgetValueChanged<E>? onSelectedItemChanged;
-  final BlocBaseList<E>? bloc;
+  final BlocBaseState<List<E>>? bloc;
 
   const WheelListSelector({Key? key, required WidgetBuilder<E> childBuilder, this.onSelectedItemChanged, this.bloc}) :
         _childBuilder = childBuilder,
@@ -21,7 +21,7 @@ class WheelListSelector<E> extends StatelessWidget {
     return Stack(
       children: [
         Positioned.fill(
-            child: BlocProvider.streamBuilder<E>(bloc: bloc, builder: (data) => ListWheelScrollView.useDelegate(
+            child: BlocProvider.streamBuilder<List<E>, BlocBaseState<List<E>>>(bloc: bloc, builder: (data) => ListWheelScrollView.useDelegate(
                 onSelectedItemChanged: (itemIndex) {
                   developer.log("Item selected: $itemIndex");
                   HapticFeedback.selectionClick();

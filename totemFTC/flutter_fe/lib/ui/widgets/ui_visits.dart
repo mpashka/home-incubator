@@ -6,45 +6,81 @@ import 'package:flutter_fe/blocs/crud_training.dart';
 import 'package:flutter_fe/blocs/crud_visit.dart';
 import 'package:flutter_fe/ui/widgets/ui_calendar.dart';
 
-class UiVisits extends StatelessWidget {
-  final CrudVisitBloc _visitBloc;
-  final DateTime _firstDay;
+import 'ui_visit.dart';
 
-  UiVisits(this._visitBloc, this._firstDay);
+class UiVisits extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    CrudVisitBlocFiltered filteredVisitBloc = BlocProvider.of(context).addBloc(bloc: CrudVisitBlocFiltered(_visitBloc, _firstDay));
+    return BlocProvider.streamBuilder<FilteredVisits, CrudVisitBlocFiltered>(builder: (d) {
+      if (d.isEmpty()) {
+        return Text('Посещений не было');
+      }
 
-    return BlocProvider.streamBuilder(bloc: filteredVisitBloc, builder: (d) => DefaultTabController(
-        length: 3,
-        child: Column(children: [
-          TabBar(tabs: [
-            Tab(icon: Icon(Icons.directions_car)),
-            Tab(icon: Icon(Icons.directions_transit)),
-            Tab(icon: Icon(Icons.directions_bike)),
-          ],),
-          TabBarView(children: [
+      return DefaultTabController(
+          length: d.typesCount(),
+          child: Column(children: [
+            Container(decoration: BoxDecoration(color: Theme.of(context).primaryColor),
+            child: TabBar(tabs: [
+              if (!d.isSingle()) Tab(child: Text('Все / ${d.allVisits.length}'),),
+              for (var trainingType in d.trainingTypes) Tab(
+                  child: Text('${trainingType.trainingName} / ${d.visitsByType[trainingType]!.length}')),
+            ],),),
+            Container(height: 200,
+            child: TabBarView(children: [
 
-          ],)
-        ],
-        ));
+              if (!d.isSingle()) ListView(children: [
+                for (var visit in d.allVisits) UiVisit(visit),
+              ]),
+              for (var trainingType in d.trainingTypes) ListView(children: [
+                for (var visit in d.visitsByType[trainingType]!) UiVisit(visit),
+              ]),
+
+              // if (!d.isSingle()) Text('all'),
+              // for (var trainingType in d.trainingTypes) Text('Tr ${trainingType.trainingName}'),
+            ]))
+          ]));
+
+      // return Text('Tabs...');
+    });
   }
-
 }
 
-class CrudVisitBlocFiltered extends BlocBaseList<CrudEntityVisit> {
+class FilteredVisits {
+  List<CrudEntityVisit> allVisits;
+  List<CrudEntityTrainingType> trainingTypes;
+  Map<CrudEntityTrainingType, List<CrudEntityVisit>> visitsByType;
+
+  FilteredVisits(this.allVisits, this.trainingTypes, this.visitsByType);
+
+  bool isEmpty() {
+    return allVisits.isEmpty;
+  }
+
+  bool isSingle() {
+    return trainingTypes.length == 1;
+  }
+
+  int typesCount() {
+    if (allVisits.isEmpty) {
+      return 0;
+    } else if (trainingTypes.length == 1) {
+      return 1;
+    } else {
+      return trainingTypes.length + 1;
+    }
+  }
+}
+
+class CrudVisitBlocFiltered extends BlocBaseState<FilteredVisits> {
 
   final CrudVisitBloc _visitBloc;
   final DateTime _firstDay;
   DateSelectionType selectionType = DateSelectionType.none;
   DateTime date = DateTime.now();
 
-  List<CrudEntityVisit> allVisits = [];
-  List<CrudEntityTrainingType> trainingTypes = [];
-  Map<CrudEntityTrainingType, List<CrudEntityVisit>> visitsByType = {};
 
-  CrudVisitBlocFiltered(this._visitBloc, this._firstDay) {
+  CrudVisitBlocFiltered(this._visitBloc, this._firstDay) : super(FilteredVisits([], [], {})) {
     _visitBloc.stateOut.listen((e) => _updateVisits());
   }
 
@@ -58,6 +94,7 @@ class CrudVisitBlocFiltered extends BlocBaseList<CrudEntityVisit> {
 
   void _updateVisits() {
     List<CrudEntityVisit> visits = selectionType == DateSelectionType.month ? _visitBloc.state : _visitBloc.state.where((v) => !v.training!.time.isBefore(_firstDay)).toList();
+    List<CrudEntityVisit> allVisits;
     switch (selectionType) {
       case DateSelectionType.none:
         allVisits = visits;
@@ -81,13 +118,12 @@ class CrudVisitBlocFiltered extends BlocBaseList<CrudEntityVisit> {
         break;
       default: throw Exception('Internal error. Unknown selection type $selectionType');
     }
-    Set<CrudEntityTrainingType> trainingTypes = HashSet();
-    allVisits.forEach((v) => trainingTypes.add(v.training!.trainingType));
-    this.trainingTypes = trainingTypes.toList();
-    this.trainingTypes.sort();
+    Set<CrudEntityTrainingType> trainingTypesSet = HashSet();
+    allVisits.forEach((v) => trainingTypesSet.add(v.training!.trainingType));
+    List<CrudEntityTrainingType> trainingTypes = trainingTypesSet.toList();
+    trainingTypes.sort();
     Map<CrudEntityTrainingType, List<CrudEntityVisit>> visitsByType = HashMap();
-    trainingTypes.forEach((tt) => visitsByType[tt] = allVisits.where((v) => v.training!.trainingType == tt).toList());
-    this.visitsByType = visitsByType;
-    stateIn.add(allVisits);
+    trainingTypesSet.forEach((tt) => visitsByType[tt] = allVisits.where((v) => v.training!.trainingType == tt).toList());
+    stateIn.add(FilteredVisits(allVisits, trainingTypes, visitsByType));
   }
 }

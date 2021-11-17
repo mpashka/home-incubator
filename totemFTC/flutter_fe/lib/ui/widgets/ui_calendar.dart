@@ -27,6 +27,7 @@ class UiCalendarState extends State<UiCalendar> {
   static const headerRows = 1;
   static const widgetColumns = 7+headerColumns;
   static const double lineWidth = 1;
+  static const charWidth = 8.0;
   late final int _weeks;
   late final int _widgetRows;
   static const selectionRadiusConst = Radius.circular(15);
@@ -215,7 +216,7 @@ class UiCalendarState extends State<UiCalendar> {
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
       ),
-      if (training) Positioned(bottom: 0,
+      if (training) Positioned(bottom: 0, left: max(0, width / 2 - (text == null ? 0 : text.length * charWidth / 2 + charWidth)),
         child: Icon(Icons.circle, size: 7),
       ),
       if (underline) Positioned(

@@ -19,7 +19,6 @@ class UiVisit extends StatelessWidget {
 
   final CrudEntityVisit _visit;
   late final Session _session;
-  late final CrudVisitBloc _visitBloc;
 
   UiVisit(this._visit) {
     _session = Injector().get<Session>();
@@ -27,7 +26,7 @@ class UiVisit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    _visitBloc = BlocProvider.getBloc<CrudVisitBloc>(context);
+    CrudVisitBloc visitBloc = BlocProvider.getBloc<CrudVisitBloc>(context);
 
     final CrudEntityTraining training = _visit.training!;
     bool past = training.time.isBefore(DateTime.now());
@@ -73,12 +72,12 @@ class UiVisit extends StatelessWidget {
     return GestureDetector(
       child: listTile,
       onTapDown: (TapDownDetails details) {
-        _showPopupMenu(context, details.globalPosition, past);
+        _showPopupMenu(context, visitBloc, details.globalPosition, past);
       },
     );
   }
 
-  void _showPopupMenu(BuildContext context, Offset offset, bool past) async {
+  void _showPopupMenu(BuildContext context, CrudVisitBloc visitBloc, Offset offset, bool past) async {
     log.finer("Menu position $offset");
 
     double left = offset.dx;
@@ -116,10 +115,10 @@ class UiVisit extends StatelessWidget {
     _visit.user = _session.user;
 
     switch (result) {
-      case 1: _visitBloc.markSelf(_visit, CrudEntityVisitMark.on); break;
-      case 2: _visitBloc.markSelf(_visit, CrudEntityVisitMark.off); break;
-      case 3: _visitBloc.markSchedule(_visit, true); break;
-      case 4: _visitBloc.markSchedule(_visit, false); break;
+      case 1: visitBloc.markSelf(_visit, CrudEntityVisitMark.on); break;
+      case 2: visitBloc.markSelf(_visit, CrudEntityVisitMark.off); break;
+      case 3: visitBloc.markSchedule(_visit, true); break;
+      case 4: visitBloc.markSchedule(_visit, false); break;
     }
   }
 }

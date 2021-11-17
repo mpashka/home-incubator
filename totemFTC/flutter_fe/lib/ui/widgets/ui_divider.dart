@@ -11,7 +11,10 @@ class UiDivider extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(children: [
       const Expanded(child: Divider(thickness: 3,)),
-      Text(_name),
+      Container(
+        padding: EdgeInsets.symmetric(horizontal: 8),
+        child: Text(_name),
+      )
     ]);
   }
 }
