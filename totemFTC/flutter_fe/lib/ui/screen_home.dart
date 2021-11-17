@@ -14,7 +14,7 @@ import 'package:logging/logging.dart';
 import '../blocs/crud_ticket.dart';
 import 'drawer.dart';
 import 'screen_base.dart';
-import 'widgets/scroll_list_selector.dart';
+import 'widgets/wheel_list_selector.dart';
 import 'widgets/ui_visit.dart';
 import 'widgets/ui_divider.dart';
 import 'widgets/ui_subscription.dart';
@@ -32,8 +32,8 @@ class ScreenHome extends StatelessWidget {
     return BlocProvider(
         init: (blocProvider) {
           _session = Injector().get<Session>();
-          blocProvider.blocListCreate<CrudEntityTicket, CrudTicketBloc>().loadTickets();
-          _visitBloc = blocProvider.blocListCreate<CrudEntityVisit, CrudVisitBloc>();
+          blocProvider.addBloc(bloc: CrudTicketBloc()).loadTickets();
+          _visitBloc = blocProvider.addBloc(bloc: CrudVisitBloc());
           _visitBloc.loadVisits(DateTime.now().subtract(const Duration(days: 14)), 10);
         },
         child: UiScreen(
@@ -41,12 +41,12 @@ class ScreenHome extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              BlocProvider.streamBuilderList<CrudEntityTicket>((data) => Column(
+              BlocProvider.streamBuilder<CrudEntityTicket>(builder: (data) => Column(
                   children: [
                     if (data.isNotEmpty) const UiDivider('Абонементы'),
                     for (var ticket in data) UiSubscription(ticket),
                   ])),
-              BlocProvider.streamBuilderList<CrudEntityVisit>((data) {
+              BlocProvider.streamBuilder<CrudEntityVisit>(builder: (data) {
                 List<Widget> prevWidgets = [], nextWidgets = [];
                 DateTime now = DateTime.now();
                 for (var visit in data) {

@@ -16,102 +16,61 @@ class BlocProvider extends StatefulWidget {
   static final Logger log = Logger('BlocProvider');
 
   final Widget child;
-  final void Function(BlocProvider) init;
-  final Map<Type, BlocBaseList> blocs = HashMap();
-  bool stateInit = false;
+  final void Function(BlocProviderState) init;
 
   BlocProvider({Key? key, required this.init, required this.child}): super(key: key);
 
   @override
-  _BlocProviderState createState() => _BlocProviderState();
+  BlocProviderState createState() => BlocProviderState();
 
-  void dispose() {
-    blocs.values.forEach((b) => b.dispose());
-  }
+  static Widget streamBuilder<T>({required Widget Function(List<T> data) builder, String? name, BlocBaseList<T>? bloc}) {
+    if (name == null && bloc == null) {
+      Type dataType = typeOf<T>();
+      switch (dataType) {
+        case CrudEntityTrainingType: name = 'CrudTrainingTypeBloc'; break;
+        case CrudEntityTraining: name = 'CrudTrainingBloc'; break;
+        case CrudEntityVisit: name = 'CrudVisitBloc'; break;
+        case CrudEntityTicket: name = 'CrudTicketBloc'; break;
+        default: throw Exception('Internal error. Unknown list type $dataType');
+      }
+    }
 
-  static Widget streamBuilderList<T>(Widget Function(List<T> data) builder) {
-    return Builder(
-      builder: (ctx) => of(ctx)._streamBuilderList(builder),
-    );
-  }
-
-  /// Is provider owner widgets during init
-  T blocListCreate<A, T extends BlocBaseList<A>>() {
-    return (createBlocList<A>() as dynamic) as T;
-  }
-
-  /// Can be called by widgets to get appropriate bloc
-  static T blocListGet<A, T extends BlocBaseList<A>>(BuildContext context) {
-    return (of(context).getBlocList<A>() as dynamic) as T;
-  }
-
-  Widget _streamBuilderList<T>(Widget Function(List<T> data) builder) {
-    BlocBaseList<T> bloc = getBlocList<T>();
-    return StreamBuilder<List<T>>(
+    Widget streamBuilder(BlocBaseList<T> bloc)  => StreamBuilder<List<T>>(
       stream: bloc.stateOut,
       initialData: bloc.state,
       builder: (BuildContext context, AsyncSnapshot<List<T>> snapshot) => builder(snapshot.requireData),
     );
+
+    return bloc != null ? streamBuilder(bloc) : Builder(builder: (ctx) => streamBuilder(of(ctx).getBloc(name)));
   }
 
-  BlocBaseList<T> getBlocList<T>() {
-    Type dataType = typeOf<T>();
-    if (dataType == dynamic) {
-      throw Exception('Internal error. Dynamic data type specified for bloc');
-    }
-    BlocBaseList? blocList = blocs[dataType];
-    if (blocList == null) {
-      throw Exception('Internal error. Bloc <$dataType> not found}');
-    }
-    return blocList as dynamic;
-  }
-
-  BlocBaseList<T> createBlocList<T>() {
-    Type dataType = typeOf<T>();
-    if (dataType == dynamic) {
-      throw Exception('Internal error. Dynamic data type specified for bloc');
-    }
-    if (!stateInit) {
-      throw Exception('Internal error. Attempt to create bloc out of init() method');
-    }
-    BlocBaseList? blocList = blocs[dataType];
-    if (blocList == null) {
-      log.fine('Bloc $dataType not found. Create new');
-      switch (dataType) {
-        case CrudEntityTrainingType: blocList = CrudTrainingTypeBloc(this); break;
-        case CrudEntityTraining: blocList = CrudTrainingBloc(); break;
-        case CrudEntityVisit: blocList = CrudVisitBloc(); break;
-        case CrudEntityTicket: blocList = CrudTicketBloc(); break;
-        default: throw Exception('Internal error. Unknown list type $dataType');
-      }
-      blocs[dataType] = blocList;
-    } else {
-      blocList.log.warning('Attempt to create already present bloc');
-      throw Exception('Internal error. Bloc <$dataType> was already present}');
-    }
-    return blocList as dynamic;
-  }
-
-  static BlocProvider of(BuildContext context) {
-    BlocProvider? provider = context.findAncestorWidgetOfExactType<BlocProvider>();
+  static BlocProviderState of(BuildContext context) {
+    BlocProviderState? provider = context.findAncestorStateOfType<BlocProviderState>();
     if (provider == null) {
-      throw Exception('Internal error. BlocProvider not found in tree');
+      throw Exception('Internal error. BlocProvider not found in widget tree');
     }
     return provider;
   }
 
+  /// Can be called by widgets to get appropriate bloc
+  static T getBloc<T extends BlocBase>(BuildContext context) {
+    return (of(context).getBloc<T>() as dynamic) as T;
+  }
 }
 
-class _BlocProviderState extends State<BlocProvider> {
-  static final Logger log = Logger('_BlocProviderState');
+class BlocProviderState extends State<BlocProvider> {
+  static final Logger log = Logger('BlocProviderState');
+
+  final Map<String, BlocBase> blocs = HashMap();
+  bool stateInit = false;
 
   @override
   void initState() {
     log.finer('Init state...');
     super.initState();
-    widget.stateInit = true;
-    widget.init(widget);
-    widget.stateInit = false;
+    stateInit = true;
+    widget.init(this);
+    stateInit = false;
     log.finer('Init complete');
   }
 
@@ -119,13 +78,46 @@ class _BlocProviderState extends State<BlocProvider> {
   void dispose() {
     log.finer('Dispose');
     super.dispose();
-    widget.dispose();
+    blocs.values.forEach((b) => b.dispose());
   }
 
   @override
   Widget build(BuildContext context) {
     return widget.child;
   }
+
+  T getBloc<T extends BlocBase>([String? name]) {
+    name ??= typeOf<T>().toString();
+    if (name == null) {
+      Type dataType = typeOf<T>();
+      switch (dataType) {
+        case CrudEntityTrainingType: name = 'CrudTrainingTypeBloc'; break;
+        case CrudEntityTraining: name = 'CrudTrainingBloc'; break;
+        case CrudEntityVisit: name = 'CrudVisitBloc'; break;
+        case CrudEntityTicket: name = 'CrudTicketBloc'; break;
+        default: throw Exception('Internal error. Unknown list type $dataType');
+      }
+    }
+    BlocBase? bloc = blocs[name];
+    if (bloc == null) {
+      throw Exception('Internal error. Bloc <$name> not found}');
+    }
+    return (bloc as dynamic) as T;
+  }
+
+  T addBloc<T extends BlocBase>({required T bloc, String? name}) {
+    if (!stateInit) {
+      throw Exception('Internal error. Attempt to create bloc out of init() method');
+    }
+    name ??= bloc.runtimeType.toString();
+    if (blocs[name] != null) {
+      throw Exception('Internal error. Bloc $name was already present');
+    } else {
+      blocs[name] = bloc;
+    }
+    return bloc;
+  }
+
 }
 
 abstract class BlocBase {

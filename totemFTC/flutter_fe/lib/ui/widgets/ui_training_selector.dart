@@ -3,7 +3,7 @@ import 'package:flutter_fe/blocs/bloc_provider.dart';
 import 'package:flutter_fe/blocs/crud_training.dart';
 import 'package:intl/intl.dart';
 
-import 'scroll_list_selector.dart';
+import 'wheel_list_selector.dart';
 
 class UiTrainingSelector {
 
@@ -13,14 +13,15 @@ class UiTrainingSelector {
   UiTrainingSelector(this.title);
 
   Future<CrudEntityTraining?> selectTraining(BuildContext context, DateTimeRange range, {List<CrudEntityTrainingType>? types}) async {
-    CrudTrainingTypeBloc? trainingTypeBloc;
+    late final CrudTrainingTypeFilteredBloc trainingTypeBloc;
+    late final CrudTrainingBloc trainingBloc;
     CrudEntityTraining? selectedTraining;
     return await showDialog(context: context,
         builder: (BuildContext c) => BlocProvider(
             init: (blocProvider) {
-              blocProvider.blocListCreate<CrudEntityTraining, CrudTrainingBloc>();
-              trainingTypeBloc = blocProvider.blocListCreate<CrudEntityTrainingType, CrudTrainingTypeBloc>();
-              trainingTypeBloc!.loadTrainings(range, types: types);
+              trainingBloc = blocProvider.addBloc(bloc: CrudTrainingBloc());
+              trainingTypeBloc = blocProvider.addBloc(bloc: CrudTrainingTypeFilteredBloc(trainingBloc));
+              trainingTypeBloc.loadTrainings(range, types: types);
             },
             child: SimpleDialog(
                 title: Text(title),
@@ -34,13 +35,15 @@ class UiTrainingSelector {
                           flex: 10,
                           child: WheelListSelector<CrudEntityTrainingType>(
                             childBuilder: (context, index, trainingType) => Text(trainingType.trainingName),
-                            onSelectedItemChanged: (ctx, i, data) => trainingTypeBloc!.onTrainingTypeChange(data),
+                            onSelectedItemChanged: (ctx, i, data) => trainingTypeBloc.onTrainingTypeChange(data),
+                            bloc: trainingTypeBloc,
                           )),
                       Flexible(
                           flex: 15,
                           child: WheelListSelector<CrudEntityTraining>(
-                              childBuilder: (context, index, training) => Text('${_dateTimeFormatter.format(training.time)} ${training.trainer.nickName}'),
-                              onSelectedItemChanged: (ctx, i, data) => selectedTraining = data,
+                            childBuilder: (context, index, training) => Text('${_dateTimeFormatter.format(training.time)} ${training.trainer.nickName}'),
+                            onSelectedItemChanged: (ctx, i, data) => selectedTraining = data,
+                            bloc: trainingBloc,
                           )),
                     ],),
                   ),

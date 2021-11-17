@@ -9,7 +9,7 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
 
 import 'drawer.dart';
-import 'widgets/scroll_list_selector.dart';
+import 'widgets/wheel_list_selector.dart';
 import 'widgets/ui_subscription.dart';
 import 'widgets/ui_visit.dart';
 

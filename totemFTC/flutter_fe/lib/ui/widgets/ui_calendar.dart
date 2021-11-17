@@ -8,9 +8,9 @@ import 'package:logging/logging.dart';
 class UiCalendar extends StatefulWidget {
   final int weeks;
   final Set<DateTime> selectedDates;
-  final void Function(DateSelectionType, {DateTime? dateTime}) onDateChange;
+  final void Function(DateSelectionType, {DateTime? date}) onFilterChange;
 
-  const UiCalendar({required this.weeks, required this.selectedDates, required this.onDateChange, Key? key}) : super(key: key);
+  const UiCalendar({required this.weeks, required this.selectedDates, required this.onFilterChange, Key? key}) : super(key: key);
 
   @override
   State createState() => UiCalendarState();
@@ -89,29 +89,29 @@ class UiCalendarState extends State<UiCalendar> {
               underline: isLastWeek(weekStart), vertlineEnd: true,
               onTap: () => setSelection(_SelectionType.row, weekStart, week+1),
             ),
-            for (var day = 0, dayTime = weekStart.add(Duration(days: day)); day < 7; day++, dayTime = weekStart.add(Duration(days: day)))
-              if (!dayTime.isAfter(now)) _buildItem(context, week+headerRows, day+headerColumns, width, height,
-                  training: widget.selectedDates.contains(dayTime),
-                  text: dayTime.day.toString(), underline: isLastWeek(dayTime), vertlineStart: day > 0 && dayTime.day == 1,
-                  onTap: () => setSelection(_SelectionType.single, dayTime, (week+headerRows)*widgetColumns + day+headerColumns))
-              else _buildItem(context, week+headerRows, day+headerColumns, width, height, noDecoration: true)
+            for (var dayNum = 0, dayDate = weekStart.add(Duration(days: dayNum)); dayNum < 7; dayNum++, dayDate = weekStart.add(Duration(days: dayNum)))
+              if (!dayDate.isAfter(now)) _buildItem(context, week+headerRows, dayNum+headerColumns, width, height,
+                  training: widget.selectedDates.contains(dayDate),
+                  text: dayDate.day.toString(), underline: isLastWeek(dayDate), vertlineStart: dayNum > 0 && dayDate.day == 1,
+                  onTap: () => setSelection(_SelectionType.single, dayDate, (week+headerRows)*widgetColumns + dayNum+headerColumns))
+              else _buildItem(context, week+headerRows, dayNum+headerColumns, width, height, noDecoration: true)
           ],)
       ],),
       ..._buildMonthNames(context, firstDay, now, width, height),
     ],);
   }
 
-  void setSelection(_SelectionType selectionType, DateTime dateTime, int selectionIndex, [int selectionIndexEnd=0]) {
+  void setSelection(_SelectionType selectionType, DateTime date, int selectionIndex, [int selectionIndexEnd=0]) {
     // log.finer('Selection $selectionType, $selectionIndex -> $selectionIndexEnd');
     setState(() {
       if (_selectionType == selectionType && _selectionIndex == selectionIndex) {
         _selectionType = _SelectionType.none;
-        widget.onDateChange(DateSelectionType.none);
+        widget.onFilterChange(DateSelectionType.none);
       } else {
         _selectionType = selectionType;
         _selectionIndex = selectionIndex;
         _selectionIndexEnd = selectionIndexEnd;
-        widget.onDateChange(DateSelectionType.values[_SelectionType.values.indexOf(selectionType)], dateTime: dateTime);
+        widget.onFilterChange(DateSelectionType.values[_SelectionType.values.indexOf(selectionType)], date: date);
       }
     });
   }

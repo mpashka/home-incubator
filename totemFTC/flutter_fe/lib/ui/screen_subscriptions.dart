@@ -27,8 +27,8 @@ class ScreenTickets extends StatelessWidget {
     return BlocProvider(
         init: (blocProvider) {
           _session = Injector().get<Session>();
-          blocProvider.blocListCreate<CrudEntityTicket, CrudTicketBloc>().loadTickets();
-          _visitBloc = blocProvider.blocListCreate<CrudEntityVisit, CrudVisitBloc>();
+          blocProvider.addBloc(bloc: CrudTicketBloc()).loadTickets();
+          _visitBloc = blocProvider.addBloc(bloc: CrudVisitBloc());
           _visitBloc.loadVisits(DateTime.now().subtract(Duration(days: 14)), 10);
         },
         child: UiScreen(
@@ -45,7 +45,7 @@ class ScreenTickets extends StatelessWidget {
   Widget subscriptionsList() {
     return Column(
         children: [
-          BlocProvider.streamBuilderList<CrudEntityTicket>((data) => Column(children: [
+          BlocProvider.streamBuilder<CrudEntityTicket>(builder: (data) => Column(children: [
             if (data.isNotEmpty) UiDivider('Абонементы'),
             for (var ticket in data)
               GestureDetector(
@@ -53,7 +53,7 @@ class ScreenTickets extends StatelessWidget {
                 child: UiSubscription(ticket),
               )
           ])),
-          BlocProvider.streamBuilderList<CrudEntityVisit>((data) => Column(
+          BlocProvider.streamBuilder<CrudEntityVisit>(builder: (data) => Column(
             children: [
               UiDivider(ticketName('Выберите абонемент', 'Посещения', _visitBloc.selectedTicket)),
               for (var visit in data) UiVisit(visit),

@@ -16,12 +16,14 @@ part 'crud_training.g.dart';
 
 class CrudTrainingBloc extends BlocBaseList<CrudEntityTraining> {}
 
-class CrudTrainingTypeBloc extends BlocBaseList<CrudEntityTrainingType> {
-  BlocProvider blocProvider;
+// class CrudTrainingTypeBloc extends BlocBaseList<CrudEntityTrainingType> {}
+
+class CrudTrainingTypeFilteredBloc extends BlocBaseList<CrudEntityTrainingType> {
+  final CrudTrainingBloc _crudTrainingBloc;
   List<CrudEntityTraining> _allTrainings = [];
   CrudEntityTraining? selectedTraining;
 
-  CrudTrainingTypeBloc(this.blocProvider);
+  CrudTrainingTypeFilteredBloc(this._crudTrainingBloc);
 
   Future<void> loadTrainings(DateTimeRange range, {List<CrudEntityTrainingType>? types}) async {
     _allTrainings = (await backend.requestJson('GET', '/api/training/byDateInterval', params: {
@@ -45,7 +47,7 @@ class CrudTrainingTypeBloc extends BlocBaseList<CrudEntityTrainingType> {
         trainings.add(training);
       }
     });
-    blocProvider.getBlocList<CrudEntityTraining>().state = trainings;
+    _crudTrainingBloc.state = trainings;
     selectedTraining = trainings.isNotEmpty ? trainings[0] : null;
   }
 }

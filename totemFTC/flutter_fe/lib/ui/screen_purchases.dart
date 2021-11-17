@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 import 'drawer.dart';
-import 'widgets/scroll_list_selector.dart';
+import 'widgets/wheel_list_selector.dart';
 
 class ScreenPurchases extends StatelessWidget {
   static final format = DateFormat('yyyy-MM-dd kk:mm');
