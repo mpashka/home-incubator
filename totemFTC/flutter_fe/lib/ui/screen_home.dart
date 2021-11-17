@@ -15,7 +15,7 @@ import '../blocs/crud_ticket.dart';
 import 'drawer.dart';
 import 'screen_base.dart';
 import 'widgets/scroll_list_selector.dart';
-import 'widgets/ui_attend.dart';
+import 'widgets/ui_visit.dart';
 import 'widgets/ui_divider.dart';
 import 'widgets/ui_subscription.dart';
 import 'widgets/ui_training_selector.dart';
@@ -32,8 +32,8 @@ class ScreenHome extends StatelessWidget {
     return BlocProvider(
         init: (blocProvider) {
           _session = Injector().get<Session>();
-          blocProvider.dynBlocList<CrudEntityTicket, CrudTicketBloc>().loadTickets();
-          _visitBloc = blocProvider.dynBlocList<CrudEntityVisit, CrudVisitBloc>();
+          blocProvider.blocListCreate<CrudEntityTicket, CrudTicketBloc>().loadTickets();
+          _visitBloc = blocProvider.blocListCreate<CrudEntityVisit, CrudVisitBloc>();
           _visitBloc.loadVisits(DateTime.now().subtract(const Duration(days: 14)), 10);
         },
         child: UiScreen(
@@ -51,7 +51,7 @@ class ScreenHome extends StatelessWidget {
                 DateTime now = DateTime.now();
                 for (var visit in data) {
                   var training = visit.training!;
-                  var widget = UiAttend(visit);
+                  var widget = UiVisit(visit);
                   // var widget = Text(visit.toJson().toString());
                   (training.time.isBefore(now) ? prevWidgets : nextWidgets).add(widget);
                 }

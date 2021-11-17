@@ -3,7 +3,7 @@ import 'dart:math';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
-import 'widgets/ui_attend.dart';
+import 'widgets/ui_visit.dart';
 
 class AttendsMonthScreen extends StatelessWidget {
 

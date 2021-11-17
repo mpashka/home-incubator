@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'drawer.dart';
 import 'widgets/ui_subscription.dart';
-import 'widgets/ui_attend.dart';
+import 'widgets/ui_visit.dart';
 import 'widgets/ui_person.dart';
 
 class ScreenMasterUsers extends StatelessWidget {

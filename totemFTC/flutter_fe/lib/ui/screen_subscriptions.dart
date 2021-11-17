@@ -3,7 +3,7 @@ import 'package:flutter_fe/blocs/bloc_provider.dart';
 import 'package:flutter_fe/blocs/crud_ticket.dart';
 import 'package:flutter_fe/blocs/crud_visit.dart';
 import 'package:flutter_fe/blocs/session.dart';
-import 'package:flutter_fe/ui/widgets/ui_attend.dart';
+import 'package:flutter_fe/ui/widgets/ui_visit.dart';
 import 'package:flutter_fe/ui/widgets/ui_training_selector.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:intl/intl.dart';
@@ -27,8 +27,8 @@ class ScreenTickets extends StatelessWidget {
     return BlocProvider(
         init: (blocProvider) {
           _session = Injector().get<Session>();
-          blocProvider.dynBlocList<CrudEntityTicket, CrudTicketBloc>().loadTickets();
-          _visitBloc = blocProvider.dynBlocList<CrudEntityVisit, CrudVisitBloc>();
+          blocProvider.blocListCreate<CrudEntityTicket, CrudTicketBloc>().loadTickets();
+          _visitBloc = blocProvider.blocListCreate<CrudEntityVisit, CrudVisitBloc>();
           _visitBloc.loadVisits(DateTime.now().subtract(Duration(days: 14)), 10);
         },
         child: UiScreen(
@@ -56,7 +56,7 @@ class ScreenTickets extends StatelessWidget {
           BlocProvider.streamBuilderList<CrudEntityVisit>((data) => Column(
             children: [
               UiDivider(ticketName('Выберите абонемент', 'Посещения', _visitBloc.selectedTicket)),
-              for (var visit in data) UiAttend(visit),
+              for (var visit in data) UiVisit(visit),
             ],
           )),
         ]

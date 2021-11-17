@@ -18,8 +18,8 @@ class UiTrainingSelector {
     return await showDialog(context: context,
         builder: (BuildContext c) => BlocProvider(
             init: (blocProvider) {
-              blocProvider.dynBlocList<CrudEntityTraining, CrudTrainingBloc>();
-              trainingTypeBloc = blocProvider.dynBlocList<CrudEntityTrainingType, CrudTrainingTypeBloc>();
+              blocProvider.blocListCreate<CrudEntityTraining, CrudTrainingBloc>();
+              trainingTypeBloc = blocProvider.blocListCreate<CrudEntityTrainingType, CrudTrainingTypeBloc>();
               trainingTypeBloc!.loadTrainings(range, types: types);
             },
             child: SimpleDialog(

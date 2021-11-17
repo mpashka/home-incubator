@@ -11,7 +11,7 @@ import '../../blocs/crud_visit.dart';
 import '../../blocs/crud_training.dart';
 
 @immutable
-class UiAttend extends StatelessWidget {
+class UiVisit extends StatelessWidget {
 
   static final Logger log = Logger('UiAttend');
 
@@ -21,14 +21,13 @@ class UiAttend extends StatelessWidget {
   late final Session _session;
   late final CrudVisitBloc _visitBloc;
 
-
-  UiAttend(this._visit) {
+  UiVisit(this._visit) {
     _session = Injector().get<Session>();
   }
 
   @override
   Widget build(BuildContext context) {
-    _visitBloc = BlocProvider.blocList(context);
+    _visitBloc = BlocProvider.blocListGet<CrudEntityVisit, CrudVisitBloc>(context);
 
     final CrudEntityTraining training = _visit.training!;
     bool past = training.time.isBefore(DateTime.now());

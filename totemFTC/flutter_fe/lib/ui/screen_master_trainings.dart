@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'drawer.dart';
-import 'widgets/ui_attend.dart';
+import 'widgets/ui_visit.dart';
 import 'widgets/ui_workout.dart';
 
 class ScreenMasterTrainings extends StatelessWidget {

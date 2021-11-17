@@ -45,7 +45,7 @@ class CrudTrainingTypeBloc extends BlocBaseList<CrudEntityTrainingType> {
         trainings.add(training);
       }
     });
-    blocProvider.dynBlocList<CrudEntityTraining, CrudTrainingBloc>().state = trainings;
+    blocProvider.getBlocList<CrudEntityTraining>().state = trainings;
     selectedTraining = trainings.isNotEmpty ? trainings[0] : null;
   }
 }

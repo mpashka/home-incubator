@@ -13,16 +13,14 @@ import 'package:logging/logging.dart';
 import 'crud_api.dart';
 
 class BlocProvider extends StatefulWidget {
+  static final Logger log = Logger('BlocProvider');
 
   final Widget child;
   final void Function(BlocProvider) init;
-  late final Session session;
   final Map<Type, BlocBaseList> blocs = HashMap();
+  bool stateInit = false;
 
-  BlocProvider({Key? key, required this.init, required this.child}): super(key: key) {
-    final injector = Injector();
-    session = injector.get<Session>();
-  }
+  BlocProvider({Key? key, required this.init, required this.child}): super(key: key);
 
   @override
   _BlocProviderState createState() => _BlocProviderState();
@@ -36,41 +34,70 @@ class BlocProvider extends StatefulWidget {
       builder: (ctx) => of(ctx)._streamBuilderList(builder),
     );
   }
-  
-  T dynBlocList<A, T extends BlocBaseList<A>>() {
-    return (getOrCreateBlocList<A>() as dynamic) as T;
+
+  /// Is provider owner widgets during init
+  T blocListCreate<A, T extends BlocBaseList<A>>() {
+    return (createBlocList<A>() as dynamic) as T;
   }
 
-  static T blocList<A, T extends BlocBaseList<A>>(BuildContext context) {
-    return (of(context).getOrCreateBlocList<A>() as dynamic) as T;
+  /// Can be called by widgets to get appropriate bloc
+  static T blocListGet<A, T extends BlocBaseList<A>>(BuildContext context) {
+    return (of(context).getBlocList<A>() as dynamic) as T;
   }
 
   Widget _streamBuilderList<T>(Widget Function(List<T> data) builder) {
-    BlocBaseList<T> bloc = getOrCreateBlocList<T>();
+    BlocBaseList<T> bloc = getBlocList<T>();
     return StreamBuilder<List<T>>(
       stream: bloc.stateOut,
       initialData: bloc.state,
-      builder: (BuildContext context, AsyncSnapshot<List<T>> ticketsSnapshot) => builder(ticketsSnapshot.requireData),
+      builder: (BuildContext context, AsyncSnapshot<List<T>> snapshot) => builder(snapshot.requireData),
     );
   }
 
-  BlocBaseList<T> getOrCreateBlocList<T>() {
+  BlocBaseList<T> getBlocList<T>() {
     Type dataType = typeOf<T>();
+    if (dataType == dynamic) {
+      throw Exception('Internal error. Dynamic data type specified for bloc');
+    }
     BlocBaseList? blocList = blocs[dataType];
     if (blocList == null) {
+      throw Exception('Internal error. Bloc <$dataType> not found}');
+    }
+    return blocList as dynamic;
+  }
+
+  BlocBaseList<T> createBlocList<T>() {
+    Type dataType = typeOf<T>();
+    if (dataType == dynamic) {
+      throw Exception('Internal error. Dynamic data type specified for bloc');
+    }
+    if (!stateInit) {
+      throw Exception('Internal error. Attempt to create bloc out of init() method');
+    }
+    BlocBaseList? blocList = blocs[dataType];
+    if (blocList == null) {
+      log.fine('Bloc $dataType not found. Create new');
       switch (dataType) {
+        case CrudEntityTrainingType: blocList = CrudTrainingTypeBloc(this); break;
         case CrudEntityTraining: blocList = CrudTrainingBloc(); break;
         case CrudEntityVisit: blocList = CrudVisitBloc(); break;
         case CrudEntityTicket: blocList = CrudTicketBloc(); break;
         default: throw Exception('Internal error. Unknown list type $dataType');
       }
+      blocs[dataType] = blocList;
+    } else {
+      blocList.log.warning('Attempt to create already present bloc');
+      throw Exception('Internal error. Bloc <$dataType> was already present}');
     }
     return blocList as dynamic;
   }
 
   static BlocProvider of(BuildContext context) {
     BlocProvider? provider = context.findAncestorWidgetOfExactType<BlocProvider>();
-    return provider!;
+    if (provider == null) {
+      throw Exception('Internal error. BlocProvider not found in tree');
+    }
+    return provider;
   }
 
 }
@@ -80,20 +107,23 @@ class _BlocProviderState extends State<BlocProvider> {
 
   @override
   void initState() {
-    log.finer('Init state');
+    log.finer('Init state...');
     super.initState();
+    widget.stateInit = true;
     widget.init(widget);
+    widget.stateInit = false;
+    log.finer('Init complete');
   }
 
   @override
-  void dispose(){
+  void dispose() {
     log.finer('Dispose');
     super.dispose();
     widget.dispose();
   }
 
   @override
-  Widget build(BuildContext context){
+  Widget build(BuildContext context) {
     return widget.child;
   }
 }
@@ -114,12 +144,13 @@ abstract class BlocBaseList<T> extends BlocBase {
   List<T> _state = [];
 
   BlocBaseList() {
+    log = Logger('${runtimeType.toString()}<${typeOf<T>()}>');
+    log.fine('Init');
     Injector injector = Injector();
     backend = injector.get<CrudApi>();
     session = injector.get<Session>();
-    stateOut = _streamController.stream.asBroadcastStream();
+    stateOut = _streamController.stream/*.asBroadcastStream()*/;
     stateIn = _streamController.sink;
-    log = Logger('BlocBaseList<${typeOf<T>()}>${runtimeType.toString()}');
   }
 
   @override
@@ -133,7 +164,7 @@ abstract class BlocBaseList<T> extends BlocBase {
   set state(List<T> state) {
     _state = state;
     stateIn.add(state);
-    log.fine('Update state: $state');
+    log.fine('Update list state [${state.length}]: $state');
   }
 
   void clear() {
