@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
@@ -26,3 +27,17 @@ int compareId(int result, int aId, int bId) {
 }
 
 Type typeOf<T>() => T;
+
+typedef DateFilter = bool Function(DateTime date);
+
+enum DateSelectionType {
+  none, day, week, weekDay, month
+}
+
+class DateFilterInfo {
+  final DateFilter filter;
+  final DateTimeRange range;
+  final DateSelectionType type;
+
+  DateFilterInfo(this.filter, this.range, this.type);
+}

@@ -23,14 +23,15 @@ class BlocProvider extends StatefulWidget {
   @override
   BlocProviderState createState() => BlocProviderState();
 
-  static Widget streamBuilder<T, B extends BlocBaseState<T>>({required Widget Function(T data) builder, String? name, B? bloc}) {
-    Widget streamBuilder(B bloc) => StreamBuilder<T>(
-      stream: bloc._stateOut,
-      initialData: bloc.state,
-      builder: (BuildContext context, AsyncSnapshot<T> snapshot) => builder(snapshot.requireData),
-    );
-
-    return bloc != null ? streamBuilder(bloc) : Builder(builder: (ctx) => streamBuilder(of(ctx).getBloc<B>(name)));
+  static Widget streamBuilder<T, B extends BlocBaseState<T>>({required Widget Function(T data) builder, String? name}) {
+    return Builder(builder: (ctx) {
+      var bloc = of(ctx).getBloc<B>(name);
+      return StreamBuilder<T>(
+        stream: bloc._stateOut,
+        initialData: bloc.state,
+        builder: (BuildContext context, AsyncSnapshot<T> snapshot) => builder(snapshot.requireData),
+      );
+    });
   }
 
   static BlocProviderState of(BuildContext context) {
@@ -43,7 +44,7 @@ class BlocProvider extends StatefulWidget {
 
   /// Can be called by widgets to get appropriate bloc
   static T getBloc<T extends BlocBase>(BuildContext context) {
-    return (of(context).getBloc<T>() as dynamic) as T;
+    return of(context).getBloc<T>();
   }
 }
 
@@ -81,7 +82,10 @@ class BlocProviderState extends State<BlocProvider> {
     if (bloc == null) {
       throw Exception('Internal error. Bloc <$name> not found}');
     }
-    return (bloc as dynamic) as T;
+    if (bloc is! T) {
+      throw Exception('Internal error. Bloc <$name> is not of type $name');
+    }
+    return bloc;
   }
 
   T addBloc<T extends BlocBase>({required T bloc, String? name}) {

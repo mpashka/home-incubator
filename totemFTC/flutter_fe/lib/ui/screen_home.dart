@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:collection';
-import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
@@ -24,17 +23,13 @@ class ScreenHome extends StatelessWidget {
   static final Logger log = Logger('HomeScreen');
 
   final GlobalKey _keyFAB = GlobalKey();
-  late final Session _session;
-  late final CrudVisitBloc _visitBloc;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
         init: (blocProvider) {
-          _session = Injector().get<Session>();
           blocProvider.addBloc(bloc: CrudTicketBloc()).loadTickets();
-          _visitBloc = blocProvider.addBloc(bloc: CrudVisitBloc());
-          _visitBloc.loadVisits(DateTime.now().subtract(const Duration(days: 14)), 10);
+          blocProvider.addBloc(bloc: CrudVisitBloc()).loadVisits(DateTime.now().subtract(const Duration(days: 14)), 10);
         },
         child: UiScreen(
           body: Column(
@@ -75,7 +70,7 @@ class ScreenHome extends StatelessWidget {
   }
 
   Future<void> _showAddMenu() async {
-    developer.log("Add menu");
+    log.fine("Add menu");
     _keyFAB.currentContext!.findRenderObject();
     final RenderBox renderBox = _keyFAB.currentContext!.findRenderObject()! as RenderBox;
     var size = renderBox.size;
@@ -101,24 +96,27 @@ class ScreenHome extends StatelessWidget {
 
   Future<void> _onAddTraining(BuildContext context, bool past) async {
     DateTime now = DateTime.now();
-    var result = await UiTrainingSelector('Выберите тренировку')
-        .selectTraining(context, DateTimeRange(
-        start: now.subtract(Duration(days: past ? 4 : 0)),
-        end: now.add(Duration(days: past ? 4 : 0))));
+    var result = await UiTrainingSelector('Выберите тренировку').selectTraining(context,
+        range: DateTimeRange(
+            start: now.subtract(Duration(days: past ? 4 : 0)),
+            end: now.add(Duration(days: past ? 4 : 0))));
     log.finer("Dialog result: $result");
     if (result != null) {
       bool _past = result.time.isBefore(now);
+      final Session session = Injector().get<Session>();
+      CrudVisitBloc visitBloc = BlocProvider.getBloc(context);
+
       CrudEntityVisit visit = CrudEntityVisit(
-          user: _session.user,
+          user: session.user,
           training: result,
           trainingId: result.id,
           markSchedule: _past ? false : true,
           markSelf: _past ? CrudEntityVisitMark.on : CrudEntityVisitMark.unmark,
           markMaster: CrudEntityVisitMark.unmark);
       if (_past) {
-        _visitBloc.markSelf(visit, CrudEntityVisitMark.on);
+        visitBloc.markSelf(visit, CrudEntityVisitMark.on);
       } else {
-        _visitBloc.markSchedule(visit, true);
+        visitBloc.markSchedule(visit, true);
       }
     }
   }

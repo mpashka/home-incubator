@@ -1,17 +1,17 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
+import 'package:flutter_fe/misc/utils.dart';
+import 'package:logging/logging.dart';
 
-class WheelListSelector<E> extends StatelessWidget {
-
+class WheelListSelector<E, B extends BlocBaseState<List<E>>> extends StatelessWidget {
+  final Logger log;
   final WidgetBuilder<E> _childBuilder;
   final WidgetValueChanged<E>? onSelectedItemChanged;
-  final BlocBaseState<List<E>>? bloc;
 
-  const WheelListSelector({Key? key, required WidgetBuilder<E> childBuilder, this.onSelectedItemChanged, this.bloc}) :
+  WheelListSelector({Key? key, required WidgetBuilder<E> childBuilder, this.onSelectedItemChanged}) :
         _childBuilder = childBuilder,
+        log = Logger('WheelListSelector<${typeOf<E>()}, ${typeOf<B>()}>'),
         super(key: key);
 
   @override
@@ -21,9 +21,9 @@ class WheelListSelector<E> extends StatelessWidget {
     return Stack(
       children: [
         Positioned.fill(
-            child: BlocProvider.streamBuilder<List<E>, BlocBaseState<List<E>>>(bloc: bloc, builder: (data) => ListWheelScrollView.useDelegate(
+            child: BlocProvider.streamBuilder<List<E>, B>(builder: (data) => ListWheelScrollView.useDelegate(
                 onSelectedItemChanged: (itemIndex) {
-                  developer.log("Item selected: $itemIndex");
+                  // log.finest("Item selected: $itemIndex");
                   HapticFeedback.selectionClick();
                   var onSelectedItemChanged = this.onSelectedItemChanged;
                   if (onSelectedItemChanged != null) {

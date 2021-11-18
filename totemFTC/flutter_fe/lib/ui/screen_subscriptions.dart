@@ -19,11 +19,10 @@ class ScreenTickets extends StatelessWidget {
 
   static final formatDateTime = DateFormat('yyyy-MM-dd HH:mm');
 
-  late final Session _session;
-  late final CrudVisitBloc _visitBloc;
-
   @override
   Widget build(BuildContext context) {
+    late final Session _session;
+    late final CrudVisitBloc _visitBloc;
     return BlocProvider(
         init: (blocProvider) {
           _session = Injector().get<Session>();
@@ -32,9 +31,9 @@ class ScreenTickets extends StatelessWidget {
           _visitBloc.loadVisits(DateTime.now().subtract(Duration(days: 14)), 10);
         },
         child: UiScreen(
-          body: subscriptionsList(),
+          body: subscriptionsList(_session, _visitBloc),
           floatingActionButton: FloatingActionButton(
-            onPressed: () => _onAddTraining(context, _visitBloc.selectedTicket),
+            onPressed: () => _onAddTraining(context, _session, _visitBloc, _visitBloc.selectedTicket),
             tooltip: 'Add',
             child: Icon(Icons.add),
           ),
@@ -42,7 +41,7 @@ class ScreenTickets extends StatelessWidget {
     );
   }
 
-  Widget subscriptionsList() {
+  Widget subscriptionsList(Session _session, CrudVisitBloc _visitBloc) {
     return Column(
         children: [
           BlocProvider.streamBuilder<List<CrudEntityTicket>, CrudTicketBloc>(builder: (data) => Column(children: [
@@ -70,10 +69,10 @@ class ScreenTickets extends StatelessWidget {
     return '$prefix ${ticket.ticketType.name} / ${formatDateTime.format(ticket.buy)}';
   }
 
-  Future<void> _onAddTraining(BuildContext context, CrudEntityTicket? ticket) async {
+  Future<void> _onAddTraining(BuildContext context, Session _session, CrudVisitBloc _visitBloc, CrudEntityTicket? ticket) async {
     DateTime now = DateTime.now();
     var result = await UiTrainingSelector(ticketName('Отметить посещение', 'Отметить абонемент', ticket))
-        .selectTraining(context, DateTimeRange(start: now.subtract(Duration(days: 7)), end: now),
+        .selectTraining(context, range: DateTimeRange(start: now.subtract(Duration(days: 7)), end: now),
         types: ticket?.ticketType.trainingTypes
     );
     log.finer("Dialog result: $result");

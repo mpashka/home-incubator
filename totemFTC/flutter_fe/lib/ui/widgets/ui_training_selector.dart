@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
 import 'package:flutter_fe/blocs/crud_training.dart';
+import 'package:flutter_fe/misc/utils.dart';
 import 'package:intl/intl.dart';
 
 import 'wheel_list_selector.dart';
@@ -12,16 +13,18 @@ class UiTrainingSelector {
 
   UiTrainingSelector(this.title);
 
-  Future<CrudEntityTraining?> selectTraining(BuildContext context, DateTimeRange range, {List<CrudEntityTrainingType>? types}) async {
+  Future<CrudEntityTraining?> selectTraining(BuildContext context, {List<CrudEntityTrainingType>? types, DateTimeRange? range, DateFilterInfo? filter}) async {
+    if (range == null && filter == null) {
+      throw Exception('Internal error. Range or filter must be specified');
+    }
     late final CrudTrainingTypeFilteredBloc trainingTypeBloc;
-    late final CrudTrainingBloc trainingBloc;
     CrudEntityTraining? selectedTraining;
     return await showDialog(context: context,
         builder: (BuildContext c) => BlocProvider(
             init: (blocProvider) {
-              trainingBloc = blocProvider.addBloc(bloc: CrudTrainingBloc());
+              final CrudTrainingBloc trainingBloc = blocProvider.addBloc(bloc: CrudTrainingBloc());
               trainingTypeBloc = blocProvider.addBloc(bloc: CrudTrainingTypeFilteredBloc(trainingBloc));
-              trainingTypeBloc.loadTrainings(range, types: types);
+              trainingTypeBloc.loadTrainings(range: range, types: types, filter: filter);
             },
             child: SimpleDialog(
                 title: Text(title),
@@ -31,19 +34,17 @@ class UiTrainingSelector {
                     height: 150,
                     child:
                     Row(children: [
-                      Flexible(
+                      Expanded(
                           flex: 10,
-                          child: WheelListSelector<CrudEntityTrainingType>(
+                          child: WheelListSelector<CrudEntityTrainingType, CrudTrainingTypeFilteredBloc>(
                             childBuilder: (context, index, trainingType) => Text(trainingType.trainingName),
                             onSelectedItemChanged: (ctx, i, data) => trainingTypeBloc.onTrainingTypeChange(data),
-                            bloc: trainingTypeBloc,
                           )),
-                      Flexible(
+                      Expanded(
                           flex: 15,
-                          child: WheelListSelector<CrudEntityTraining>(
+                          child: WheelListSelector<CrudEntityTraining, CrudTrainingBloc>(
                             childBuilder: (context, index, training) => Text('${_dateTimeFormatter.format(training.time)} ${training.trainer.nickName}'),
                             onSelectedItemChanged: (ctx, i, data) => selectedTraining = data,
-                            bloc: trainingBloc,
                           )),
                     ],),
                   ),

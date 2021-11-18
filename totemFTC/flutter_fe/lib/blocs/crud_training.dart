@@ -25,15 +25,26 @@ class CrudTrainingTypeFilteredBloc extends BlocBaseList<CrudEntityTrainingType> 
 
   CrudTrainingTypeFilteredBloc(this._crudTrainingBloc);
 
-  Future<void> loadTrainings(DateTimeRange range, {List<CrudEntityTrainingType>? types}) async {
-    _allTrainings = (await backend.requestJson('GET', '/api/training/byDateInterval', params: {
-      'from': dateTimeFormat.format(range.start), 'to': dateTimeFormat.format(range.end)}) as List)
-        .map((item) => CrudEntityTraining.fromJson(item))
-        .toList();
+  Future<void> loadTrainings({List<CrudEntityTrainingType>? types, DateTimeRange? range, DateFilterInfo? filter}) async {
+    if (range == null && filter == null) {
+      throw Exception('Internal error. Range or filter must be specified');
+    }
+    range ??= filter?.range;
+
+    Iterable<CrudEntityTraining> loaded = (await backend.requestJson('GET', '/api/training/byDateInterval', params: {
+      'from': dateTimeFormat.format(range!.start), 'to': dateTimeFormat.format(range.end)}) as List)
+        .map((item) => CrudEntityTraining.fromJson(item));
+    if (filter != null) {
+      loaded = loaded.where((t) => filter.filter(t.time));
+    }
+    _allTrainings = loaded.toList();
 
     Set<CrudEntityTrainingType> trainingTypesSet = HashSet<CrudEntityTrainingType>();
     _allTrainings.forEach((training) => trainingTypesSet.add(training.trainingType));
-    if (types != null) trainingTypesSet.retainAll(types);
+    if (types != null) {
+      trainingTypesSet.retainAll(types);
+      _allTrainings = _allTrainings.where((t) => types.contains(t.trainingType)).toList();
+    }
     var trainingTypes = List.of(trainingTypesSet, growable: false);
     trainingTypes.sort();
     state = trainingTypes;

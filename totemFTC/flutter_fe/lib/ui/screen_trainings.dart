@@ -3,7 +3,9 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
+import 'package:flutter_fe/blocs/crud_training.dart';
 import 'package:flutter_fe/blocs/crud_visit.dart';
+import 'package:flutter_fe/blocs/session.dart';
 import 'package:flutter_fe/ui/widgets/ui_calendar.dart';
 import 'package:flutter_fe/ui/widgets/ui_visits.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
@@ -12,6 +14,7 @@ import 'package:logging/logging.dart';
 
 import 'screen_base.dart';
 import 'widgets/ui_divider.dart';
+import 'widgets/ui_training_selector.dart';
 
 class ScreenTrainings extends StatefulWidget {
   @override
@@ -27,33 +30,51 @@ class ScreenTrainingsState extends State<ScreenTrainings> {
 
   @override
   Widget build(BuildContext context) {
+    late final CrudVisitBloc visitBloc;
     late final CrudVisitBlocFiltered filteredVisitBloc;
+    CrudEntityTrainingType? selectedTrainingType;
     return BlocProvider(
         init: (blocProvider) {
           // _session = Injector().get<Session>();
           final now = DateTime.now();
           final DateTime firstDay = now.subtract(Duration(days: now.weekday - 1 + 7*(weeks-1)));
-          final CrudVisitBloc visitBloc = blocProvider.addBloc(bloc: CrudVisitBloc());
+          visitBloc = blocProvider.addBloc(bloc: CrudVisitBloc());
           visitBloc.loadVisits(DateTime(firstDay.year, firstDay.month), 10);
           filteredVisitBloc = blocProvider.addBloc(bloc: CrudVisitBlocFiltered(visitBloc, firstDay));
         },
         child: UiScreen(
-          body: BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(builder: (data) {
-            return Column(children: [
-              UiCalendar(
-                weeks: weeks,
-                selectedDates: data.map((v) => v.training!.time).map((t) => DateTime(t.year, t.month, t.day)).toSet(),
-                onFilterChange: filteredVisitBloc.onFilterChange,
-              ),
-              UiDivider('Посещения'),
-              UiVisits(),
-            ]);}),
+          body: BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(builder: (data) => Column(children: [
+            UiCalendar(
+              weeks: weeks,
+              selectedDates: data.where((v) => v.isVisible()).map((v) => v.training!.time).map((t) => DateTime(t.year, t.month, t.day)).toSet(),
+              onFilterChange: filteredVisitBloc.onFilterChange,
+            ),
+            UiDivider('Посещения'),
+            Expanded(child: UiVisits((tt) => selectedTrainingType = tt)),
+          ]),),
           floatingActionButton: FloatingActionButton(
-          key: _keyFAB,
-            onPressed: () => log.finer('aaa'),
+            key: _keyFAB,
+            onPressed: () => _onAddTraining(visitBloc, filteredVisitBloc, selectedTrainingType),
             tooltip: 'Add',
             child: const Icon(Icons.add),
           ), // This trailing comma makes auto-formatting nicer for build methods.
         ));
+  }
+
+  Future<void> _onAddTraining(CrudVisitBloc visitBloc, CrudVisitBlocFiltered filteredVisitBloc, CrudEntityTrainingType? selectedTrainingType) async {
+    var _session = Injector().get<Session>();
+    List<CrudEntityTrainingType>? types = selectedTrainingType != null ? [selectedTrainingType] : null;
+    var result = await UiTrainingSelector('Выберите тренировку').selectTraining(context, filter: filteredVisitBloc.filter, types: types);
+    log.finer("Dialog result: $result");
+    if (result != null) {
+      CrudEntityVisit visit = CrudEntityVisit(
+          user: _session.user,
+          training: result,
+          trainingId: result.id,
+          markSchedule: false,
+          markSelf: CrudEntityVisitMark.on,
+          markMaster: CrudEntityVisitMark.unmark);
+      visitBloc.markSelf(visit, CrudEntityVisitMark.on);
+    }
   }
 }

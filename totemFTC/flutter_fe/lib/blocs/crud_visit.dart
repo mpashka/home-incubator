@@ -104,6 +104,19 @@ class CrudEntityVisit implements Comparable<CrudEntityVisit> {
     return 't${trainingId}u${user!.userId}';
   }
 
+  bool isVisible() {
+    switch (markMaster) {
+      case CrudEntityVisitMark.off: return false;
+      case CrudEntityVisitMark.unmark:
+        switch (markSelf) {
+          case CrudEntityVisitMark.off: return false;
+          case CrudEntityVisitMark.unmark: return markSchedule;
+          default: return true;
+        }
+      default: return true;
+    }
+  }
+
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
