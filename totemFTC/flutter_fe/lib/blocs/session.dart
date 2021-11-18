@@ -108,6 +108,7 @@ class Session {
 
 const loginProviders = <LoginProvider>[
   LoginProvider("facebook", "https://www.facebook.com/dialog/oauth", ["openid", "email", "public_profile", "user_gender", "user_link", "user_birthday", "user_location"], Icon(MdiIcons.facebook), true),
+  LoginProvider("google", "https://accounts.google.com/o/oauth2/v2/auth", ["openid", "email", "profile"], Icon(MdiIcons.google), true),
 ];
 
 class SessionBloc extends BlocBase {
