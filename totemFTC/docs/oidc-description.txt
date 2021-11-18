@@ -146,3 +146,6 @@ urn:ietf:wg:oauth:2.0:oob
 ---
 https://www.facebook.com/dialog/oauth?client_id=4493174020705731&redirect_uri=http%3A%2F%2Flocalhost%3A8080%2Flogin%2Fcallback%2Ffacebook&state=facebook_e0SlBNR31qWJNBIQXJu9&response_type=code&scope=openid%20email%20public_profile%20user_gender%20user_link%20user_birthday%20user_location
 
+Yandex
+scope=login:birthday+login:email+login:info+login:avatar (! no openid!!!!)
+Yandex user response received: {"id":"1502479891","login":"veritatem.quaeres","client_id":"23d6b1950e904067af78ed108d33d11d","display_name":"veritatem.quaeres","real_name":"Veritatem Quaeres","first_name":"Veritatem","last_name":"Quaeres","default_email":"veritatem.quaeres@yandex.ru","emails":["veritatem.quaeres@yandex.ru"],"birthday":"","default_avatar_id":"40841/szC4VCiRKavWdmTru3NAFgaGhVE-1","is_avatar_empty":false,"psuid":"1.AAeCdQ.07OljcgwCsOLXbXbs3yUIA.KnmfruGuYG9cZAXEDdsEtA"}

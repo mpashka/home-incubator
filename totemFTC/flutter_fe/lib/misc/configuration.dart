@@ -23,7 +23,7 @@ class Configuration {
   /// circular dependency between crud_api and session
   String sessionId = '';
 
-  Future load() {
+  Future<List> load() {
     try {
       WidgetsFlutterBinding.ensureInitialized();
       return Future.wait([
@@ -58,4 +58,6 @@ class Configuration {
   String loginRedirectUrl() {
     return _doc['oidc'][kIsWeb ? 'redirectUrlWeb' : 'redirectUrl'];
   }
+
+  dynamic get doc => _doc;
 }

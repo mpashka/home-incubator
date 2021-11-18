@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/crud_api.dart';
 import 'package:flutter_fe/blocs/crud_user.dart';
@@ -50,7 +51,8 @@ class Session {
     final clientId = _configuration.loginProviderClientId(provider.name);
     // client_id=<client_id>&redirect_uri=<redirect_uri>&state=<state>&response_type=code&scope=<scope>&nonce=<nonce>
     final url = provider.url
-        + '?client_id=' + clientId
+        + (provider.url.contains('?') ? '&' : '?')
+        + 'client_id=' + clientId
         + '&state=my_state'
             '&response_type=code'
             '&scope=' + provider.scopes.join('+')
@@ -100,7 +102,8 @@ class Session {
   }
 
   Future<CrudEntityUser> loadUser() async {
-    _user = CrudEntityUser.fromJson(await _api.requestJson('GET', '/api/user'));
+    var json = await _api.requestJson('GET', '/api/user');
+    _user = CrudEntityUser.fromJson(json);
     return _user;
   }
 
@@ -109,6 +112,8 @@ class Session {
 const loginProviders = <LoginProvider>[
   LoginProvider("facebook", "https://www.facebook.com/dialog/oauth", ["openid", "email", "public_profile", "user_gender", "user_link", "user_birthday", "user_location"], Icon(MdiIcons.facebook), true),
   LoginProvider("google", "https://accounts.google.com/o/oauth2/v2/auth", ["openid", "email", "profile"], Icon(MdiIcons.google), true),
+  // ?force_confirm=yes
+  LoginProvider("yandex", "https://oauth.yandex.ru/authorize", ["login:birthday", "login:email", "login:info", "login:avatar"], Icon(MdiIcons.alphaYCircleOutline), true),
 ];
 
 class SessionBloc extends BlocBase {

@@ -85,7 +85,7 @@ class CrudEntityUser implements Comparable<CrudEntityUser> {
 class CrudEntityUserSocialNetwork {
   String networkName;
   String id;
-  String link;
+  String? link;
 
   CrudEntityUserSocialNetwork({required this.networkName, required this.id, required this.link});
   factory CrudEntityUserSocialNetwork.fromJson(Map<String, dynamic> json) => _$CrudEntityUserSocialNetworkFromJson(json);

@@ -38,7 +38,8 @@ class ScreenHome extends StatelessWidget {
             children: <Widget>[
               BlocProvider.streamBuilder<List<CrudEntityTicket>, CrudTicketBloc>(builder: (data) => Column(
                   children: [
-                    if (data.isNotEmpty) const UiDivider('Абонементы'),
+                    if (data.isNotEmpty) const UiDivider('Абонементы')
+                    else const UiDivider('Абонементов нет'),
                     for (var ticket in data) UiSubscription(ticket),
                   ])),
               BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(builder: (data) {
@@ -51,9 +52,10 @@ class ScreenHome extends StatelessWidget {
                   (training.time.isBefore(now) ? prevWidgets : nextWidgets).add(widget);
                 }
                 return Column(children: [
-                  if (prevWidgets.isNotEmpty) const UiDivider('Прошло'),
+                  if (prevWidgets.isEmpty && nextWidgets.isEmpty) const UiDivider('Тренировок нет'),
+                  if (prevWidgets.isNotEmpty) const UiDivider('Тренировки'),
                   for (var widget in prevWidgets) widget,
-                  if (nextWidgets.isNotEmpty) const UiDivider('Будет'),
+                  if (nextWidgets.isNotEmpty) const UiDivider('Записи'),
                   for (var widget in nextWidgets) widget,
                 ]);
               }),
