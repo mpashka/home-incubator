@@ -2,7 +2,6 @@ package org.mpashka.totemftc.api;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.smallrye.mutiny.Uni;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.PreparedQuery;
@@ -48,19 +47,6 @@ public class DbCrudTraining {
         selectByDateIntervalForUser = client.preparedQuery(sql.replace("<where>", "WHERE t.training_time >= $1 AND t.training_time <= $2 "));
         selectByDateIntervalForTrainer = client.preparedQuery("SELECT * FROM training t, " +
                 "    LATERAL (SELECT row_to_json(tt.*) training_type_obj FROM training_type tt WHERE tt.training_type=t.training_type) trty " +
-                "    LEFT OUTER JOIN LATERAL ( " +
-                "        SELECT array_agg(row_to_json(v.*)) visits_arr " +
-                "        FROM ( " +
-                "            SELECT row_to_json(v.*) visit_obj, row_to_json(u.*) user_obj, " +
-                "                row_to_json(trt.*) training_ticket_obj, row_to_json(tit.*) ticket_type_obj " +
-                "            FROM training_visit v " +
-                "                LEFT JOIN user_info u ON u.user_id=v.user_id " +
-                "                LEFT OUTER JOIN training_ticket trt ON v.ticket_id=trt.user_id " +
-                "                LEFT OUTER JOIN ticket_type tit ON trt.ticket_type_id=tit.ticket_type_id " +
-                "            WHERE v.training_id = t.training_id " +
-                "        ) v " +
-                "        GROUP BY t.training_id " +
-                "    ) v ON true " +
                 "WHERE t.trainer_id = $1 " +
                 "    AND t.training_time >= $2 AND t.training_time <= $3 " +
                 "ORDER BY t.training_time"
@@ -76,7 +62,7 @@ public class DbCrudTraining {
                 .execute()
                 .onItem().transform(set ->
                     StreamSupport.stream(set.spliterator(), false)
-                            .map(r -> new Entity().loadFromDb(r, false))
+                            .map(r -> new Entity().loadFromDb(r))
                             .toArray(Entity[]::new)
                 )
                 .onFailure().transform(e -> new RuntimeException("Error getAll", e))
@@ -88,7 +74,7 @@ public class DbCrudTraining {
                 .execute(Tuple.of(date))
                 .onItem().transform(set ->
                     StreamSupport.stream(set.spliterator(), false)
-                            .map(r -> new Entity().loadFromDb(r, false))
+                            .map(r -> new Entity().loadFromDb(r))
                             .toArray(Entity[]::new)
                 )
                 .onFailure().transform(e -> new RuntimeException("Error getByDate", e))
@@ -100,7 +86,7 @@ public class DbCrudTraining {
                 .execute(Tuple.of(from, to))
                 .onItem().transform(set ->
                     StreamSupport.stream(set.spliterator(), false)
-                            .map(r -> new Entity().loadFromDb(r, false))
+                            .map(r -> new Entity().loadFromDb(r))
                             .toArray(Entity[]::new)
                 )
                 .onFailure().transform(e -> new RuntimeException("Error getByDateInterval", e))
@@ -112,7 +98,7 @@ public class DbCrudTraining {
                 .execute(Tuple.of(trainerId, from, to))
                 .onItem().transform(set ->
                     StreamSupport.stream(set.spliterator(), false)
-                            .map(r -> new Entity().loadFromDb(r, true))
+                            .map(r -> new Entity().loadFromDb(r))
                             .toArray(Entity[]::new)
                 )
                 .onFailure().transform(e -> new RuntimeException("Error getByDateInterval", e))
@@ -162,10 +148,9 @@ public class DbCrudTraining {
         private LocalDateTime time;
         private DbUser.EntityUser trainer;
         private EntityTrainingType trainingType;
-        private DbCrudVisit.EntityVisit[] visits;
         private String comment;
 
-        public Entity loadFromDb(Row row, boolean visits) {
+        public Entity loadFromDb(Row row) {
             this.id = row.getInteger("training_id");
             this.time = row.getLocalDateTime("training_time");
             JsonObject trainerJson = row.getJsonObject("trainer");
@@ -174,17 +159,6 @@ public class DbCrudTraining {
             }
             this.trainingType = new EntityTrainingType().loadFromDb(row.getJsonObject("training_type_obj"));
             this.comment = row.getString("training_comment");
-            JsonObject[] visitsJson = row.getArrayOfJsonObjects("visits_arr");
-            if (visits) {
-                this.visits = visitsJson == null ? new DbCrudVisit.EntityVisit[0] :
-                        Arrays.stream(visitsJson)
-                                .map(visitJson -> new DbCrudVisit.EntityVisit().loadFromDb(
-                                        visitJson.getJsonObject("visit_obj"),
-                                        visitJson.getJsonObject("user_obj"),
-                                        visitJson.getJsonObject("training_ticket_obj"),
-                                        visitJson.getJsonObject("ticket_type_obj")
-                                )).toArray(DbCrudVisit.EntityVisit[]::new);
-            }
             return this;
         }
     }

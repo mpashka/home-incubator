@@ -40,6 +40,13 @@ class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
     _addAndUpdate(visit, (v) => v.markSelf = mark);
   }
 
+  Future<void> markMaster(CrudEntityVisit visit, CrudEntityVisitMark mark) async {
+    log.finer('Mark master $visit -> $mark');
+    await backend.request('PUT', '/api/visit/markMaster/${describeEnum(mark)}', body: visit);
+    visit.markMaster = mark;
+    _addAndUpdate(visit, (v) => v.markMaster = mark);
+  }
+
   void _addAndUpdate(CrudEntityVisit visit, void Function(CrudEntityVisit visit) apply) {
     List<CrudEntityVisit> state = this.state;
     var indexOf = state.indexOf(visit);

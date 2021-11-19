@@ -3,6 +3,7 @@ import 'dart:core';
 
 import 'package:flutter_fe/blocs/bloc_provider.dart';
 import 'package:flutter_fe/blocs/crud_api.dart';
+import 'package:flutter_fe/blocs/crud_visit.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
@@ -47,6 +48,8 @@ class CrudEntityTicket {
   @JsonKey(fromJson: dateTimeFromJson_, toJson: dateTimeToJson_)
   DateTime? end;
   int visited;
+  // added
+  List<CrudEntityVisit>? visits;
 
   CrudEntityTicket({required this.id, required this.ticketType, required this.user, required this.buy, this.start, this.end, required this.visited});
   factory CrudEntityTicket.fromJson(Map<String, dynamic> json) => _$CrudEntityTicketFromJson(json);

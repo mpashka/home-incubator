@@ -80,11 +80,12 @@ class CrudEntityTraining implements Comparable<CrudEntityTraining> {
   DateTime time;
   CrudEntityUser trainer;
   CrudEntityTrainingType trainingType;
-  List<CrudEntityVisit>? visits;
   String? comment;
+  // Added
+  List<CrudEntityVisit>? visits;
 
   CrudEntityTraining({required this.id, required this.time, required this.trainer,
-      required this.trainingType, this.visits, this.comment});
+      required this.trainingType, this.comment});
 
   factory CrudEntityTraining.fromJson(Map<String, dynamic> json) => _$CrudEntityTrainingFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityTrainingToJson(this);

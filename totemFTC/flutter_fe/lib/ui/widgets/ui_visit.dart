@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
+import 'package:flutter_fe/blocs/crud_user.dart';
 import 'package:flutter_fe/blocs/session.dart';
+import 'package:flutter_fe/misc/utils.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
@@ -13,14 +15,14 @@ import '../../blocs/crud_training.dart';
 @immutable
 class UiVisit extends StatelessWidget {
 
-  static final Logger log = Logger('UiAttend');
-
-  final _dateTimeFormat = DateFormat('EEE,dd HH:mm');
+  static final Logger log = Logger('UiVisit');
 
   final CrudEntityVisit _visit;
+  /// todo this is adhoc workaround. Probably later enum will be used
+  final bool forTrainer;
   late final Session _session;
 
-  UiVisit(this._visit) {
+  UiVisit(this._visit, {this.forTrainer = false}) {
     _session = Injector().get<Session>();
   }
 
@@ -29,6 +31,7 @@ class UiVisit extends StatelessWidget {
     CrudVisitBloc visitBloc = BlocProvider.getBloc<CrudVisitBloc>(context);
 
     final CrudEntityTraining training = _visit.training!;
+    final CrudEntityUser user = _visit.user!;
     bool past = training.time.isBefore(DateTime.now());
     IconData visitIcon = _visit.markSchedule ? MdiIcons.clockOutline : MdiIcons.checkboxBlankCircleOutline;
     if (past) {
@@ -59,11 +62,13 @@ class UiVisit extends StatelessWidget {
               Icon(visitIcon),
             ]
         ),
-        title: Text('${training.trainingType.trainingName} (${training.trainer.nickName})'),
+        title: Text(forTrainer
+            ? '${user.firstName} ${user.lastName} (${user.nickName})'
+            : '${training.trainingType.trainingName} (${training.trainer.nickName})'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(_dateTimeFormat.format(training.time)),
+            Text(localDateTimeFormat.format(training.time)),
             const Icon(Icons.more_vert),
           ],
         )
@@ -86,25 +91,35 @@ class UiVisit extends StatelessWidget {
       context: context,
       position: RelativeRect.fromLTRB(left, top, left, top),
       items: [
-        if (past && _visit.markSelf != CrudEntityVisitMark.on) const PopupMenuItem(
+        if (!forTrainer && past && _visit.markSelf != CrudEntityVisitMark.on) const PopupMenuItem(
           value: 1,
           child: Text("Был"),
         ),
-        if (past && _visit.markSelf != CrudEntityVisitMark.off) const PopupMenuItem(
+        if (!forTrainer && past && _visit.markSelf != CrudEntityVisitMark.off) const PopupMenuItem(
           value: 2,
           child: Text("Не был"),
         ),
-        if (!past && !_visit.markSchedule) const PopupMenuItem(
+        if (!forTrainer && !past && !_visit.markSchedule) const PopupMenuItem(
           value: 3,
           child: Text("Приду"),
         ),
-        if (!past && _visit.markSchedule) const PopupMenuItem(
+        if (!forTrainer && !past && _visit.markSchedule) const PopupMenuItem(
           value: 4,
           child: Text("Не приду"),
         ),
+
+        if (forTrainer && past && _visit.markMaster != CrudEntityVisitMark.on) const PopupMenuItem(
+          value: 5,
+          child: Text("Был"),
+        ),
+        if (forTrainer && past && _visit.markMaster != CrudEntityVisitMark.off) const PopupMenuItem(
+          value: 6,
+          child: Text("Не был"),
+        ),
+
 /*
         if (!past) const PopupMenuItem(
-          value: 5,
+          value: 7,
           child: Text("Перенести"),
         ),
 */
@@ -119,7 +134,8 @@ class UiVisit extends StatelessWidget {
       case 2: visitBloc.markSelf(_visit, CrudEntityVisitMark.off); break;
       case 3: visitBloc.markSchedule(_visit, true); break;
       case 4: visitBloc.markSchedule(_visit, false); break;
+      case 5: visitBloc.markMaster(_visit, CrudEntityVisitMark.on); break;
+      case 6: visitBloc.markMaster(_visit, CrudEntityVisitMark.off); break;
     }
   }
 }
-

@@ -6,6 +6,8 @@ import 'package:flutter_fe/misc/utils.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
 
+/// todo introduce types and type methods
+///
 class UiCalendar extends StatefulWidget {
   final int weeks;
   final Set<DateTime> selectedDates;

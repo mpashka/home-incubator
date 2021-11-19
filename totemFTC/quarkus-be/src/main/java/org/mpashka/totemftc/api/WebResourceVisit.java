@@ -49,7 +49,7 @@ public class WebResourceVisit {
     @GET
     @Path("byTraining/{trainingId}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<DbCrudVisit.EntityVisit[]> list(@PathParam("trainingId") int trainingId) {
+    public Uni<DbCrudVisit.EntityVisit[]> listByTraining(@PathParam("trainingId") int trainingId) {
         return dbVisit.getByTraining(trainingId);
     }
 

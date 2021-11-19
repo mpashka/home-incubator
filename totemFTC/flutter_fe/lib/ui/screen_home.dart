@@ -31,8 +31,7 @@ class ScreenHome extends StatelessWidget {
           blocProvider.addBloc(bloc: CrudTicketBloc()).loadTickets();
           blocProvider.addBloc(bloc: CrudVisitBloc()).loadVisits(DateTime.now().subtract(const Duration(days: 14)), 10);
         },
-        child: UiScreen(
-          body: Column(
+        child: UiScreen((context) => Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[

@@ -6,6 +6,7 @@ import 'package:flutter_fe/blocs/bloc_provider.dart';
 import 'package:flutter_fe/blocs/crud_training.dart';
 import 'package:flutter_fe/blocs/crud_visit.dart';
 import 'package:flutter_fe/blocs/session.dart';
+import 'package:flutter_fe/misc/utils.dart';
 import 'package:flutter_fe/ui/widgets/ui_calendar.dart';
 import 'package:flutter_fe/ui/widgets/ui_visits.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
@@ -39,11 +40,11 @@ class ScreenTrainingsState extends State<ScreenTrainings> {
           final now = DateTime.now();
           final DateTime firstDay = now.subtract(Duration(days: now.weekday - 1 + 7*(weeks-1)));
           visitBloc = blocProvider.addBloc(bloc: CrudVisitBloc());
-          visitBloc.loadVisits(DateTime(firstDay.year, firstDay.month), 10);
+          visitBloc.loadVisits(firstDay.monthDate(), 10);
           filteredVisitBloc = blocProvider.addBloc(bloc: CrudVisitBlocFiltered(visitBloc, firstDay));
         },
-        child: UiScreen(
-          body: BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(builder: (data) => Column(children: [
+        child: UiScreen((context) => BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(
+          builder: (data) => Column(children: [
             UiCalendar(
               weeks: weeks,
               selectedDates: data.where((v) => v.isVisible()).map((v) => v.training!.time).map((t) => DateTime(t.year, t.month, t.day)).toSet(),

@@ -28,6 +28,16 @@ int compareId(int result, int aId, int bId) {
   return aId > bId ? 1 : -1;
 }
 
+extension DateTimeFactory on DateTime {
+  DateTime dayDate() {
+    return DateTime(year, month, day);
+  }
+
+  DateTime monthDate() {
+    return DateTime(year, month);
+  }
+}
+
 Type typeOf<T>() => T;
 
 typedef DateFilter = bool Function(DateTime date);

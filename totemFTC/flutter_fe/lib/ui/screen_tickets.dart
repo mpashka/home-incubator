@@ -31,14 +31,13 @@ class ScreenTickets extends StatelessWidget {
           visitBloc = blocProvider.addBloc(bloc: SelectedVisitBloc());
           visitBloc.loadVisits(DateTime.now().subtract(Duration(days: 14)), 10);
         },
-        child: UiScreen(
-          body: Column(
+        child: UiScreen((context) => Column(
               children: [
                 BlocProvider.streamBuilder<List<CrudEntityTicket>, CrudTicketBloc>(builder: (data) => Column(children: [
                   if (data.isNotEmpty) UiDivider('Абонементы'),
                   for (var ticket in data)
                     GestureDetector(
-                      onTap: () => visitBloc.loadTicketVisits(session.user, ticket),
+                      onTap: () => visitBloc.selectTicket(session.user, ticket),
                       child: UiTicket(ticket),
                     )
                 ])),
@@ -86,14 +85,15 @@ class ScreenTickets extends StatelessWidget {
 class SelectedVisitBloc extends CrudVisitBloc {
   CrudEntityTicket? selectedTicket;
 
-  Future<void> loadTicketVisits(CrudEntityUser user, CrudEntityTicket ticket) async {
-    state = (await backend.requestJson('GET', '/api/visit/byTicket/${ticket.id}') as List)
+  Future<void> selectTicket(CrudEntityUser user, CrudEntityTicket ticket) async {
+    ticket.visits ??= (await backend.requestJson('GET', '/api/visit/byTicket/${ticket.id}') as List)
         .map((item) {
       var crudEntityVisit = CrudEntityVisit.fromJson(item);
       crudEntityVisit.user = user;
       crudEntityVisit.ticket = ticket;
       return crudEntityVisit;
     }).toList();
+    state = ticket.visits!;
     selectedTicket = ticket;
   }
 }

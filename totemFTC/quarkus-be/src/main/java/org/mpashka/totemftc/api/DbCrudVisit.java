@@ -14,7 +14,6 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.stream.StreamSupport;
 
 import static java.util.Arrays.asList;
@@ -42,10 +41,13 @@ public class DbCrudVisit {
     void init() {
         selectByTraining = client.preparedQuery("SELECT * FROM training_visit v " +
                 "JOIN user_info u ON v.user_id = u.user_id " +
-                "LEFT OUTER JOIN training_ticket tti ON v.ticket_id = tti.ticket_id " +
-                "LEFT OUTER JOIN (SELECT ticket_id, COUNT(*) training_visit_count FROM training_visit GROUP BY ticket_id) vc ON tti.ticket_id=vc.ticket_id " +
+                "LEFT OUTER JOIN training_ticket trt ON trt.ticket_id=v.ticket_id " +
+                "LEFT JOIN ticket_type tit ON tit.ticket_type_id=trt.ticket_type_id " +
+                // todo check optimization WHERE tv.ticket_id=v.ticket_id
+                "LEFT OUTER JOIN (SELECT ticket_id, COUNT(*) training_visit_count FROM training_visit tv WHERE tv.ticket_id=v.ticket_id GROUP BY ticket_id) vc ON v.ticket_id=vc.ticket_id " +
                 "WHERE v.training_id=$1 " +
                 "ORDER BY u.last_name, u.first_name, u.nick_name");
+
         selectByUser = client.preparedQuery(
                 "SELECT * " +
                         "FROM training_visit v " +
@@ -217,7 +219,7 @@ public class DbCrudVisit {
             this.markSelf = EntityVisitMark.valueOf(row.getString("visit_mark_self"));
             this.markMaster = EntityVisitMark.valueOf(row.getString("visit_mark_master"));
             if (training) {
-                this.training = new DbCrudTraining.Entity().loadFromDb(row, false);
+                this.training = new DbCrudTraining.Entity().loadFromDb(row);
             }
             if (ticket && row.getInteger("ticket_id") != null) {
                 this.ticket = new DbCrudTicket.EntityTicket().loadFromDb(row);
