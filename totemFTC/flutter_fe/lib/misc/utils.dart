@@ -12,6 +12,7 @@ String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
 
 final dateFormat = DateFormat('yyyy-MM-dd');
 final dateTimeFormat = DateFormat('yyyy-MM-dd HH:mm');
+final localDateTimeFormat = DateFormat('EEE,dd HH:mm');
 
 int compare<E>(int result, Comparable<E>? a, E? b) {
   if (result != 0) return result;

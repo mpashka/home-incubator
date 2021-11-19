@@ -1,6 +1,7 @@
 package org.mpashka.totemftc.api;
 
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.PreparedQuery;
 import io.vertx.mutiny.sqlclient.Row;
@@ -216,10 +217,30 @@ public class DbCrudVisit {
             this.markSelf = EntityVisitMark.valueOf(row.getString("visit_mark_self"));
             this.markMaster = EntityVisitMark.valueOf(row.getString("visit_mark_master"));
             if (training) {
-                this.training = new DbCrudTraining.Entity().loadFromDb(row);
+                this.training = new DbCrudTraining.Entity().loadFromDb(row, false);
             }
             if (ticket && row.getInteger("ticket_id") != null) {
                 this.ticket = new DbCrudTicket.EntityTicket().loadFromDb(row);
+            }
+            return this;
+        }
+
+        public EntityVisit loadFromDb(JsonObject visitJson, JsonObject userJson, JsonObject ticketJson, JsonObject ticketTypeJson) {
+            this.trainingId = visitJson.getInteger("training_id");
+            if (userJson != null) {
+                this.user = new DbUser.EntityUser().loadFromDb(userJson);
+            }
+            this.comment = visitJson.getString("visit_comment");
+            this.markSchedule = visitJson.getBoolean("visit_mark_schedule");
+            this.markSelf = EntityVisitMark.valueOf(visitJson.getString("visit_mark_self"));
+            this.markMaster = EntityVisitMark.valueOf(visitJson.getString("visit_mark_master"));
+/*
+            if (training) {
+                this.training = new DbCrudTraining.Entity().loadFromDb(visitJson, false);
+            }
+*/
+            if (ticketJson != null && visitJson.getInteger("ticket_id") != null) {
+                this.ticket = new DbCrudTicket.EntityTicket().loadFromDb(ticketJson, ticketTypeJson);
             }
             return this;
         }

@@ -4,14 +4,14 @@ import 'package:intl/intl.dart';
 import '../../blocs/crud_ticket.dart';
 
 @immutable
-class UiSubscription extends StatelessWidget {
+class UiTicket extends StatelessWidget {
 
   static final formatDateTime = DateFormat('yyyy-MM-dd HH:mm');
   static final formatDate = DateFormat('yyyy-MM-dd');
 
   final CrudEntityTicket _ticket;
 
-  UiSubscription(this._ticket) : super(key: ValueKey(_ticket.id));
+  UiTicket(this._ticket) : super(key: ValueKey(_ticket.id));
 
   @override
   Widget build(BuildContext context) {

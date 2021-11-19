@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_fe/blocs/bloc_provider.dart';
+import 'package:flutter_fe/blocs/crud_training.dart';
+import 'package:flutter_fe/blocs/crud_visit.dart';
+import 'package:flutter_fe/ui/screen_base.dart';
+import 'package:flutter_fe/ui/widgets/wheel_list_selector.dart';
 
 import 'drawer.dart';
 import 'widgets/ui_visit.dart';
@@ -8,42 +13,24 @@ class ScreenMasterTrainings extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Totem FC'),
-      ),
-      drawer: MyDrawer(),
-      body: trainsList(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => {},//_showAddMenu(context),
-        tooltip: 'Add',
-        child: Icon(Icons.add),
-      ),
-    );
+    return BlocProvider(
+        init: (blocProvider) {
+          var now = DateTime.now();
+          blocProvider.addBloc(bloc: CrudTrainingBloc()).loadMasterTrainings(now.subtract(const Duration(days: 4)), now.add(const Duration(days: 4)));
+        },
+        child: UiScreen(
+          body: Column(children: [
+            WheelListSelector<CrudEntityTraining, CrudTrainingBloc>(
+              childBuilder: (context, index, training) => UiTraining(training),
+              onSelectedItemChanged: (ctx, i, data) => trainingTypeBloc.onTrainingTypeChange(data),
+            )
+          ]),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () => {},
+            tooltip: 'Add',
+            child: Icon(Icons.add),
+          ),
+        ));
   }
 
-  Widget trainsList() {
-    return Column(
-      children: [
-        UiWorkout(name: 'Индивидуальная', date: _minus(3),),
-        UiWorkout(name: 'Кроссфит групповая', date: _minus(2),),
-        UiWorkout(name: 'Кроссфит групповая', date: _minus(1),),
-        Divider(
-          height: 20,
-          thickness: 5,
-          indent: 20,
-          endIndent: 20,
-        ),
-        // todo
-        // UiAttend(name: 'Павел М.', marked: true),
-        // UiAttend(name: 'Рома Р.', marked: false)
-      ],
-    );
-  }
-
-  DateTime _minus(int hour) {
-    var sub = DateTime.now()
-        .subtract(Duration(hours: hour));
-    return DateTime(sub.year, sub.month, sub.day, sub.hour);
-  }
 }

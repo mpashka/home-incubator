@@ -1,27 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_fe/blocs/crud_training.dart';
+import 'package:flutter_fe/misc/utils.dart';
 import 'package:intl/intl.dart';
 
 @immutable
 class UiTraining extends StatelessWidget {
 
-  static final format = DateFormat('yyyy-MM-dd kk:mm');
+  final CrudEntityTraining _training;
 
-  final String name;
-  final DateTime date;
-
-  UiTraining({
-    required this.name,
-    required this.date,
-  });
+  UiTraining(this._training);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-        color: theme.accentColor,
+        color: theme.colorScheme.secondary,
         child: ListTile(
             leading: Icon(Icons.baby_changing_station_rounded),
-            title: Text('$name ${format.format(date)}'),
+            title: Text('${_training.trainingType.trainingName} ${localDateTimeFormat.format(_training.time)}'),
         )
     );
   }

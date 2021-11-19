@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'dart:core';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_fe/blocs/crud_visit.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
@@ -14,7 +15,16 @@ import 'crud_user.dart';
 
 part 'crud_training.g.dart';
 
-class CrudTrainingBloc extends BlocBaseList<CrudEntityTraining> {}
+class CrudTrainingBloc extends BlocBaseList<CrudEntityTraining> {
+  void loadMasterTrainings(DateTime from, DateTime to) async {
+    state = (await backend.requestJson('GET', 'masterTraining/byDateInterval', params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
+        .map((item) {
+      var crudEntityTraining = CrudEntityTraining.fromJson(item);
+      crudEntityTraining.trainer = session.user;
+      return crudEntityTraining;
+    }).toList();
+  }
+}
 
 // class CrudTrainingTypeBloc extends BlocBaseList<CrudEntityTrainingType> {}
 
@@ -70,18 +80,13 @@ class CrudEntityTraining implements Comparable<CrudEntityTraining> {
   DateTime time;
   CrudEntityUser trainer;
   CrudEntityTrainingType trainingType;
+  List<CrudEntityVisit>? visits;
   String? comment;
 
-  CrudEntityTraining(
-      {required this.id,
-      required this.time,
-      required this.trainer,
-      required this.trainingType,
-      this.comment});
+  CrudEntityTraining({required this.id, required this.time, required this.trainer,
+      required this.trainingType, this.visits, this.comment});
 
-  factory CrudEntityTraining.fromJson(Map<String, dynamic> json) =>
-      _$CrudEntityTrainingFromJson(json);
-
+  factory CrudEntityTraining.fromJson(Map<String, dynamic> json) => _$CrudEntityTrainingFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityTrainingToJson(this);
 
   @override

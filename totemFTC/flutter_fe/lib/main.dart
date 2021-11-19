@@ -10,7 +10,7 @@ import 'ui/screen_init.dart';
 import 'ui/screen_master_users.dart';
 import 'ui/screen_master_trainings.dart';
 import 'ui/screen_purchases.dart';
-import 'ui/screen_subscriptions.dart';
+import 'ui/screen_tickets.dart';
 import 'ui/screen_login.dart';
 import 'misc/container.dart';
 import 'misc/initializer.dart';

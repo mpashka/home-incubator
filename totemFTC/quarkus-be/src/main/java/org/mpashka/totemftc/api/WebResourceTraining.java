@@ -69,14 +69,14 @@ public class WebResourceTraining {
     @Path("userTraining/byDateInterval")
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<DbCrudTraining.Entity[]> userTrainingsByDateInterval(@QueryParam("from") LocalDateTime from, @QueryParam("to") LocalDateTime to) {
-        return dbTraining.getByDateInterval(from, to);
+        return dbTraining.getByDateIntervalForUser(from, to);
     }
 
     @GET
     @Path("masterTraining/byDateInterval")
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<DbCrudTraining.Entity[]> masterTrainingsByDateInterval(@QueryParam("from") LocalDateTime from, @QueryParam("to") LocalDateTime to) {
-        return dbTraining.getByDateInterval(from, to);
+        return dbTraining.getByDateIntervalForTrainer(webSessionService.getUserId(), from, to);
     }
 
     @DELETE

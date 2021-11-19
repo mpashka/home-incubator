@@ -16,7 +16,7 @@ import 'screen_base.dart';
 import 'widgets/wheel_list_selector.dart';
 import 'widgets/ui_visit.dart';
 import 'widgets/ui_divider.dart';
-import 'widgets/ui_subscription.dart';
+import 'widgets/ui_ticket.dart';
 import 'widgets/ui_training_selector.dart';
 
 class ScreenHome extends StatelessWidget {
@@ -40,7 +40,7 @@ class ScreenHome extends StatelessWidget {
                   children: [
                     if (data.isNotEmpty) const UiDivider('Абонементы')
                     else const UiDivider('Абонементов нет'),
-                    for (var ticket in data) UiSubscription(ticket),
+                    for (var ticket in data) UiTicket(ticket),
                   ])),
               BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(builder: (data) {
                 List<Widget> prevWidgets = [], nextWidgets = [];

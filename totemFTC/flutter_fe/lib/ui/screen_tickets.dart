@@ -11,7 +11,7 @@ import 'package:logging/logging.dart';
 
 import 'screen_base.dart';
 import 'widgets/ui_divider.dart';
-import 'widgets/ui_subscription.dart';
+import 'widgets/ui_ticket.dart';
 
 class ScreenTickets extends StatelessWidget {
 
@@ -49,7 +49,7 @@ class ScreenTickets extends StatelessWidget {
             for (var ticket in data)
               GestureDetector(
                 onTap: () => _visitBloc.loadTicketVisits(_session.user, ticket),
-                child: UiSubscription(ticket),
+                child: UiTicket(ticket),
               )
           ])),
           BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(builder: (data) => Column(

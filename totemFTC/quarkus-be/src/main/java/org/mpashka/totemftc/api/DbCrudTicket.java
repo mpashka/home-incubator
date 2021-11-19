@@ -2,6 +2,7 @@ package org.mpashka.totemftc.api;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.PreparedQuery;
@@ -17,6 +18,7 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.stream.StreamSupport;
 
@@ -181,6 +183,21 @@ public class DbCrudTicket {
             return this;
         }
 
+        public EntityTicketType loadFromDb(JsonObject row) {
+            this.id = row.getInteger("ticket_type_id");
+            this.name = row.getString("ticket_name");
+            this.cost = row.getInteger("ticket_cost");
+            this.cost = row.getInteger("ticket_cost");
+            this.visits = row.getInteger("ticket_visits");
+            this.days = row.getInteger("ticket_days");
+            JsonArray trainingTypesObjs = row.getJsonArray("ticket_training_types_obj");
+            this.trainingTypes = trainingTypesObjs == null ? null :
+                    trainingTypesObjs.stream()
+                            .map(tt -> new DbCrudTraining.EntityTrainingType().loadFromDb((JsonObject) tt))
+                            .toArray(DbCrudTraining.EntityTrainingType[]::new);
+            return this;
+        }
+
         public String[] getTrainingTypeIds() {
             return Arrays.stream(trainingTypes).map(DbCrudTraining.EntityTrainingType::getTrainingType).toArray(String[]::new);
         }
@@ -205,6 +222,18 @@ public class DbCrudTicket {
             this.buy = row.getLocalDateTime("ticket_buy");
             this.start = row.getLocalDate("ticket_start");
             this.end = row.getLocalDate("ticket_end");
+            Integer visitedObj = row.getInteger("training_visit_count");
+            this.visited = visitedObj != null ? visitedObj : 0;
+            return this;
+        }
+
+        public EntityTicket loadFromDb(JsonObject row, JsonObject ticketTypeJson) {
+            this.id = row.getInteger("ticket_id");
+            this.ticketType = new EntityTicketType().loadFromDb(ticketTypeJson);
+//            this.user = row.getString("ticket_name");
+            this.buy = LocalDateTime.from(DateTimeFormatter.ISO_LOCAL_DATE_TIME.parse(row.getString("ticket_buy")));
+            this.start = LocalDate.from(DateTimeFormatter.ISO_LOCAL_DATE.parse(row.getString("ticket_start")));
+            this.end = LocalDate.from(DateTimeFormatter.ISO_LOCAL_DATE.parse(row.getString("ticket_end")));
             Integer visitedObj = row.getInteger("training_visit_count");
             this.visited = visitedObj != null ? visitedObj : 0;
             return this;

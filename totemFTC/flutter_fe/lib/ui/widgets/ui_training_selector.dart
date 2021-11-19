@@ -8,7 +8,6 @@ import 'wheel_list_selector.dart';
 
 class UiTrainingSelector {
 
-  final _dateTimeFormatter = DateFormat('EEE,dd HH:mm');
   final String title;
 
   UiTrainingSelector(this.title);
@@ -32,8 +31,7 @@ class UiTrainingSelector {
                 children: [
                   SizedBox(
                     height: 150,
-                    child:
-                    Row(children: [
+                    child: Row(children: [
                       Expanded(
                           flex: 10,
                           child: WheelListSelector<CrudEntityTrainingType, CrudTrainingTypeFilteredBloc>(
@@ -43,7 +41,7 @@ class UiTrainingSelector {
                       Expanded(
                           flex: 15,
                           child: WheelListSelector<CrudEntityTraining, CrudTrainingBloc>(
-                            childBuilder: (context, index, training) => Text('${_dateTimeFormatter.format(training.time)} ${training.trainer.nickName}'),
+                            childBuilder: (context, index, training) => Text('${localDateTimeFormat.format(training.time)} ${training.trainer.nickName}'),
                             onSelectedItemChanged: (ctx, i, data) => selectedTraining = data,
                           )),
                     ],),
