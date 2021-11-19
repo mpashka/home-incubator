@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
 import 'package:flutter_fe/blocs/crud_ticket.dart';
+import 'package:flutter_fe/blocs/crud_user.dart';
 import 'package:flutter_fe/blocs/crud_visit.dart';
 import 'package:flutter_fe/blocs/session.dart';
 import 'package:flutter_fe/ui/widgets/ui_visit.dart';
@@ -21,19 +22,36 @@ class ScreenTickets extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    late final Session _session;
-    late final CrudVisitBloc _visitBloc;
+    late final Session session;
+    late final SelectedVisitBloc visitBloc;
     return BlocProvider(
         init: (blocProvider) {
-          _session = Injector().get<Session>();
+          session = Injector().get<Session>();
           blocProvider.addBloc(bloc: CrudTicketBloc()).loadTickets();
-          _visitBloc = blocProvider.addBloc(bloc: CrudVisitBloc());
-          _visitBloc.loadVisits(DateTime.now().subtract(Duration(days: 14)), 10);
+          visitBloc = blocProvider.addBloc(bloc: SelectedVisitBloc());
+          visitBloc.loadVisits(DateTime.now().subtract(Duration(days: 14)), 10);
         },
         child: UiScreen(
-          body: subscriptionsList(_session, _visitBloc),
+          body: Column(
+              children: [
+                BlocProvider.streamBuilder<List<CrudEntityTicket>, CrudTicketBloc>(builder: (data) => Column(children: [
+                  if (data.isNotEmpty) UiDivider('Абонементы'),
+                  for (var ticket in data)
+                    GestureDetector(
+                      onTap: () => visitBloc.loadTicketVisits(session.user, ticket),
+                      child: UiTicket(ticket),
+                    )
+                ])),
+                BlocProvider.streamBuilder<List<CrudEntityVisit>, SelectedVisitBloc>(builder: (data) => Column(
+                  children: [
+                    UiDivider(_ticketName('Выберите абонемент', 'Посещения', visitBloc.selectedTicket)),
+                    for (var visit in data) UiVisit(visit),
+                  ],
+                )),
+              ]
+          ),
           floatingActionButton: FloatingActionButton(
-            onPressed: () => _onAddTraining(context, _session, _visitBloc, _visitBloc.selectedTicket),
+            onPressed: () => _onAddTraining(context, session, visitBloc),
             tooltip: 'Add',
             child: Icon(Icons.add),
           ),
@@ -41,52 +59,41 @@ class ScreenTickets extends StatelessWidget {
     );
   }
 
-  Widget subscriptionsList(Session _session, CrudVisitBloc _visitBloc) {
-    return Column(
-        children: [
-          BlocProvider.streamBuilder<List<CrudEntityTicket>, CrudTicketBloc>(builder: (data) => Column(children: [
-            if (data.isNotEmpty) UiDivider('Абонементы'),
-            for (var ticket in data)
-              GestureDetector(
-                onTap: () => _visitBloc.loadTicketVisits(_session.user, ticket),
-                child: UiTicket(ticket),
-              )
-          ])),
-          BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(builder: (data) => Column(
-            children: [
-              UiDivider(ticketName('Выберите абонемент', 'Посещения', _visitBloc.selectedTicket)),
-              for (var visit in data) UiVisit(visit),
-            ],
-          )),
-        ]
-    );
-  }
+  String _ticketName(String ifEmpty, String prefix, CrudEntityTicket? ticket) =>
+      ticket != null ? '$prefix ${ticket.ticketType.name} / ${formatDateTime.format(ticket.buy)}' : ifEmpty;
 
-  String ticketName(String ifEmpty, String prefix, CrudEntityTicket? ticket) {
-    if (ticket == null) {
-      return ifEmpty;
-    }
-    return '$prefix ${ticket.ticketType.name} / ${formatDateTime.format(ticket.buy)}';
-  }
-
-  Future<void> _onAddTraining(BuildContext context, Session _session, CrudVisitBloc _visitBloc, CrudEntityTicket? ticket) async {
+  Future<void> _onAddTraining(BuildContext context, Session session, SelectedVisitBloc visitBloc) async {
     DateTime now = DateTime.now();
-    var result = await UiTrainingSelector(ticketName('Отметить посещение', 'Отметить абонемент', ticket))
+    var result = await UiTrainingSelector(_ticketName('Отметить посещение', 'Отметить абонемент', visitBloc.selectedTicket))
         .selectTraining(context, range: DateTimeRange(start: now.subtract(Duration(days: 7)), end: now),
-        types: ticket?.ticketType.trainingTypes
+        types: visitBloc.selectedTicket?.ticketType.trainingTypes
     );
     log.finer("Dialog result: $result");
     if (result != null) {
       bool _past = result.time.isBefore(now);
       CrudEntityVisit visit = CrudEntityVisit(
-          user: _session.user,
+          user: session.user,
           training: result,
           trainingId: result.id,
           markSchedule: _past ? false : true,
           markSelf: _past ? CrudEntityVisitMark.on : CrudEntityVisitMark.unmark,
           markMaster: CrudEntityVisitMark.unmark);
-      _visitBloc.markSelf(visit, CrudEntityVisitMark.on);
+      visitBloc.markSelf(visit, CrudEntityVisitMark.on);
     }
   }
+}
 
+class SelectedVisitBloc extends CrudVisitBloc {
+  CrudEntityTicket? selectedTicket;
+
+  Future<void> loadTicketVisits(CrudEntityUser user, CrudEntityTicket ticket) async {
+    state = (await backend.requestJson('GET', '/api/visit/byTicket/${ticket.id}') as List)
+        .map((item) {
+      var crudEntityVisit = CrudEntityVisit.fromJson(item);
+      crudEntityVisit.user = user;
+      crudEntityVisit.ticket = ticket;
+      return crudEntityVisit;
+    }).toList();
+    selectedTicket = ticket;
+  }
 }

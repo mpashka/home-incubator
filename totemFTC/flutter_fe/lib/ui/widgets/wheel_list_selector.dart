@@ -4,14 +4,18 @@ import 'package:flutter_fe/blocs/bloc_provider.dart';
 import 'package:flutter_fe/misc/utils.dart';
 import 'package:logging/logging.dart';
 
-class WheelListSelector<E, B extends BlocBaseState<List<E>>, X> extends StatelessWidget {
+class WheelListSelector<E, B extends BlocBaseState<List<E>>> extends StatelessWidget {
   final Logger log;
-  final WidgetBuilder<X> childBuilder;
-  final WidgetValueChanged<X>? onSelectedItemChanged;
-  final List<X> Function(List<E>)? dataTransformer;
+  final WidgetBuilder<E> childBuilder;
+  final WidgetBuilder? transformedChildBuilder;
+  final WidgetValueChanged<E>? onSelectedItemChanged;
+  final WidgetValueChanged? onSelectedTransformedItemChanged;
+  final List Function(List<E>)? dataTransformer;
+  final dynamic selectedItem;
 
-  WheelListSelector({Key? key, required this.childBuilder, this.onSelectedItemChanged, this.dataTransformer}) :
-        log = Logger('WheelListSelector<${typeOf<E>()}->${typeOf<X>()}, ${typeOf<B>()}>'),
+  WheelListSelector({Key? key, required this.childBuilder, this.onSelectedItemChanged, this.onSelectedTransformedItemChanged,
+    this.transformedChildBuilder, this.dataTransformer, this.selectedItem}) :
+        log = Logger('WheelListSelector<${typeOf<E>()}, ${typeOf<B>()}>'),
         super(key: key);
 
   @override
@@ -21,21 +25,22 @@ class WheelListSelector<E, B extends BlocBaseState<List<E>>, X> extends Stateles
     return Stack(
       children: [
         Positioned.fill(
-            child: BlocProvider.streamBuilder<List<E>, B>(builder: (data) {
-
+            child: BlocProvider.streamBuilder<List<E>, B>(builder: (_data) {
+              List workingData = dataTransformer != null ? dataTransformer!(_data) : _data;
               return ListWheelScrollView.useDelegate(
                   onSelectedItemChanged: (itemIndex) {
                     // log.finest("Item selected: $itemIndex");
                     HapticFeedback.selectionClick();
-                    var onSelectedItemChanged = this.onSelectedItemChanged;
-                    if (onSelectedItemChanged != null) {
-                      var item = data[itemIndex];
-                      onSelectedItemChanged(context, itemIndex, item);
+                    var item = workingData[itemIndex];
+                    if (item is E) {
+                      if (onSelectedItemChanged != null) {
+                        onSelectedItemChanged!(context, itemIndex, item);
+                      }
+                    } else if (onSelectedTransformedItemChanged != null) {
+                      onSelectedTransformedItemChanged!(context, itemIndex, item);
                     }
                   },
-                  controller: FixedExtentScrollController(
-
-                  ),
+                  controller: FixedExtentScrollController(initialItem: selectedItem == null ? 0 : workingData.indexOf(selectedItem)),
                   itemExtent: 30,
                   physics: const FixedExtentScrollPhysics(),
                   squeeze: 1.45,
@@ -48,8 +53,9 @@ class WheelListSelector<E, B extends BlocBaseState<List<E>>, X> extends Stateles
                   // useMagnifier: true,
                   // magnification: 1.2,
                   childDelegate: ListWheelChildBuilderDelegate(
-                    childCount: data.length,
-                    builder: (context, index) => _childBuilder(context, index, data[index]),
+                    childCount: workingData.length,
+                    builder: (context, index) =>
+                        (workingData[index] is E ? childBuilder : transformedChildBuilder)!(context, index, workingData[index]),
                   )
               );
             })),

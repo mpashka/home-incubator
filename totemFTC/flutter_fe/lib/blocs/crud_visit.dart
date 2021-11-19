@@ -18,23 +18,11 @@ part 'crud_visit.g.dart';
 
 class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
 
-  CrudEntityTicket? selectedTicket;
-
   Future<void> loadVisits(DateTime from, int rows) async {
     state = (await backend.requestJson('GET', '/api/visit/byUser', params: {'from': dateTimeFormat.format(from), 'rows': rows}) as List)
         .map((item) {
       var crudEntityVisit = CrudEntityVisit.fromJson(item);
       crudEntityVisit.user = session.user;
-      return crudEntityVisit;
-    }).toList();
-  }
-
-  Future<void> loadTicketVisits(CrudEntityUser user, CrudEntityTicket ticket) async {
-    state = (await backend.requestJson('GET', '/api/visit/byTicket/${ticket.id}') as List)
-        .map((item) {
-      var crudEntityVisit = CrudEntityVisit.fromJson(item);
-      crudEntityVisit.user = user;
-      crudEntityVisit.ticket = ticket;
       return crudEntityVisit;
     }).toList();
   }
