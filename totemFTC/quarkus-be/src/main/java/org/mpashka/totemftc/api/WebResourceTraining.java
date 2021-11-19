@@ -48,7 +48,9 @@ public class WebResourceTraining {
         return dbTraining.getTrainingTypes();
     }
 
-
+    /**
+     * todo [!] check this. How tf is this used.
+     */
     @GET
     @Path("training/list")
     @Produces(MediaType.APPLICATION_JSON)
@@ -64,9 +66,16 @@ public class WebResourceTraining {
     }
 
     @GET
-    @Path("training/byDateInterval")
+    @Path("userTraining/byDateInterval")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<DbCrudTraining.Entity[]> byDateInterval(@QueryParam("from") LocalDateTime from, @QueryParam("to") LocalDateTime to) {
+    public Uni<DbCrudTraining.Entity[]> userTrainingsByDateInterval(@QueryParam("from") LocalDateTime from, @QueryParam("to") LocalDateTime to) {
+        return dbTraining.getByDateInterval(from, to);
+    }
+
+    @GET
+    @Path("masterTraining/byDateInterval")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<DbCrudTraining.Entity[]> masterTrainingsByDateInterval(@QueryParam("from") LocalDateTime from, @QueryParam("to") LocalDateTime to) {
         return dbTraining.getByDateInterval(from, to);
     }
 

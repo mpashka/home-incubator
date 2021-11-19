@@ -31,7 +31,7 @@ class CrudTrainingTypeFilteredBloc extends BlocBaseList<CrudEntityTrainingType> 
     }
     range ??= filter?.range;
 
-    Iterable<CrudEntityTraining> loaded = (await backend.requestJson('GET', '/api/training/byDateInterval', params: {
+    Iterable<CrudEntityTraining> loaded = (await backend.requestJson('GET', '/api/userTraining/byDateInterval', params: {
       'from': dateTimeFormat.format(range!.start), 'to': dateTimeFormat.format(range.end)}) as List)
         .map((item) => CrudEntityTraining.fromJson(item));
     if (filter != null) {

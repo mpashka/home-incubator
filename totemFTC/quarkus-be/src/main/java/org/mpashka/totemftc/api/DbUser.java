@@ -285,6 +285,7 @@ public class DbUser {
         private String lastName;
         private String nickName;
         private EntityImage primaryImage;
+        /** todo use set here */
         private UserType type;
         private String[] trainingTypes;
         private EntitySocialNetwork[] socialNetworks;

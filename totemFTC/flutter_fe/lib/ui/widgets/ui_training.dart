@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
 @immutable
-class UiWorkout extends StatelessWidget {
+class UiTraining extends StatelessWidget {
 
   static final format = DateFormat('yyyy-MM-dd kk:mm');
 
   final String name;
   final DateTime date;
 
-  UiWorkout({
+  UiTraining({
     required this.name,
     required this.date,
   });

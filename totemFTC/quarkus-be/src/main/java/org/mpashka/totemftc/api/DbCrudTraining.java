@@ -1,7 +1,6 @@
 package org.mpashka.totemftc.api;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import io.quarkus.runtime.StartupEvent;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
@@ -13,12 +12,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
-import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Singleton
@@ -28,9 +25,10 @@ public class DbCrudTraining {
     @Inject
     PgPool client;
 
-    private PreparedQuery<RowSet<Row>> select;
-    private PreparedQuery<RowSet<Row>> selectByDate;
-    private PreparedQuery<RowSet<Row>> selectByDateInterval;
+    private PreparedQuery<RowSet<Row>> selectForUser;
+    private PreparedQuery<RowSet<Row>> selectByDateForUser;
+    private PreparedQuery<RowSet<Row>> selectByDateIntervalForUser;
+    private PreparedQuery<RowSet<Row>> selectByDateIntervalForMaster;
     private PreparedQuery<RowSet<Row>> selectTrainingTypes;
     private PreparedQuery<RowSet<Row>> insert;
     private PreparedQuery<RowSet<Row>> update;
@@ -41,12 +39,26 @@ public class DbCrudTraining {
         String sql = "SELECT * FROM training t, " +
                 "   LATERAL (SELECT row_to_json(ut.*) trainer FROM user_info ut WHERE ut.user_id=t.trainer_id) ut, " +
                 "   LATERAL (SELECT row_to_json(trt.*) training_type_obj FROM training_type trt WHERE trt.training_type=t.training_type) trt " +
-//                "JOIN training_type tt on t.training_type = tt.training_type " +
                 " <where> " +
                 "ORDER BY t.training_time";
-        select = client.preparedQuery(sql.replace("<where>", ""));
-        selectByDate = client.preparedQuery(sql.replace("<where>", "WHERE date(t.training_time) = $1"));
-        selectByDateInterval = client.preparedQuery(sql.replace("<where>", "WHERE t.training_time >= $1 AND t.training_time <= $2 "));
+        selectForUser = client.preparedQuery(sql.replace("<where>", ""));
+        selectByDateForUser = client.preparedQuery(sql.replace("<where>", "WHERE date(t.training_time) = $1"));
+        selectByDateIntervalForUser = client.preparedQuery(sql.replace("<where>", "WHERE t.training_time >= $1 AND t.training_time <= $2 "));
+        selectByDateIntervalForMaster = client.preparedQuery("SELECT * FROM training t, " +
+                "   LATERAL (SELECT row_to_json(trt.*) training_type_obj FROM training_type trt WHERE trt.training_type=t.training_type) trt " +
+                "   LEFT OUTER JOIN LATERAL (" +
+                "       SELECT array_agg() " +
+                "       FROM (" +
+                "           SELECT * " +
+                "           FROM training_visit v " +
+                "           JOIN LATERAL (SELECT row_to_json(u.*) user_obj FROM user_info u WHERE u.user_id=v.user_id) u) v " +
+                "       WHERE v.training_id = t.training_id " +
+                "       GROUP BY t.training_id " +
+                "   ) v ON true " +
+                "WHERE t.trainer_id = $1 " +
+                "       AND t.training_time >= $2 AND t.training_time <= $3 " +
+                "ORDER BY t.training_time"
+        );
         selectTrainingTypes = client.preparedQuery("SELECT * FROM training_type");
         insert = client.preparedQuery("INSERT INTO training (training_time, trainer_id, training_type) VALUES ($1, $2, $3) RETURNING training_id");
         update = client.preparedQuery("UPDATE training SET training_time=$2, trainer_id=$3, training_type=$4 WHERE training_id=$1");
@@ -54,7 +66,7 @@ public class DbCrudTraining {
     }
 
     public Uni<Entity[]> getAll() {
-        return select
+        return selectForUser
                 .execute()
                 .onItem().transform(set ->
                     StreamSupport.stream(set.spliterator(), false)
@@ -66,7 +78,7 @@ public class DbCrudTraining {
     }
 
     public Uni<Entity[]> getByDate(LocalDate date) {
-        return selectByDate
+        return selectByDateForUser
                 .execute(Tuple.of(date))
                 .onItem().transform(set ->
                     StreamSupport.stream(set.spliterator(), false)
@@ -78,7 +90,7 @@ public class DbCrudTraining {
     }
 
     public Uni<Entity[]> getByDateInterval(LocalDateTime from, LocalDateTime to) {
-        return selectByDateInterval
+        return selectByDateIntervalForUser
                 .execute(Tuple.of(from, to))
                 .onItem().transform(set ->
                     StreamSupport.stream(set.spliterator(), false)
