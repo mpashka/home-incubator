@@ -38,8 +38,15 @@ public class WebResourceUser {
     @GET
     @Path("list")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<DbUser.EntityUser[]> listTrainers() {
+    public Uni<DbUser.EntityUser[]> listUsers() {
         return dbUser.getAllUsers();
+    }
+
+    @GET
+    @Path("listTrainers")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<DbUser.EntityUser[]> listTrainers() {
+        return dbUser.getTrainers();
     }
 
     @DELETE

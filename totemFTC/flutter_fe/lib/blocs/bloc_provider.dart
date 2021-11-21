@@ -107,7 +107,7 @@ abstract class BlocBase {
   void dispose();
 }
 
-abstract class BlocBaseState<T> extends BlocBase {
+class BlocBaseState<T> extends BlocBase {
   late final Logger log;
 
   late final CrudApi backend;

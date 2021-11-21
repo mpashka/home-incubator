@@ -10,6 +10,7 @@ import 'package:flutter_fe/ui/widgets/ui_divider.dart';
 import 'package:flutter_fe/ui/widgets/wheel_list_selector.dart';
 
 import 'drawer.dart';
+import 'widgets/ui_selector_user.dart';
 import 'widgets/ui_visit.dart';
 import 'widgets/ui_training.dart';
 
@@ -20,50 +21,64 @@ class ScreenMasterTrainings extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     late final TrainingVisitsBloc visitsBloc;
-    DateTime? date;
+    late final SelectedTrainingBloc selectedTrainingBloc;
+
     return BlocProvider(
         init: (blocProvider) {
-          var now = DateTime.now();
-          blocProvider.addBloc(bloc: CrudTrainingBloc()).loadMasterTrainings(now.subtract(const Duration(days: 4)), now.add(const Duration(days: 4)));
+          blocProvider.addBloc(bloc: CrudTrainingBloc())
+              .loadMasterTrainings(now.subtract(const Duration(days: 4)), now.add(const Duration(days: 4)));
           visitsBloc = blocProvider.addBloc(bloc: TrainingVisitsBloc());
+          selectedTrainingBloc = blocProvider.addBloc(bloc: SelectedTrainingBloc());
         },
-        child: UiScreen((context) => Column(children: [
-          WheelListSelector<CrudEntityTraining, CrudTrainingBloc>(
-            childBuilder: (context, index, training) => UiTraining(training),
-            transformedChildBuilder: (context, index, item) => item == now
-                ? const Text('Сейчас')
-                : Text(localDateTimeFormat.format(item)),
-            onSelectedItemChanged: (ctx, i, training) {
-              date = training.time.dayDate();
-              visitsBloc.selectTraining(training);
-            },
-            onSelectedTransformedItemChanged: (ctx, i, item) {
-              if (item == now) {
-                date = now.dayDate();
-              } else if (item is DateTime) {
-                date = item;
-              }
-            },
-            selectedItem: now,
-            dataTransformer: addDates,
-          ),
-          UiDivider(visitsBloc.selectedTraining == null
-              ? 'Выберите тренировку'
-              : 'Посещения ${visitsBloc.selectedTraining!.trainingType.trainingName} ${localDateTimeFormat.format(visitsBloc.selectedTraining!.time)}'),
-          BlocProvider.streamBuilder<List<CrudEntityVisit>, TrainingVisitsBloc>(builder: (visits) {
-            if (visits.isEmpty) return Text('Никого не было');
-            return Expanded(
-              child: ListView(children: [
-                for (var visit in visits) UiVisit(visit, forTrainer: true,),
-              ],),);
+        child: UiScreen(body: Builder(
+          builder: (context) => Column(children: [
+            WheelListSelector<CrudEntityTraining, CrudTrainingBloc>(
+              childBuilder: (context, index, training) => UiTraining(training),
+              transformedChildBuilder: (context, index, item) => item == now
+                  ? const Text('Сейчас')
+                  : Text(localDateTimeFormat.format(item)),
+              onSelectedItemChanged: (ctx, i, training) {
+                visitsBloc.selectTraining(training);
+                selectedTrainingBloc.state = training;
+              },
+              onSelectedTransformedItemChanged: (ctx, i, item) {
+                selectedTrainingBloc.state = null;
+              },
+              selectedItem: now,
+              dataTransformer: addDates,
+            ),
+            UiDivider(visitsBloc.selectedTraining == null
+                ? 'Выберите тренировку'
+                : 'Посещения ${visitsBloc.selectedTraining!.trainingType.trainingName} ${localDateTimeFormat.format(visitsBloc.selectedTraining!.time)}'),
+            BlocProvider.streamBuilder<List<CrudEntityVisit>, TrainingVisitsBloc>(builder: (visits) {
+              if (visits.isEmpty) return Text('Никого не было');
+              return Expanded(
+                child: ListView(children: [
+                  for (var visit in visits) UiVisit(visit, forTrainer: true,),
+                ],),);
+            }),
+          ]),),
+          floatingActionButton: BlocProvider.streamBuilder<CrudEntityTraining?, SelectedTrainingBloc>(builder: (selectedTraining) {
+            return FloatingActionButton(
+              onPressed: selectedTraining == null ? null : () => addVisit(context, visitsBloc, selectedTraining),
+              tooltip: 'Add',
+              child: Icon(Icons.add),
+            );
           }),
-        ]),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () => {},
-            tooltip: 'Add',
-            child: Icon(Icons.add),
-          ),
         ));
+  }
+
+  void addVisit(BuildContext context, TrainingVisitsBloc visitsBloc, CrudEntityTraining training) async {
+    CrudEntityUser? user = await UiSelectorUser('Добавить посещение').selectUser(context);
+    if (user != null) {
+      visitsBloc.markMaster(CrudEntityVisit(user: user,
+          markSchedule: false,
+          markSelf: CrudEntityVisitMark.unmark,
+          markMaster: CrudEntityVisitMark.on,
+          trainingId: training.id,
+          training: training
+      ), CrudEntityVisitMark.on);
+    }
   }
 
   List addDates(List<CrudEntityTraining> trainings) {
@@ -98,4 +113,8 @@ class TrainingVisitsBloc extends CrudVisitBloc {
     state = training.visits!;
     selectedTraining = training;
   }
+}
+
+class SelectedTrainingBloc extends BlocBaseState<CrudEntityTraining?> {
+  SelectedTrainingBloc(): super(null);
 }

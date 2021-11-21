@@ -6,11 +6,11 @@ import 'package:intl/intl.dart';
 
 import 'wheel_list_selector.dart';
 
-class UiTrainingSelector {
+class UiSelectorTraining {
 
   final String title;
 
-  UiTrainingSelector(this.title);
+  UiSelectorTraining(this.title);
 
   Future<CrudEntityTraining?> selectTraining(BuildContext context, {List<CrudEntityTrainingType>? types, DateTimeRange? range, DateFilterInfo? filter}) async {
     if (range == null && filter == null) {

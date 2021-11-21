@@ -63,7 +63,7 @@ class UiVisit extends StatelessWidget {
             ]
         ),
         title: Text(forTrainer
-            ? '${user.firstName} ${user.lastName} (${user.nickName})'
+            ? user.displayName
             : '${training.trainingType.trainingName} (${training.trainer.nickName})'),
         trailing: Row(
           mainAxisSize: MainAxisSize.min,

@@ -15,7 +15,7 @@ import 'package:logging/logging.dart';
 
 import 'screen_base.dart';
 import 'widgets/ui_divider.dart';
-import 'widgets/ui_training_selector.dart';
+import 'widgets/ui_selector_training.dart';
 
 class ScreenTrainings extends StatefulWidget {
   @override
@@ -43,7 +43,7 @@ class ScreenTrainingsState extends State<ScreenTrainings> {
           visitBloc.loadVisits(firstDay.monthDate(), 10);
           filteredVisitBloc = blocProvider.addBloc(bloc: CrudVisitBlocFiltered(visitBloc, firstDay));
         },
-        child: UiScreen((context) => BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(
+        child: UiScreen(body: BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(
           builder: (data) => Column(children: [
             UiCalendar(
               weeks: weeks,
@@ -65,7 +65,7 @@ class ScreenTrainingsState extends State<ScreenTrainings> {
   Future<void> _onAddTraining(CrudVisitBloc visitBloc, CrudVisitBlocFiltered filteredVisitBloc, CrudEntityTrainingType? selectedTrainingType) async {
     var _session = Injector().get<Session>();
     List<CrudEntityTrainingType>? types = selectedTrainingType != null ? [selectedTrainingType] : null;
-    var result = await UiTrainingSelector('Выберите тренировку').selectTraining(context, filter: filteredVisitBloc.filter, types: types);
+    var result = await UiSelectorTraining('Выберите тренировку').selectTraining(context, filter: filteredVisitBloc.filter, types: types);
     log.finer("Dialog result: $result");
     if (result != null) {
       CrudEntityVisit visit = CrudEntityVisit(

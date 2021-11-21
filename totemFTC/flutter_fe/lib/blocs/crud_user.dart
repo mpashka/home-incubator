@@ -5,26 +5,13 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
 
+import 'bloc_provider.dart';
 import 'crud_api.dart';
 import '../misc/utils.dart';
 
 part 'crud_user.g.dart';
 
-
-class CrudUser {
-  static final Logger log = Logger('CrudUser');
-
-  final CrudApi _api;
-
-  CrudUser(Injector injector): _api = injector.get<CrudApi>();
-
-  void clear() {
-  }
-}
-
-class CrudUserBloc {
-
-}
+// class CrudUserBloc extends BlocBaseList<CrudEntityUser> {}
 
 CrudEntityUser emptyUser = CrudEntityUser(userId: -1, type: CrudEntityUserType.guest);
 
@@ -59,6 +46,23 @@ class CrudEntityUser implements Comparable<CrudEntityUser> {
   factory CrudEntityUser.fromJson(Map<String, dynamic> json) => _$CrudEntityUserFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityUserToJson(this);
 
+  String get displayName {
+    String result = '';
+    String add(String? s) {
+      if (s == null) return result;
+      if (result.isNotEmpty) {
+        result += ' ';
+      }
+      result += s;
+      return result;
+    }
+    add(firstName);
+    add(lastName);
+    if (nickName == null) {
+      return result;
+    }
+    return result.isEmpty ? nickName! : add('($nickName)');
+  }
 
   @override
   bool operator ==(Object other) =>

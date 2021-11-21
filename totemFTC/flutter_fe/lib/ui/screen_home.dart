@@ -17,7 +17,7 @@ import 'widgets/wheel_list_selector.dart';
 import 'widgets/ui_visit.dart';
 import 'widgets/ui_divider.dart';
 import 'widgets/ui_ticket.dart';
-import 'widgets/ui_training_selector.dart';
+import 'widgets/ui_selector_training.dart';
 
 class ScreenHome extends StatelessWidget {
   static final Logger log = Logger('HomeScreen');
@@ -31,7 +31,7 @@ class ScreenHome extends StatelessWidget {
           blocProvider.addBloc(bloc: CrudTicketBloc()).loadTickets();
           blocProvider.addBloc(bloc: CrudVisitBloc()).loadVisits(DateTime.now().subtract(const Duration(days: 14)), 10);
         },
-        child: UiScreen((context) => Column(
+        child: UiScreen(body: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
@@ -97,7 +97,7 @@ class ScreenHome extends StatelessWidget {
 
   Future<void> _onAddTraining(BuildContext context, bool past) async {
     DateTime now = DateTime.now();
-    var result = await UiTrainingSelector('Выберите тренировку').selectTraining(context,
+    var result = await UiSelectorTraining('Выберите тренировку').selectTraining(context,
         range: DateTimeRange(
             start: now.subtract(Duration(days: past ? 4 : 0)),
             end: now.add(Duration(days: past ? 4 : 0))));

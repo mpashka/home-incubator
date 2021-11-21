@@ -16,6 +16,7 @@ import 'session.dart';
 
 part 'crud_visit.g.dart';
 
+// todo in mark*** methods we must take care about returning ticket
 class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
 
   Future<void> loadVisits(DateTime from, int rows) async {

@@ -5,7 +5,7 @@ import 'package:flutter_fe/blocs/crud_user.dart';
 import 'package:flutter_fe/blocs/crud_visit.dart';
 import 'package:flutter_fe/blocs/session.dart';
 import 'package:flutter_fe/ui/widgets/ui_visit.dart';
-import 'package:flutter_fe/ui/widgets/ui_training_selector.dart';
+import 'package:flutter_fe/ui/widgets/ui_selector_training.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:intl/intl.dart';
 import 'package:logging/logging.dart';
@@ -14,6 +14,7 @@ import 'screen_base.dart';
 import 'widgets/ui_divider.dart';
 import 'widgets/ui_ticket.dart';
 
+// todo add radio selector for ticket
 class ScreenTickets extends StatelessWidget {
 
   static final Logger log = Logger('SubscriptionsScreen');
@@ -31,7 +32,7 @@ class ScreenTickets extends StatelessWidget {
           visitBloc = blocProvider.addBloc(bloc: SelectedVisitBloc());
           visitBloc.loadVisits(DateTime.now().subtract(Duration(days: 14)), 10);
         },
-        child: UiScreen((context) => Column(
+        child: UiScreen(body: Column(
               children: [
                 BlocProvider.streamBuilder<List<CrudEntityTicket>, CrudTicketBloc>(builder: (data) => Column(children: [
                   if (data.isNotEmpty) UiDivider('Абонементы'),
@@ -63,7 +64,7 @@ class ScreenTickets extends StatelessWidget {
 
   Future<void> _onAddTraining(BuildContext context, Session session, SelectedVisitBloc visitBloc) async {
     DateTime now = DateTime.now();
-    var result = await UiTrainingSelector(_ticketName('Отметить посещение', 'Отметить абонемент', visitBloc.selectedTicket))
+    var result = await UiSelectorTraining(_ticketName('Отметить посещение', 'Отметить абонемент', visitBloc.selectedTicket))
         .selectTraining(context, range: DateTimeRange(start: now.subtract(Duration(days: 7)), end: now),
         types: visitBloc.selectedTicket?.ticketType.trainingTypes
     );

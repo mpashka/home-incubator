@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_fe/blocs/crud_user.dart';
 
 @immutable
-class UiPerson extends StatelessWidget {
+class UiUser extends StatelessWidget {
 
-  final String name;
+  final CrudEntityUser _user;
 
-  UiPerson({
-    required this.name,
-  });
+  UiUser(this._user);
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-        color: theme.accentColor,
+        color: theme.colorScheme.secondary,
         child: ListTile(
             leading: Icon(Icons.baby_changing_station_rounded),
-            title: Text('$name'),
+            title: Text(_user.displayName),
         )
     );
   }

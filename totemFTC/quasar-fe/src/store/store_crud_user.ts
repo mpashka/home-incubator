@@ -84,7 +84,7 @@ export const useStoreCrudUser = defineStore('crudUser', {
     },
 
     async load() {
-      this.rows = (await api.get<EntityUser[]>('/api/user/list')).data;
+      this.rows = (await api.get<EntityUser[]>('/api/user/listTrainers')).data;
       this.filter();
       console.log('Users received', this.rows);
     },
