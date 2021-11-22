@@ -69,7 +69,7 @@ class ScreenMasterTrainings extends StatelessWidget {
   }
 
   void addVisit(BuildContext context, TrainingVisitsBloc visitsBloc, CrudEntityTraining training) async {
-    CrudEntityUser? user = await UiSelectorUser('Добавить посещение').selectUser(context);
+    CrudEntityUser? user = await UiSelectorUser().selectUserDialog(context, 'Добавить посещение');
     if (user != null) {
       visitsBloc.markMaster(CrudEntityVisit(user: user,
           markSchedule: false,

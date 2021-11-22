@@ -15,6 +15,7 @@ import 'ui/screen_login.dart';
 import 'misc/container.dart';
 import 'misc/initializer.dart';
 import 'ui/screen_about.dart';
+import 'ui/widgets/ui_selector_user.dart';
 
 void main() {
   var injector = Injector();
@@ -71,7 +72,8 @@ class MyApp extends StatelessWidget {
             case '/trainings': return MaterialPageRoute(builder: (context) => ScreenTrainings());
             case '/purchases': return MaterialPageRoute(builder: (context) => ScreenPurchases());
             case '/master_trainings': return MaterialPageRoute(builder: (context) => ScreenMasterTrainings());
-            case '/master_users': return MaterialPageRoute(builder: (context) => ScreenMasterUsers());
+            // case '/master_users': return MaterialPageRoute(builder: (context) => ScreenMasterUsers());
+            case '/master_users': return MaterialPageRoute(builder: (context) => UiSelectorUser().buildPage(context));
           }
         }
       },
