@@ -10,8 +10,9 @@ class UiTicket extends StatelessWidget {
   static final formatDate = DateFormat('yyyy-MM-dd');
 
   final CrudEntityTicket _ticket;
+  final Widget? leading;
 
-  UiTicket(this._ticket) : super(key: ValueKey(_ticket.id));
+  UiTicket(this._ticket, {this.leading = const Icon(Icons.baby_changing_station_rounded)}) : super(key: ValueKey(_ticket.id));
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +30,7 @@ class UiTicket extends StatelessWidget {
     return Card(
         color: theme.colorScheme.secondary,
         child: ListTile(
-          leading: const Icon(Icons.baby_changing_station_rounded),
+          leading: leading,
           title: Text(_ticket.ticketType.name),
           subtitle: Text('Покупка ${formatDateTime.format(_ticket.buy)} $dates'),
           trailing: Text('${_ticket.visited} из ${_ticket.ticketType.visits}', textScaleFactor: 2,),

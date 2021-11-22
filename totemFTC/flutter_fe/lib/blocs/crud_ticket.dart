@@ -17,7 +17,7 @@ class CrudTicketBloc extends BlocBaseList<CrudEntityTicket> {
 
   Future<void> loadTickets() async {
     state = (await backend.requestJson('GET', '/api/tickets/byUser') as List)
-        .map((item) => CrudEntityTicket.fromJson(item)).toList();
+        .map((item) => CrudEntityTicket.fromJson(item)..user = session.user).toList();
   }
 }
 

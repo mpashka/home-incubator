@@ -65,7 +65,7 @@ class ScreenTrainingsState extends State<ScreenTrainings> {
   Future<void> _onAddTraining(CrudVisitBloc visitBloc, CrudVisitBlocFiltered filteredVisitBloc, CrudEntityTrainingType? selectedTrainingType) async {
     var _session = Injector().get<Session>();
     List<CrudEntityTrainingType>? types = selectedTrainingType != null ? [selectedTrainingType] : null;
-    var result = await UiSelectorTraining('Выберите тренировку').selectTraining(context, filter: filteredVisitBloc.filter, types: types);
+    var result = await UiSelectorTraining('Выберите тренировку').selectTraining(context, dateFilter: filteredVisitBloc.filter, types: types);
     log.finer("Dialog result: $result");
     if (result != null) {
       CrudEntityVisit visit = CrudEntityVisit(

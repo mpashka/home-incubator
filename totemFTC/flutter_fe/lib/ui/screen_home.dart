@@ -98,7 +98,7 @@ class ScreenHome extends StatelessWidget {
   Future<void> _onAddTraining(BuildContext context, bool past) async {
     DateTime now = DateTime.now();
     var result = await UiSelectorTraining('Выберите тренировку').selectTraining(context,
-        range: DateTimeRange(
+        dateRange: DateTimeRange(
             start: now.subtract(Duration(days: past ? 4 : 0)),
             end: now.add(Duration(days: past ? 4 : 0))));
     log.finer("Dialog result: $result");

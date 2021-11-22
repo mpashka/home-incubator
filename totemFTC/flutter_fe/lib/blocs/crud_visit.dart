@@ -21,11 +21,7 @@ class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
 
   Future<void> loadVisits(DateTime from, int rows) async {
     state = (await backend.requestJson('GET', '/api/visit/byUser', params: {'from': dateTimeFormat.format(from), 'rows': rows}) as List)
-        .map((item) {
-      var crudEntityVisit = CrudEntityVisit.fromJson(item);
-      crudEntityVisit.user = session.user;
-      return crudEntityVisit;
-    }).toList();
+        .map((item) => CrudEntityVisit.fromJson(item)..user = session.user).toList();
   }
 
   Future<void> markSchedule(CrudEntityVisit visit, bool mark) async {
@@ -90,8 +86,8 @@ class CrudEntityVisit implements Comparable<CrudEntityVisit> {
   CrudEntityTicket? ticket;
 
 
-  CrudEntityVisit({this.user, this.comment, required this.markSchedule, required this.markSelf,
-    required this.markMaster, required this.trainingId, this.training, this.ticket});
+  CrudEntityVisit({this.user, this.comment, this.markSchedule = false, this.markSelf = CrudEntityVisitMark.unmark,
+    this.markMaster = CrudEntityVisitMark.unmark, required this.trainingId, this.training, this.ticket});
 
   factory CrudEntityVisit.fromJson(Map<String, dynamic> json) => _$CrudEntityVisitFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityVisitToJson(this);

@@ -12,8 +12,8 @@ class UiSelectorTraining {
 
   UiSelectorTraining(this.title);
 
-  Future<CrudEntityTraining?> selectTraining(BuildContext context, {List<CrudEntityTrainingType>? types, DateTimeRange? range, DateFilterInfo? filter}) async {
-    if (range == null && filter == null) {
+  Future<CrudEntityTraining?> selectTraining(BuildContext context, {List<CrudEntityTrainingType>? types, DateTimeRange? dateRange, DateFilterInfo? dateFilter, TrainingFilter? trainingFilter}) async {
+    if (dateRange == null && dateFilter == null) {
       throw Exception('Internal error. Range or filter must be specified');
     }
     late final CrudTrainingTypeFilteredBloc trainingTypeBloc;
@@ -23,7 +23,7 @@ class UiSelectorTraining {
             init: (blocProvider) {
               final CrudTrainingBloc trainingBloc = blocProvider.addBloc(bloc: CrudTrainingBloc());
               trainingTypeBloc = blocProvider.addBloc(bloc: CrudTrainingTypeFilteredBloc(trainingBloc));
-              trainingTypeBloc.loadTrainings(range: range, types: types, filter: filter);
+              trainingTypeBloc.loadTrainings(dateRange: dateRange, types: types, dateFilter: dateFilter, trainingFilter: trainingFilter);
             },
             child: SimpleDialog(
                 title: Text(title),

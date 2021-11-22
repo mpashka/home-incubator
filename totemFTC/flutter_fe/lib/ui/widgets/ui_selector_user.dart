@@ -6,19 +6,19 @@ import 'package:flutter_fe/misc/utils.dart';
 import 'package:flutter_fe/ui/screen_base.dart';
 import 'package:intl/intl.dart';
 
+import '../screen_master_user.dart';
 import 'ui_user.dart';
 import 'wheel_list_selector.dart';
 
 
 class UiSelectorUser {
 
+  static const routeName = '/master_users';
+
   Widget buildPage(BuildContext context) {
     final TextEditingController searchTextController = TextEditingController();
     return _buildBloc(UiScreen(body: Column(
-
-        https://docs.flutter.dev/cookbook/navigation/navigate-with-arguments
-
-      children: _buildContent(context, searchTextController, (user) => Navigator.),
+      children: _buildContent(context, searchTextController, (user) => Navigator.pushNamed(context, ScreenMasterUser.routeName, arguments: user)),
     ),), searchTextController);
   }
 
@@ -29,8 +29,6 @@ class UiSelectorUser {
 
   SimpleDialog _buildDialog(BuildContext context, String title) {
     final TextEditingController searchTextController = TextEditingController();
-    // return _buildBloc(UiScreen(body: Column(
-
     return SimpleDialog(
         title: Text(title),
         elevation: 5,

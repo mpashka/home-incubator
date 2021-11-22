@@ -3,11 +3,12 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
+import 'blocs/crud_user.dart';
 import 'blocs/session.dart';
 import 'ui/screen_home.dart';
 import 'ui/screen_trainings.dart';
 import 'ui/screen_init.dart';
-import 'ui/screen_master_users.dart';
+import 'ui/screen_master_user.dart';
 import 'ui/screen_master_trainings.dart';
 import 'ui/screen_purchases.dart';
 import 'ui/screen_tickets.dart';
@@ -72,8 +73,10 @@ class MyApp extends StatelessWidget {
             case '/trainings': return MaterialPageRoute(builder: (context) => ScreenTrainings());
             case '/purchases': return MaterialPageRoute(builder: (context) => ScreenPurchases());
             case '/master_trainings': return MaterialPageRoute(builder: (context) => ScreenMasterTrainings());
-            // case '/master_users': return MaterialPageRoute(builder: (context) => ScreenMasterUsers());
-            case '/master_users': return MaterialPageRoute(builder: (context) => UiSelectorUser().buildPage(context));
+            case UiSelectorUser.routeName: return MaterialPageRoute(builder: (context) => UiSelectorUser().buildPage(context));
+            case ScreenMasterUser.routeName:
+              final user = settings.arguments as CrudEntityUser;
+              return MaterialPageRoute(builder: (context) => ScreenMasterUser(user));
           }
         }
       },

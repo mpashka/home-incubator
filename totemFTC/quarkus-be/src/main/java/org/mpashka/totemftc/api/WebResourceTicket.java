@@ -45,6 +45,13 @@ public class WebResourceTicket {
     }
 
     @GET
+    @Path("tickets/byUser/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<DbCrudTicket.EntityTicket[]> listTicketsByUser(@PathParam("userId") int userId) {
+        return dbTicket.getTicketsByUser(userId);
+    }
+
+    @GET
     @Path("ticket/{id}")
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<DbCrudTicket.EntityTicket> getTicketById(@RestPath int id) {

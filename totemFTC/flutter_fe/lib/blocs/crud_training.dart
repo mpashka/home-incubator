@@ -35,17 +35,20 @@ class CrudTrainingTypeFilteredBloc extends BlocBaseList<CrudEntityTrainingType> 
 
   CrudTrainingTypeFilteredBloc(this._crudTrainingBloc);
 
-  Future<void> loadTrainings({List<CrudEntityTrainingType>? types, DateTimeRange? range, DateFilterInfo? filter}) async {
-    if (range == null && filter == null) {
+  Future<void> loadTrainings({List<CrudEntityTrainingType>? types, DateTimeRange? dateRange, DateFilterInfo? dateFilter, TrainingFilter? trainingFilter}) async {
+    if (dateRange == null && dateFilter == null) {
       throw Exception('Internal error. Range or filter must be specified');
     }
-    range ??= filter?.range;
+    dateRange ??= dateFilter?.range;
 
     Iterable<CrudEntityTraining> loaded = (await backend.requestJson('GET', '/api/userTraining/byDateInterval', params: {
-      'from': dateTimeFormat.format(range!.start), 'to': dateTimeFormat.format(range.end)}) as List)
+      'from': dateTimeFormat.format(dateRange!.start), 'to': dateTimeFormat.format(dateRange.end)}) as List)
         .map((item) => CrudEntityTraining.fromJson(item));
-    if (filter != null) {
-      loaded = loaded.where((t) => filter.filter(t.time));
+    if (dateFilter != null) {
+      loaded = loaded.where((t) => dateFilter.filter(t.time));
+    }
+    if (trainingFilter != null) {
+      loaded = loaded.where((t) => trainingFilter(t));
     }
     _allTrainings = loaded.toList();
 
@@ -133,3 +136,5 @@ class CrudEntityTrainingType implements Comparable<CrudEntityTrainingType> {
     return trainingType.compareTo(other.trainingType);
   }
 }
+
+typedef TrainingFilter = bool Function(CrudEntityTraining training);

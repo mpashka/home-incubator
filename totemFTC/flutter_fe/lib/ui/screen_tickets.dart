@@ -65,7 +65,7 @@ class ScreenTickets extends StatelessWidget {
   Future<void> _onAddTraining(BuildContext context, Session session, SelectedVisitBloc visitBloc) async {
     DateTime now = DateTime.now();
     var result = await UiSelectorTraining(_ticketName('Отметить посещение', 'Отметить абонемент', visitBloc.selectedTicket))
-        .selectTraining(context, range: DateTimeRange(start: now.subtract(Duration(days: 7)), end: now),
+        .selectTraining(context, dateRange: DateTimeRange(start: now.subtract(Duration(days: 7)), end: now),
         types: visitBloc.selectedTicket?.ticketType.trainingTypes
     );
     log.finer("Dialog result: $result");
