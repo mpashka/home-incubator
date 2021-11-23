@@ -16,13 +16,15 @@ import 'crud_user.dart';
 part 'crud_training.g.dart';
 
 class CrudTrainingBloc extends BlocBaseList<CrudEntityTraining> {
+
+  void loadTrainings(DateTime from, DateTime to) async {
+    state = (await backend.requestJson('GET', 'userTraining/byDateInterval', params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
+        .map((item) => CrudEntityTraining.fromJson(item)).toList();
+  }
+
   void loadMasterTrainings(DateTime from, DateTime to) async {
     state = (await backend.requestJson('GET', 'masterTraining/byDateInterval', params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
-        .map((item) {
-      var crudEntityTraining = CrudEntityTraining.fromJson(item);
-      crudEntityTraining.trainer = session.user;
-      return crudEntityTraining;
-    }).toList();
+        .map((item) => CrudEntityTraining.fromJson(item)..trainer = session.user).toList();
   }
 }
 

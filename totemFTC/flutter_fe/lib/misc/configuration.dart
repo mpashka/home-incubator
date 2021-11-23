@@ -59,5 +59,29 @@ class Configuration {
     return _doc['oidc'][kIsWeb ? 'redirectUrlWeb' : 'redirectUrl'];
   }
 
+  String devTelegram() {
+    return _doc['contacts']['dev']['telegram'];
+  }
+
+  String devPhone() {
+    return _doc['contacts']['dev']['phone'];
+  }
+
+  String masterTelegram() {
+    return _doc['contacts']['master']['telegram'];
+  }
+
+  String masterPhone() {
+    return _doc['contacts']['master']['phone'];
+  }
+
+  String masterPhoneUi() {
+    return _doc['contacts']['master']['phoneUi'];
+  }
+
+  String masterEmail() {
+    return _doc['contacts']['master']['email'];
+  }
+
   dynamic get doc => _doc;
 }

@@ -75,7 +75,7 @@ class ScreenLoginState extends State<ScreenLogin> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Totem FC'), automaticallyImplyLeading: false,),
+      appBar: AppBar(title: const Text('Totem FC'),),
       // drawer: MyDrawer(),
       body: Column(children: [
         // Text('Login'),

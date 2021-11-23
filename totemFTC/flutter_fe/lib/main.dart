@@ -6,6 +6,7 @@ import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'blocs/crud_user.dart';
 import 'blocs/session.dart';
 import 'ui/screen_home.dart';
+import 'ui/screen_schedule.dart';
 import 'ui/screen_trainings.dart';
 import 'ui/screen_init.dart';
 import 'ui/screen_master_user.dart';
@@ -68,11 +69,13 @@ class MyApp extends StatelessWidget {
             case '/': return MaterialPageRoute(builder: (context) => ScreenHome());
             case '/login': return MaterialPageRoute(builder: (context) => ScreenLogin());
             case '/init': return MaterialPageRoute(builder: (context) => ScreenInit());
-            case '/about': return MaterialPageRoute(builder: (context) => ScreenAbout());
+            case ScreenAbout.routeName: return MaterialPageRoute(builder: (context) => ScreenAbout());
             case '/tickets': return MaterialPageRoute(builder: (context) => ScreenTickets());
             case '/trainings': return MaterialPageRoute(builder: (context) => ScreenTrainings());
-            case '/purchases': return MaterialPageRoute(builder: (context) => ScreenPurchases());
-            case '/master_trainings': return MaterialPageRoute(builder: (context) => ScreenMasterTrainings());
+            case ScreenSchedule.routeName: return MaterialPageRoute(builder: (context) => ScreenSchedule());
+            case ScreenSchedule.routeNameMaster: return MaterialPageRoute(builder: (context) => ScreenSchedule(forTrainer: true,));
+            // case '/purchases': return MaterialPageRoute(builder: (context) => ScreenPurchases());
+            case ScreenMasterTrainings.routeName: return MaterialPageRoute(builder: (context) => ScreenMasterTrainings());
             case UiSelectorUser.routeName: return MaterialPageRoute(builder: (context) => UiSelectorUser().buildPage(context));
             case ScreenMasterUser.routeName:
               final user = settings.arguments as CrudEntityUser;

@@ -7,14 +7,15 @@ import 'package:intl/intl.dart';
 class UiTraining extends StatelessWidget {
 
   final CrudEntityTraining _training;
+  final bool forSchedule;
 
-  UiTraining(this._training);
+  UiTraining(this._training, {this.forSchedule = false});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-        color: theme.colorScheme.secondary,
+        color: forSchedule ? null :theme.colorScheme.secondary,
         child: ListTile(
             leading: Icon(Icons.baby_changing_station_rounded),
             title: Text('${_training.trainingType.trainingName} ${localDateTimeFormat.format(_training.time)}'),

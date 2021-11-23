@@ -16,7 +16,15 @@ import 'widgets/ui_training.dart';
 
 class ScreenMasterTrainings extends StatelessWidget {
 
-  static final DateTime now = DateTime.now();
+  static const routeName = '/master_trainings';
+
+  static final now = DateTime.now();
+  static const intervalBefore = Duration(days: 4);
+  static const intervalAfter = Duration(days: 4);
+
+  final CrudEntityTraining? initialTraining;
+
+  ScreenMasterTrainings({this.initialTraining});
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +34,7 @@ class ScreenMasterTrainings extends StatelessWidget {
     return BlocProvider(
         init: (blocProvider) {
           blocProvider.addBloc(bloc: CrudTrainingBloc())
-              .loadMasterTrainings(now.subtract(const Duration(days: 4)), now.add(const Duration(days: 4)));
+              .loadMasterTrainings(now.subtract(intervalBefore), now.add(intervalAfter));
           visitsBloc = blocProvider.addBloc(bloc: TrainingVisitsBloc());
           selectedTrainingBloc = blocProvider.addBloc(bloc: SelectedTrainingBloc());
         },
@@ -44,7 +52,7 @@ class ScreenMasterTrainings extends StatelessWidget {
               onSelectedTransformedItemChanged: (ctx, i, item) {
                 selectedTrainingBloc.state = null;
               },
-              selectedItem: now,
+              selectedItem: initialTraining ?? now,
               dataTransformer: addDates,
             ),
             UiDivider(visitsBloc.selectedTraining == null

@@ -20,11 +20,9 @@ class UiVisit extends StatelessWidget {
   final CrudEntityVisit _visit;
   /// todo this is adhoc workaround. Probably later enum will be used
   final bool forTrainer;
-  late final Session _session;
+  final Session _session = Injector().get<Session>();
 
-  UiVisit(this._visit, {this.forTrainer = false}) {
-    _session = Injector().get<Session>();
-  }
+  UiVisit(this._visit, {this.forTrainer = false});
 
   @override
   Widget build(BuildContext context) {
@@ -76,9 +74,7 @@ class UiVisit extends StatelessWidget {
 
     return GestureDetector(
       child: listTile,
-      onTapDown: (TapDownDetails details) {
-        _showPopupMenu(context, visitBloc, details.globalPosition, past);
-      },
+      onTapDown: (tapDownDetails) => _showPopupMenu(context, visitBloc, tapDownDetails.globalPosition, past),
     );
   }
 

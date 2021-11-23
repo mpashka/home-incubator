@@ -2,8 +2,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/crud_user.dart';
 import 'package:flutter_fe/blocs/session.dart';
+import 'package:flutter_fe/ui/screen_about.dart';
+import 'package:flutter_fe/ui/screen_master_trainings.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
+
+import 'screen_schedule.dart';
+import 'widgets/ui_selector_user.dart';
 
 class MyDrawer extends StatelessWidget {
 
@@ -58,26 +63,25 @@ class MyDrawer extends StatelessWidget {
           if (trainer) Divider(),
           if (trainer) ListTile(
             title: Text('Мои тренировки'),
-            onTap: () => Navigator.pushNamed(context, '/master_trainings',),
+            onTap: () => Navigator.pushNamed(context, ScreenMasterTrainings.routeName,),
           ),
           if (trainer) ListTile(
             title: Text('Мои ученики'),
-            onTap: () => Navigator.pushNamed(context, '/master_users',),
+            onTap: () => Navigator.pushNamed(context, UiSelectorUser.routeName,),
           ),
           if (trainer) ListTile(
             title: Text('Мое расписание'),
-            onTap: () => Navigator.pushNamed(context, '/master_schedule',),
+            onTap: () => Navigator.pushNamed(context, ScreenSchedule.routeNameMaster,),
           ),
 
           Divider(),
           ListTile(
             title: Text('Расписание'),
-            onTap: () => Navigator.pushNamed(context, '/schedule',),
+            onTap: () => Navigator.pushNamed(context, ScreenSchedule.routeName,),
           ),
           ListTile(
-            title: Text('Связаться с нами'),
-            onTap: () {
-            },
+            title: Text('О нас'),
+            onTap: () => Navigator.pushNamed(context, ScreenAbout.routeName,),
           ),
         ],
       ),

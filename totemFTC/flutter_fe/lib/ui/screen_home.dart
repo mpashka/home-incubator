@@ -20,7 +20,7 @@ import 'widgets/ui_ticket.dart';
 import 'widgets/ui_selector_training.dart';
 
 class ScreenHome extends StatelessWidget {
-  static final Logger log = Logger('HomeScreen');
+  static final Logger log = Logger('ScreenHome');
 
   final GlobalKey _keyFAB = GlobalKey();
 
