@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/misc/configuration.dart';
 import 'package:flutter_fe/ui/screen_base.dart';
+import 'package:flutter_fe/ui/widgets/ui_divider.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -16,9 +17,7 @@ class ScreenAbout extends StatelessWidget {
 
   const ScreenAbout({Key? key}) : super(key: key);
 
-  /**
-   * https://t.me/Rino77s -> tg://resolve?domain=Rino77s
-   */
+  // https://t.me/_user_ -> tg://resolve?domain=_user_
   @override
   Widget build(BuildContext context) {
     var config = Injector().get<Configuration>();
@@ -40,7 +39,11 @@ class ScreenAbout extends StatelessWidget {
           onTap: () => launch('https://wa.me/${config.masterPhone()}'),),
         GestureDetector(child: Icon(Icons.alternate_email),
           onTap: () => launch('mailto:${config.masterEmail()}'),),
+        GestureDetector(child: FaIcon(FontAwesomeIcons.vk),
+          onTap: () => launch('https://vk.com/rino77'),),
       ],),
+
+      Divider(thickness: 3,),
 
       GestureDetector(child: Row(
         children: [Icon(Icons.phone), Text(config.masterPhoneUi()),],),
@@ -49,9 +52,12 @@ class ScreenAbout extends StatelessWidget {
         children: [Icon(Icons.email), Text(config.masterEmail()),],),
         onTap: () => launch('mailto:${config.masterEmail()}'),),
       GestureDetector(child: Column(children: [
-        Row(children: const [Icon(Icons.maps_home_work), Text('141401, Московская Область, г. Химки, ул. Академика Грушина, д. 8'),],),
+        Row(children: const [Icon(Icons.maps_home_work), Text('МО, г.Химки, ул.Академика Грушина, д.8'),],),
       ]),
         onTap: () async {
+          // https://yandex.ru/dev/yandex-apps-launch/maps/doc/concepts/About.html
+          // https://developers.google.com/maps/documentation/urls/get-started
+          // https://developer.apple.com/library/archive/featuredarticles/iPhoneURLScheme_Reference/MapLinks/MapLinks.html
           for (var mapUrl in ['https://www.google.com/maps/search/?api=1&query=55.910944,37.454814',
             'yandexmaps://maps.yandex.ru/?z=12&ll=55.910944,37.454814',
             'http://maps.apple.com/?ll=55.910944,37.454814']) {
@@ -61,15 +67,20 @@ class ScreenAbout extends StatelessWidget {
             }
           }
         },),
+      GestureDetector(child: Row(
+        children: const [Icon(Icons.public), Text('totemftc.ru'),],),
+        onTap: () => launch('https://totemftc.ru/'),),
 
-    Row(children: [Text('Обратная связь с разработчиками'),
-    GestureDetector(child: Icon(MdiIcons.trello),
-    onTap: () => launch('https://trello.com/b/dQ9YlBoq/todo')),
-    GestureDetector(child: Icon(MdiIcons.github),
-    onTap: () => launch('https://github.com/mpashka/home-incubator/issues')),
-    GestureDetector(child: FaIcon(FontAwesomeIcons.telegram),
-    onTap: () => launch('https://t.me/${config.devTelegram
-    }()}'),),
+      Divider(thickness: 3,),
+
+      Row(children: [Text('Обратная связь с разработчиками'),
+        GestureDetector(child: Icon(MdiIcons.trello),
+            onTap: () => launch('https://trello.com/b/dQ9YlBoq/todo')),
+        GestureDetector(child: Icon(MdiIcons.github),
+            onTap: () => launch('https://github.com/mpashka/home-incubator/issues')),
+        GestureDetector(child: FaIcon(FontAwesomeIcons.telegram),
+          onTap: () => launch('https://t.me/${config.devTelegram
+          }()}'),),
         GestureDetector(child: Icon(MdiIcons.whatsapp),
           onTap: () => launch('https://wa.me/${config.devPhone()}'),),
       ],)

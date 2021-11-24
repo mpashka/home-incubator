@@ -85,7 +85,8 @@ CREATE TABLE IF NOT EXISTS training_ticket (
     user_id INTEGER REFERENCES user_info(user_id),
     ticket_buy TIMESTAMP NOT NULL,
     ticket_start DATE NULL,
-    ticket_end DATE NULL
+    ticket_end DATE NULL,
+    training_visits INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS training_visit (
