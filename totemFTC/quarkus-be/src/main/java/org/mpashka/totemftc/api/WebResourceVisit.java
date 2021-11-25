@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -23,7 +22,6 @@ import java.time.LocalDateTime;
 @Path("/api/visit")
 @Authenticated
 public class WebResourceVisit {
-
     private static final Logger log = LoggerFactory.getLogger(WebResourceVisit.class);
 
     @Inject
@@ -62,41 +60,40 @@ public class WebResourceVisit {
 
     @PUT
     @Path("delete")
-    public Uni<Void> delete(DbCrudVisit.EntityVisit visit) {
+    public Uni<DbCrudTicket.EntityTicket> delete(DbCrudVisit.EntityVisit visit) {
         return dbVisit.delete(visit);
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Uni<Void> create(DbCrudVisit.EntityVisit visit) {
-        log.debug("Add visit {}", visit);
-        return dbVisit.add(visit);
+    public Uni<DbCrudTicket.EntityTicket> create(DbCrudVisit.EntityVisit visit) {
+        return dbVisit.updateMark(visit, null, null, null);
     }
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public Uni<Void> update(DbCrudVisit.EntityVisit visit) {
+    public Uni<Void> updateComment(DbCrudVisit.EntityVisit visit) {
         return dbVisit.updateComment(visit);
     }
 
     @PUT
     @Path("/markSchedule/{markSchedule}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Uni<Void> updateMarkSchedule(DbCrudVisit.EntityVisit visit, @PathParam("markSchedule") boolean markSchedule) {
-        return dbVisit.updateMarkSchedule(visit, markSchedule);
+    public Uni<DbCrudTicket.EntityTicket> updateMarkSchedule(DbCrudVisit.EntityVisit visit, @PathParam("markSchedule") boolean markSchedule) {
+        return dbVisit.updateMark(visit, markSchedule, null, null);
     }
 
     @PUT
     @Path("/markSelf/{markSelf}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Uni<Void> updateMarkSelf(DbCrudVisit.EntityVisit visit, @PathParam("markSelf") DbCrudVisit.EntityVisitMark markSelf) {
-        return dbVisit.updateMarkSelf(visit, markSelf);
+    public Uni<DbCrudTicket.EntityTicket> updateMarkSelf(DbCrudVisit.EntityVisit visit, @PathParam("markSelf") DbCrudVisit.EntityVisitMark markSelf) {
+        return dbVisit.updateMark(visit, null, markSelf, null);
     }
 
     @PUT
     @Path("/markMaster/{markMaster}")
     @Consumes(MediaType.APPLICATION_JSON)
-    public Uni<Void> updateMarkMaster(DbCrudVisit.EntityVisit visit, @PathParam("markMaster") DbCrudVisit.EntityVisitMark markMaster) {
-        return dbVisit.updateMarkMaster(visit, markMaster);
+    public Uni<DbCrudTicket.EntityTicket> updateMarkMaster(DbCrudVisit.EntityVisit visit, @PathParam("markMaster") DbCrudVisit.EntityVisitMark markMaster) {
+        return dbVisit.updateMark(visit, null, null, markMaster);
     }
 }

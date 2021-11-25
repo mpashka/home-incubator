@@ -71,11 +71,4 @@ public class WebResourceTicket {
         log.debug("Add ticket {}", ticket);
         return dbTicket.addTicket(ticket);
     }
-
-    @PUT
-    @Path("ticket")
-    @Consumes(MediaType.APPLICATION_JSON)
-    public Uni<Void> update(DbCrudTicket.EntityTicket ticket) {
-        return dbTicket.updateTicket(ticket);
-    }
 }

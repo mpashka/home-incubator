@@ -36,7 +36,6 @@ public class DbCrudTicket {
     private PreparedQuery<RowSet<Row>> selectTicketsByUser;
     private PreparedQuery<RowSet<Row>> selectTicketById;
     private PreparedQuery<RowSet<Row>> insertTicket;
-    private PreparedQuery<RowSet<Row>> updateTicket;
     private PreparedQuery<RowSet<Row>> deleteTicket;
 
     @PostConstruct
@@ -50,21 +49,18 @@ public class DbCrudTicket {
         deleteTicketType = client.preparedQuery("DELETE FROM ticket_type WHERE ticket_type_id=$1");
 
         selectTicketsByUser = client.preparedQuery("SELECT * FROM training_ticket t " +
-                "JOIN ticket_type tit ON tit.ticket_type_id=t.ticket_type_id " +
+                "JOIN ticket_type tit USING (ticket_type_id) " +
 //                "JOIN (SELECT array_agg(row_to_json(tt.*)) AS training_types_obj FROM training_type tt WHERE tt.training_type=ANY(t.training_types)) training_type trt ON trt.training_type=" +
                 "JOIN (SELECT tit.ticket_type_id, array_agg(row_to_json(trt.*)) AS ticket_training_types_obj " +
                 "       FROM ticket_type tit " +
                 "       JOIN training_type trt ON trt.training_type=ANY(tit.ticket_training_types) " +
-                "       GROUP BY tit.ticket_type_id) trto ON trto.ticket_type_id=tit.ticket_type_id " +
-                "LEFT OUTER JOIN (SELECT ticket_id, COUNT(*) training_visit_count FROM training_visit GROUP BY ticket_id) vc ON t.ticket_id=vc.ticket_id " +
+                "       GROUP BY tit.ticket_type_id) trto USING (ticket_type_id) " +
                 "WHERE t.user_id=$1");
         selectTicketById = client.preparedQuery("SELECT * FROM training_ticket t " +
-                "JOIN ticket_type tt ON tt.ticket_type_id=t.ticket_type_id " +
-                "LEFT OUTER JOIN (SELECT ticket_id, COUNT(*) training_visit_count FROM training_visit WHERE ticket_id=$1 GROUP BY ticket_id) vc ON t.ticket_id=vc.ticket_id " +
+                "JOIN ticket_type tty USING (ticket_type_id) " +
                 "WHERE t.ticket_id=$1");
-        insertTicket = client.preparedQuery("INSERT INTO training_ticket (ticket_type_id, user_id, ticket_start, ticket_end) VALUES ($1, $2, $3, $4) RETURNING ticket_id");
-        updateTicket = client.preparedQuery("UPDATE training_ticket SET ticket_type_id=$2, user_id=$3, ticket_start=$4, ticket_end=$5 WHERE ticket_id=$1");
-        deleteTicket = client.preparedQuery("DELETE FROM training_ticket WHERE ticket_id=$1");
+        insertTicket = client.preparedQuery("SELECT * FROM insert_ticket($1, $2)");
+        deleteTicket = client.preparedQuery("SELECT * FROM delete_ticket($1)");
     }
 
     public Uni<EntityTicketType[]> getTicketTypes() {
@@ -141,16 +137,9 @@ public class DbCrudTicket {
      * @return ticketType id
      */
     public Uni<Integer> addTicket(EntityTicket ticket) {
-        return insertTicket.execute(Tuple.of(ticket.ticketType.id, ticket.user.getUserId(), ticket.start, ticket.end))
+        return insertTicket.execute(Tuple.of(ticket.ticketType.id, ticket.user.getUserId()))
                 .onItem().transform(rows -> rows.iterator().next().getInteger("ticket_id"))
                 .onFailure().transform(e -> new RuntimeException("Error addTicket", e))
-                ;
-    }
-
-    public Uni<Void> updateTicket(EntityTicket ticket) {
-        return updateTicket.execute(Tuple.of(ticket.id, ticket.ticketType.id, ticket.user.getUserId(), ticket.start, ticket.end))
-                .onFailure().transform(e -> new RuntimeException("Error updateTicket", e))
-                .onItem().transform(u -> null)
                 ;
     }
 
@@ -222,8 +211,7 @@ public class DbCrudTicket {
             this.buy = row.getLocalDateTime("ticket_buy");
             this.start = row.getLocalDate("ticket_start");
             this.end = row.getLocalDate("ticket_end");
-            Integer visitedObj = row.getInteger("training_visit_count");
-            this.visited = visitedObj != null ? visitedObj : 0;
+            this.visited = row.getInteger("training_visits");
             return this;
         }
 
@@ -234,8 +222,7 @@ public class DbCrudTicket {
             this.buy = LocalDateTime.from(DateTimeFormatter.ISO_LOCAL_DATE_TIME.parse(row.getString("ticket_buy")));
             this.start = LocalDate.from(DateTimeFormatter.ISO_LOCAL_DATE.parse(row.getString("ticket_start")));
             this.end = LocalDate.from(DateTimeFormatter.ISO_LOCAL_DATE.parse(row.getString("ticket_end")));
-            Integer visitedObj = row.getInteger("training_visit_count");
-            this.visited = visitedObj != null ? visitedObj : 0;
+            this.visited = row.getInteger("training_visits");
             return this;
         }
     }

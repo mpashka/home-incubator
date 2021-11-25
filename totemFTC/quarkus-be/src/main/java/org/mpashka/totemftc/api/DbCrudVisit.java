@@ -16,8 +16,6 @@ import javax.inject.Singleton;
 import java.time.LocalDateTime;
 import java.util.stream.StreamSupport;
 
-import static java.util.Arrays.asList;
-
 // todo [!] currently ticket_user_id == user_id which is wrong. To be fixed after implementing tickets
 @Singleton
 public class DbCrudVisit {
@@ -29,12 +27,8 @@ public class DbCrudVisit {
     private PreparedQuery<RowSet<Row>> selectByTraining;
     private PreparedQuery<RowSet<Row>> selectByUser;
     private PreparedQuery<RowSet<Row>> selectByTicket;
-    private PreparedQuery<RowSet<Row>> insert;
-    private PreparedQuery<RowSet<Row>> insertMarks;
     private PreparedQuery<RowSet<Row>> updateComment;
-    private PreparedQuery<RowSet<Row>> updateSchedule;
-    private PreparedQuery<RowSet<Row>> updateSelf;
-    private PreparedQuery<RowSet<Row>> updateMaster;
+    private PreparedQuery<RowSet<Row>> updateMark;
     private PreparedQuery<RowSet<Row>> delete;
 
     @PostConstruct
@@ -75,16 +69,9 @@ public class DbCrudVisit {
                         "         WHERE v.training_id = t.training_id) t " +
                         "WHERE v.ticket_id=$1 " +
                         "ORDER BY t.training_time");
-        insert = client.preparedQuery("INSERT INTO training_visit (training_id, user_id, ticket_user_id, visit_comment, visit_mark_schedule, visit_mark_self, visit_mark_master) " +
-                "VALUES ($1, $2, $3, $4, $5, $6::mark_type_enum, $7::mark_type_enum)");
-        insertMarks = client.preparedQuery("INSERT INTO training_visit (training_id, user_id, ticket_user_id, visit_comment, " +
-                "visit_mark_schedule, visit_mark_self, visit_mark_master) " +
-                "VALUES ($1, $2, $3, $4, $5, $6::mark_type_enum, $7::mark_type_enum)");
+        updateMark = client.preparedQuery("SELECT * FROM mark_visit($1, $2, $3, $4::mark_type_enum, $5::mark_type_enum, $6, $7::mark_type_enum, $8::mark_type_enum, $9)");
         updateComment = client.preparedQuery("UPDATE training_visit SET visit_comment=$4 WHERE training_id=$1 AND user_id=$2 AND ticket_user_id=$3");
-        updateSchedule = client.preparedQuery("UPDATE training_visit SET visit_mark_schedule=$4 WHERE training_id=$1 AND user_id=$2 AND ticket_user_id=$3");
-        updateSelf = client.preparedQuery("UPDATE training_visit SET visit_mark_self=$4::mark_type_enum WHERE training_id=$1 AND user_id=$2 AND ticket_user_id=$3");
-        updateMaster = client.preparedQuery("UPDATE training_visit SET visit_mark_master=$4::mark_type_enum WHERE training_id=$1 AND user_id=$2 AND ticket_user_id=$3");
-        delete = client.preparedQuery("DELETE FROM training_visit WHERE training_id=$1 AND user_id=$2 AND ticket_user_id=$3");
+        delete = client.preparedQuery("SELECT * FROM delete_visit($1, $2)");
     }
 
     public Uni<EntityVisit[]> getByTraining(int trainingId) {
@@ -123,18 +110,6 @@ public class DbCrudVisit {
                 ;
     }
 
-    /**
-     *
-     * @return trainer id
-     */
-    public Uni<Void> add(EntityVisit entityVisit) {
-        return insert.execute(Tuple.from(asList(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), entityVisit.comment,
-                        entityVisit.markSchedule, entityVisit.markSelf, entityVisit.markMaster)))
-                .onFailure().transform(e -> new RuntimeException("Error add", e))
-                .onItem().transform(u -> null)
-                ;
-    }
-
     /** Update comment */
     public Uni<Void> updateComment(EntityVisit entityVisit) {
         return updateComment.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), entityVisit.comment))
@@ -143,56 +118,20 @@ public class DbCrudVisit {
                 ;
     }
 
-    public Uni<Void> updateMarkSchedule(EntityVisit entityVisit, boolean markSchedule) {
+    public Uni<DbCrudTicket.EntityTicket> updateMark(EntityVisit entityVisit, Boolean markSchedule, EntityVisitMark markSelf, EntityVisitMark markMaster) {
 //        log.debug("updateMarkSchedule Visit: {}, Training: {} ", entityVisit, entityVisit.training, );
-        return updateSchedule.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), markSchedule))
-                .onItem().transformToUni(updateResult ->
-                        updateResult.rowCount() > 0 ? Uni.createFrom().voidItem() :
-                                insertMarks
-                                        .execute(Tuple.from(asList(
-                                                entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), entityVisit.comment,
-                                                markSchedule, EntityVisitMark.unmark.name(), EntityVisitMark.unmark.name())))
-                                        .onItem().transform(u -> null)
-                )
+        return updateMark.execute(Tuple.from(new Object[]{
+                        entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(),
+                        markSelf, markMaster, markSchedule,
+                        entityVisit.markSelf, entityVisit.markMaster}))
                 .onFailure().transform(e -> new RuntimeException("Error update", e))
-                ;
+                .onItem().transform(r -> new DbCrudTicket.EntityTicket().loadFromDb(r.iterator().next()));
     }
 
-    public Uni<Void> updateMarkSelf(EntityVisit entityVisit, EntityVisitMark markSelf) {
-        return updateSelf.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), markSelf.name()))
-                .onItem().invoke(updateResult -> log.info("Mark self {} {} row count {}", entityVisit, markSelf, updateResult.rowCount()))
-                .onItem().transformToUni(updateResult ->
-                        updateResult.rowCount() > 0 ? Uni.createFrom().voidItem() :
-                                insertMarks
-                                        .execute(Tuple.from(asList(
-                                                entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), entityVisit.comment,
-                                                false, markSelf.name(), EntityVisitMark.unmark.name())))
-                                        .onItem().invoke(insertResult -> log.info("Mark self {} {} insert row count {}", entityVisit, markSelf, insertResult.rowCount()))
-                                        .onItem().transform(u -> null)
-                )
-                .onFailure().transform(e -> new RuntimeException("Error update", e))
-                ;
-    }
-
-    public Uni<Void> updateMarkMaster(EntityVisit entityVisit, EntityVisitMark markMaster) {
-        return updateMaster.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), markMaster))
-                .onItem().transformToUni(updateResult ->
-                        updateResult.rowCount() > 0 ? Uni.createFrom().voidItem() :
-                                insertMarks
-                                        .execute(Tuple.from(asList(
-                                                entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(), entityVisit.comment,
-                                                false, EntityVisitMark.unmark.name(), markMaster.name())))
-                                        .onItem().transform(u -> null)
-                )
-                .onFailure().transform(e -> new RuntimeException("Error update", e))
-                ;
-    }
-
-    public Uni<Void> delete(DbCrudVisit.EntityVisit entityVisit) {
-        return delete.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId()))
+    public Uni<DbCrudTicket.EntityTicket> delete(DbCrudVisit.EntityVisit entityVisit) {
+        return delete.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId()))
                 .onFailure().transform(e -> new RuntimeException("Error delete", e))
-                .onItem().transform(u -> null)
-                ;
+                .onItem().transform(r -> new DbCrudTicket.EntityTicket().loadFromDb(r.iterator().next()));
     }
 
     public static class EntityVisit {

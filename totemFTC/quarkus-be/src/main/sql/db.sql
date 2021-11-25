@@ -92,13 +92,14 @@ CREATE TABLE IF NOT EXISTS training_ticket (
 CREATE TABLE IF NOT EXISTS training_visit (
     training_id INTEGER NOT NULL REFERENCES training (training_id),
     user_id INTEGER NOT NULL REFERENCES user_info (user_id),
+    -- ticket_user_id is used to set payer if ticker_id is null
     ticket_user_id INTEGER NULL REFERENCES user_info (user_id),
-    visit_comment VARCHAR(200) NULL,  --
     ticket_id INTEGER NULL REFERENCES training_ticket(ticket_id),
     visit_mark_schedule BOOLEAN NOT NULL DEFAULT false,
     visit_mark_self mark_type_enum NOT NULL DEFAULT 'unmark'::mark_type_enum,
     visit_mark_master mark_type_enum NOT NULL DEFAULT 'unmark'::mark_type_enum,
-    PRIMARY KEY (training_id, user_id, ticket_user_id)
+    visit_comment VARCHAR(200) NULL,
+    PRIMARY KEY (training_id, user_id)
 );
 
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO totemftc;
