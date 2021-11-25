@@ -14,13 +14,21 @@ CREATE TYPE ticket_and_type AS (
                                    ticket_days INTEGER
                                );
 
+CREATE OR REPLACE FUNCTION add_ticket(p_ticket_type_id INTEGER, p_user_id INTEGER) RETURNS ticket_and_type AS $$
+DECLARE
+BEGIN
+
+END;
+$$ LANGUAGE plpgsql;
+
+
 CREATE OR REPLACE FUNCTION mark_visit(p_training_id INTEGER, p_user_id INTEGER, p_ticket_user_id INTEGER,
                                       p_mark_self mark_type_enum DEFAULT NULL,
                                       p_mark_master mark_type_enum DEFAULT NULL,
                                       p_default_mark_schedule BOOLEAN DEFAULT FALSE,
                                       p_default_mark_self mark_type_enum DEFAULT NULL,
                                       p_default_mark_master mark_type_enum DEFAULT NULL
-) RETURNS RECORD AS $$
+) RETURNS ticket_and_type AS $$
 DECLARE
     v_visit_cursor REFCURSOR;
     v_ticket_cursor REFCURSOR;
@@ -30,7 +38,7 @@ DECLARE
     v_diff_visits INTEGER;
     v_update_ticket_id BOOLEAN;
 BEGIN
-    RAISE DEBUG 'debug mark_visit. training:%, user:%, self:%, master:%', p_training_id, p_user_id, p_mark_self, p_mark_master;
+    RAISE DEBUG 'mark_visit(). training:%, user:%, self:%, master:%', p_training_id, p_user_id, p_mark_self, p_mark_master;
 
     SELECT t.* INTO STRICT v_training FROM training t WHERE t.training_id=p_training_id;
 
@@ -42,14 +50,14 @@ BEGIN
           AND t.ticket_user_id=p_ticket_user_id;
     FETCH NEXT FROM v_visit_cursor INTO v_visit;
 
-    RAISE DEBUG 'select visits found: %', FOUND;
+    RAISE DEBUG 'mark_visit. visit found: %', FOUND;
     IF FOUND THEN
-        v_diff_visits = mark_visit_calc_count(v_visit.visit_mark_self, v_visit.visit_mark_master)
-            - mark_visit_calc_count(COALESCE(p_mark_self, v_visit.visit_mark_self), COALESCE(p_mark_master, v_visit.visit_mark_master));
+        v_diff_visits = mark_visit_calc_count(COALESCE(p_mark_self, v_visit.visit_mark_self), COALESCE(p_mark_master, v_visit.visit_mark_master))
+            - mark_visit_calc_count(v_visit.visit_mark_self, v_visit.visit_mark_master);
         v_update_ticket_id = v_visit.ticket_id IS NULL;
         v_ticket_cursor = mark_visit_find_ticket(v_visit.ticket_id, p_ticket_user_id, v_diff_visits, v_training.training_type);
         FETCH NEXT FROM v_ticket_cursor INTO v_ticket;
-        RAISE DEBUG 'ticket found: %', FOUND;
+        RAISE DEBUG 'mark_visit. ticket found: %', FOUND;
         IF NOT FOUND THEN
             v_update_ticket_id = TRUE;
             v_ticket_cursor = mark_visit_find_ticket(NULL, p_ticket_user_id, v_diff_visits, v_training.training_type);
@@ -92,30 +100,37 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE OR REPLACE PROCEDURE mark_visit_update_ticket(p_found BOOLEAN, p_diff_visits INTEGER, p_ticket ticket_and_type/*record*/, p_ticket_cursor REFCURSOR,
-                                                     p_training RECORD/*training%ROWTYPE*/) AS $$
+CREATE OR REPLACE PROCEDURE mark_visit_update_ticket(p_found BOOLEAN, p_diff_visits INTEGER, INOUT p_ticket ticket_and_type, p_ticket_cursor REFCURSOR,
+                                                     p_training training) AS $$
 DECLARE
-    v_old_visits INTEGER;
     v_new_visits INTEGER;
+    v_date TIMESTAMP;
 BEGIN
-    RAISE DEBUG 'update visit. ticket found: %', p_found;
+    RAISE DEBUG 'mark_visit_update_ticket(). ticket found: %, diff:%, ticket:%', p_found, p_diff_visits, p_ticket;
     IF NOT p_found THEN
         RETURN;
     END IF;
-    v_old_visits = p_ticket.training_visits;
-    v_new_visits := v_old_visits + p_diff_visits;
-    IF p_diff_visits<>0 THEN
+    v_new_visits := p_ticket.training_visits + p_diff_visits;
+    IF p_diff_visits!=0 THEN
         UPDATE training_ticket SET training_visits=v_new_visits WHERE CURRENT OF p_ticket_cursor;
         IF v_new_visits = 0 THEN
             UPDATE training_ticket SET ticket_start=NULL,ticket_end=NULL WHERE CURRENT OF p_ticket_cursor;
+            p_ticket.ticket_start=NULL;
+            p_ticket.ticket_end=NULL;
         ELSEIF v_new_visits > 0 AND p_ticket.ticket_start IS NULL THEN
-            UPDATE training_ticket SET ticket_start=date_trunc('day', p_training.training_time) WHERE CURRENT OF p_ticket_cursor;
+            v_date := date_trunc('day', p_training.training_time);
+            UPDATE training_ticket SET ticket_start=v_date WHERE CURRENT OF p_ticket_cursor;
+            p_ticket.ticket_start=v_date;
         ELSEIF v_new_visits < p_ticket.ticket_visits AND p_ticket.ticket_end IS NOT NULL THEN
             UPDATE training_ticket SET ticket_end=NULL WHERE CURRENT OF p_ticket_cursor;
+            p_ticket.ticket_end=NULL;
         ELSEIF v_new_visits = p_ticket.ticket_visits THEN
-            UPDATE training_ticket SET ticket_end=date_trunc('day', p_training.training_time) WHERE CURRENT OF p_ticket_cursor;
+            v_date := date_trunc('day', p_training.training_time);
+            UPDATE training_ticket SET ticket_end=v_date WHERE CURRENT OF p_ticket_cursor;
+            p_ticket.ticket_end=v_date;
         END IF;
         p_ticket.training_visits=v_new_visits;
+        RAISE DEBUG 'mark_visit_update_ticket(). ticket:%', p_ticket;
     END IF;
 END
 $$ LANGUAGE plpgsql;
@@ -137,18 +152,13 @@ DECLARE
     v_where VARCHAR;
     v_order_visit VARCHAR;
     v_order_date VARCHAR;
-    v_tt VARCHAR(10)[];
 BEGIN
-    v_tt := ARRAY[p_training_type];
-    RAISE DEBUG $$v_tt:%$$, v_tt;
-    RAISE DEBUG $$find ticket. ticket:%, user:%, visits_delta:%, training_type:'%'$$, p_ticket_id, p_ticket_user_id, p_visits_delta, p_training_type;
+    RAISE DEBUG $$mark_visit_find_ticket(). ticket:%, user:%, visits_delta:%, training_type:'%'$$, p_ticket_id, p_ticket_user_id, p_visits_delta, p_training_type;
 
     IF p_ticket_id IS NOT NULL THEN
         v_where := ' trt.ticket_id=$1 ';
     ELSE
-        --v_where := $$ trt.user_id=$2 AND tty.ticket_training_types && $3 $$;
-        --v_where := $$ trt.user_id=$2 AND tty.ticket_training_types && '{stretch}' $$;
-        v_where := $$ trt.user_id=$2 $$;
+        v_where := $$ trt.user_id=$2 AND tty.ticket_training_types && ARRAY[$3] $$;
     END IF;
 
     IF p_visits_delta >= 0 THEN
@@ -165,33 +175,16 @@ BEGIN
         v_order_date := 'DESC';
     END IF;
 
-    RAISE DEBUG USING MESSAGE=format(
-            'SELECT *
-             FROM training_ticket trt
-                      JOIN ticket_type tty ON trt.ticket_type_id=tty.ticket_type_id
-             WHERE %s
-             ORDER BY trt.training_visits %s, trt.ticket_buy %s
-             LIMIT 1
-                 FOR UPDATE', v_where, v_order_visit, v_order_date);
-
-    /*
-    ticket_type_id SERIAL PRIMARY KEY ,
-        ticket_training_types VARCHAR(10)[] NOT NULL,
-    ticket_name VARCHAR(20)  NOT NULL,
-    ticket_cost INTEGER NOT NULL,
-    ticket_visits INTEGER NOT NULL,
-    ticket_days INTEGER NOT NULL
-     */
-
     OPEN p_ticket_cursor NO SCROLL FOR EXECUTE
         format(
-                'SELECT trt.*,tty.ticket_training_types, tty.ticket_name, tty.ticket_cost, tty.ticket_visits, tty.ticket_days
+                'SELECT trt.ticket_id, trt.ticket_type_id, trt.user_id, trt.ticket_buy, trt.ticket_start, trt.ticket_end, trt.training_visits,
+                    tty.ticket_training_types, tty.ticket_name, tty.ticket_cost, tty.ticket_visits, tty.ticket_days
                  FROM training_ticket trt
                           JOIN ticket_type tty ON trt.ticket_type_id=tty.ticket_type_id
                  WHERE %s
                  ORDER BY trt.training_visits %s, trt.ticket_buy %s
                  LIMIT 1
                      FOR UPDATE', v_where, v_order_visit, v_order_date)
-        USING p_ticket_id, p_ticket_user_id, v_tt/*ARRAY[p_training_type]*/;
+        USING p_ticket_id, p_ticket_user_id, p_training_type;
 END
 $i$ LANGUAGE plpgsql;
