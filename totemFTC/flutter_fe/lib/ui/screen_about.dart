@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/misc/configuration.dart';
 import 'package:flutter_fe/ui/screen_base.dart';
-import 'package:flutter_fe/ui/widgets/ui_divider.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
-
-import 'drawer.dart';
-import 'widgets/wheel_list_selector.dart';
-import 'widgets/ui_visit.dart';
 
 class ScreenAbout extends StatelessWidget {
 

@@ -41,7 +41,7 @@ class ScreenSchedule extends StatelessWidget {
         }
       },
       child: UiScreen(
-        body: BlocProvider.streamBuilder<List<CrudEntityTraining>,CrudTrainingBloc>(builder: (trainings) {
+        body: BlocProvider.streamBuilder<List<CrudEntityTraining>,CrudTrainingBloc>(builder: (ctx, trainings) {
           DaySchedule currentDay = DaySchedule(DateTime(0));
           List<DaySchedule> result = [];
           bool nowAdded = false;

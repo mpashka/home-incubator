@@ -66,7 +66,7 @@ class UiSelectorUser {
         ),
       ],),
       Flexible(
-        child: BlocProvider.streamBuilder<List<CrudEntityUser>, FilteredUsersBloc>(builder: (users) => ListView(children: [
+        child: BlocProvider.streamBuilder<List<CrudEntityUser>, FilteredUsersBloc>(builder: (ctx, users) => ListView(children: [
           for (var user in users) GestureDetector(
             child: UiUser(user),
             onTap: () => userListener(user),

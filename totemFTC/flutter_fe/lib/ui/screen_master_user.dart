@@ -38,7 +38,7 @@ class ScreenMasterUser extends StatelessWidget {
         visitsBloc = blocProvider.addBloc(bloc: UserVisitsBloc(selectedUserBloc))
           ..loadUserVisits();
       },
-      child: UiScreen(body: BlocProvider.streamBuilder<CrudEntityUser, SelectedUserBloc>(builder: (user) => Column(children: [
+      child: UiScreen(body: BlocProvider.streamBuilder<CrudEntityUser, SelectedUserBloc>(builder: (ctx, user) => Column(children: [
         Row(children: [
           Expanded(child: UiUser(user)),
           GestureDetector(
@@ -50,7 +50,7 @@ class ScreenMasterUser extends StatelessWidget {
           )
         ],),
         UiDivider('Абонементы'),
-        BlocProvider.streamBuilder<List<CrudEntityTicket>, UserTicketsBloc>(builder: (tickets) {
+        BlocProvider.streamBuilder<List<CrudEntityTicket>, UserTicketsBloc>(builder: (ctx, tickets) {
           if (tickets.isEmpty) {
             return Text('Нет абонементов');
           } else {
@@ -69,7 +69,7 @@ class ScreenMasterUser extends StatelessWidget {
           }
         }),
         UiDivider('Посещения'),
-        Flexible(child: BlocProvider.streamBuilder<List<CrudEntityVisit>, UserVisitsBloc>(builder: (visits) {
+        Flexible(child: BlocProvider.streamBuilder<List<CrudEntityVisit>, UserVisitsBloc>(builder: (ctx, visits) {
           if (visits.isEmpty) {
             return Text('Нет посещений');
           } else {

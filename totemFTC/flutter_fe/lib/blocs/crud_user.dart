@@ -1,17 +1,43 @@
-import 'dart:async';
 import 'dart:core';
 
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:logging/logging.dart';
 
-import 'bloc_provider.dart';
-import 'crud_api.dart';
 import '../misc/utils.dart';
+import 'bloc_provider.dart';
+import 'session.dart';
 
 part 'crud_user.g.dart';
 
-// class CrudUserBloc extends BlocBaseList<CrudEntityUser> {}
+class CrudUserBloc extends BlocBaseState<CrudEntityUser> {
+
+
+  CrudUserBloc(): super(Injector().get<Session>().user);
+
+  void updateUser(CrudEntityUser user) async {
+    await backend.request('PUT', '/api/user', body: user);
+    session.user.firstName = user.firstName;
+    session.user.lastName = user.lastName;
+    session.user.nickName = user.nickName;
+    session.user.primaryImage = user.primaryImage;
+    session.user.type = user.type;
+    session.user.trainingTypes = user.trainingTypes;
+    state = session.user;
+  }
+
+  void unlink(CrudEntityUserSocialNetwork network) async {
+    await backend.request('DELETE', '/api/user/current/network/${network.id}');
+    state.socialNetworks!.remove(network);
+    state = session.user;
+  }
+
+  void link(LoginProvider provider, {SessionBloc? sessionBloc}) async {
+    var user = await session.link(provider, sessionBloc: sessionBloc);
+    if (user != null) {
+      state = user;
+    }
+  }
+}
 
 CrudEntityUser emptyUser = CrudEntityUser(userId: -1, type: CrudEntityUserType.guest);
 
@@ -90,8 +116,9 @@ class CrudEntityUserSocialNetwork {
   String networkName;
   String id;
   String? link;
+  String? displayName;
 
-  CrudEntityUserSocialNetwork({required this.networkName, required this.id, required this.link});
+  CrudEntityUserSocialNetwork({required this.networkName, required this.id, this.link, this.displayName});
   factory CrudEntityUserSocialNetwork.fromJson(Map<String, dynamic> json) => _$CrudEntityUserSocialNetworkFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityUserSocialNetworkToJson(this);
 }

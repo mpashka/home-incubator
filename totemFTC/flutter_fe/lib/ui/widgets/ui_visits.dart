@@ -19,31 +19,31 @@ class UiVisits extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider.streamBuilder<FilteredVisits, CrudVisitBlocFiltered>(builder: (d) {
-      if (d.isEmpty()) {
+    return BlocProvider.streamBuilder<FilteredVisits, CrudVisitBlocFiltered>(builder: (ctx, visits) {
+      if (visits.isEmpty()) {
         return Text('Посещений не было');
       }
 
       var theme = Theme.of(context);
-      return DefaultTabController(length: d.trainingTypes.length + 1, child: Builder(builder: (context) {
+      return DefaultTabController(length: visits.trainingTypes.length + 1, child: Builder(builder: (context) {
         var tabController = DefaultTabController.of(context)!;
-        tabController.addListener(() => onTrainingTypeChange(tabController.index > 0 ? d.trainingTypes[tabController.index - 1] : null));
+        tabController.addListener(() => onTrainingTypeChange(tabController.index > 0 ? visits.trainingTypes[tabController.index - 1] : null));
         return Column(children: [
           Container(decoration: BoxDecoration(color: theme.primaryColor),
             child: TabBar(indicatorColor: theme.colorScheme.onPrimary,
               tabs: [
                 // if (!d.isSingle())
-                Tab(child: Text('Все / ${d.allVisits.length}'),),
-                for (var trainingType in d.trainingTypes) Tab(
-                    child: Text('${trainingType.trainingName} / ${d.visitsByType[trainingType]!.length}')),
+                Tab(child: Text('Все / ${visits.allVisits.length}'),),
+                for (var trainingType in visits.trainingTypes) Tab(
+                    child: Text('${trainingType.trainingName} / ${visits.visitsByType[trainingType]!.length}')),
               ],),),
           Expanded(child: TabBarView(children: [
             // if (!d.isSingle())
             ListView(children: [
-              for (var visit in d.allVisits) UiVisit(visit),
+              for (var visit in visits.allVisits) UiVisit(visit),
             ]),
-            for (var trainingType in d.trainingTypes) ListView(children: [
-              for (var visit in d.visitsByType[trainingType]!) UiVisit(visit),
+            for (var trainingType in visits.trainingTypes) ListView(children: [
+              for (var visit in visits.visitsByType[trainingType]!) UiVisit(visit),
             ]),
           ]))
         ]);},),);

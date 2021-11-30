@@ -55,7 +55,7 @@ public class AuthProviderOkRu extends AuthProviderOidc {
      */
     @Override
     public Uni<UserInfo> readUserInfo(WebResourceLogin.LoginState loginState) {
-        String fields = "UID,EMAIL,FIRST_NAME,LAST_NAME,GENDER,PIC_BASE,URL_PROFILE,PIC1024X768,BIRTHDAY";
+        String fields = "UID,EMAIL,NAME,FIRST_NAME,LAST_NAME,GENDER,PIC_BASE,URL_PROFILE,PIC1024X768,BIRTHDAY";
         String sigString = "application_key=<application_public_key>fields=<fields>method=users.getCurrentUser<secret_sign_key>"
                 .replace("<application_public_key>", applicationPublicKey)
                 .replace("<fields>", fields)
@@ -80,6 +80,7 @@ public class AuthProviderOkRu extends AuthProviderOidc {
                             userJson.getString("url_profile"),
                             userJson.getString("email"),
                             null,
+                            userJson.getString("name"),
                             userJson.getString("first_name"),
                             userJson.getString("last_name"),
                             null,

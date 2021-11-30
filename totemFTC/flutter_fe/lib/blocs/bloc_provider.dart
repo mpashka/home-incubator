@@ -2,9 +2,6 @@ import 'dart:async';
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_fe/blocs/crud_ticket.dart';
-import 'package:flutter_fe/blocs/crud_visit.dart';
-import 'package:flutter_fe/blocs/crud_training.dart';
 import 'package:flutter_fe/blocs/session.dart';
 import 'package:flutter_fe/misc/utils.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
@@ -18,18 +15,18 @@ class BlocProvider extends StatefulWidget {
   final Widget child;
   final void Function(BlocProviderState) init;
 
-  BlocProvider({Key? key, required this.init, required this.child}): super(key: key);
+  const BlocProvider({Key? key, required this.init, required this.child}): super(key: key);
 
   @override
   BlocProviderState createState() => BlocProviderState();
 
-  static Widget streamBuilder<T, B extends BlocBaseState<T>>({required Widget Function(T data) builder, String? name}) {
+  static Widget streamBuilder<T, B extends BlocBaseState<T>>({required Widget Function(BuildContext context, T data) builder, String? name}) {
     return Builder(builder: (ctx) {
       var bloc = of(ctx).getBloc<B>(name);
       return StreamBuilder<T>(
         stream: bloc._stateOut,
         initialData: bloc.state,
-        builder: (BuildContext context, AsyncSnapshot<T> snapshot) => builder(snapshot.requireData),
+        builder: (BuildContext context, AsyncSnapshot<T> snapshot) => builder(context, snapshot.requireData),
       );
     });
   }
@@ -43,8 +40,8 @@ class BlocProvider extends StatefulWidget {
   }
 
   /// Can be called by widgets to get appropriate bloc
-  static T getBloc<T extends BlocBase>(BuildContext context) {
-    return of(context).getBloc<T>();
+  static T getBloc<T extends BlocBase>(BuildContext context, {String? name}) {
+    return of(context).getBloc<T>(name);
   }
 }
 
@@ -134,12 +131,12 @@ class BlocBaseState<T> extends BlocBase {
     _streamController.close();
   }
 
-  T get state => _state;
-
   Stream<T> get stateOut {
     log.fine("Get stream");
     return _stateOut;
   }
+
+  T get state => _state;
 
   set state(T state) {
     _state = state;

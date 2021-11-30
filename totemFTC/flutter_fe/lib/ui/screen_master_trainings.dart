@@ -58,7 +58,7 @@ class ScreenMasterTrainings extends StatelessWidget {
             UiDivider(visitsBloc.selectedTraining == null
                 ? 'Выберите тренировку'
                 : 'Посещения ${visitsBloc.selectedTraining!.trainingType.trainingName} ${localDateTimeFormat.format(visitsBloc.selectedTraining!.time)}'),
-            BlocProvider.streamBuilder<List<CrudEntityVisit>, TrainingVisitsBloc>(builder: (visits) {
+            BlocProvider.streamBuilder<List<CrudEntityVisit>, TrainingVisitsBloc>(builder: (ctx, visits) {
               if (visits.isEmpty) return Text('Никого не было');
               return Expanded(
                 child: ListView(children: [
@@ -66,7 +66,7 @@ class ScreenMasterTrainings extends StatelessWidget {
                 ],),);
             }),
           ]),),
-          floatingActionButton: BlocProvider.streamBuilder<CrudEntityTraining?, SelectedTrainingBloc>(builder: (selectedTraining) {
+          floatingActionButton: BlocProvider.streamBuilder<CrudEntityTraining?, SelectedTrainingBloc>(builder: (ctx, selectedTraining) {
             return FloatingActionButton(
               onPressed: selectedTraining == null ? null : () => addVisit(context, visitsBloc, selectedTraining),
               tooltip: 'Add',

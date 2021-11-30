@@ -18,6 +18,10 @@ import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.stream.StreamSupport;
 
+import static org.mpashka.totemftc.api.Utils.firstNonBlank;
+import static org.mpashka.totemftc.api.Utils.isBlank;
+import static org.mpashka.totemftc.api.Utils.notBlank;
+
 /**
  *
  */
@@ -80,7 +84,7 @@ public class DbUser {
                 "WHERE phone = $1");
 
         insertUser = client.preparedQuery("INSERT INTO user_info (first_name, last_name, nick_name, user_type) VALUES ($1, $2, $3, $4) RETURNING user_id");
-        insertSocialNetwork = client.preparedQuery("INSERT INTO user_social_network (network_name, id, user_id, link) VALUES ($1, $2, $3, $4)");
+        insertSocialNetwork = client.preparedQuery("INSERT INTO user_social_network (network_name, id, user_id, link, display_name) VALUES ($1, $2, $3, $4, $5)");
         insertEmail = client.preparedQuery("INSERT INTO user_email (email, user_id, confirmed) VALUES ($1, $2, $3)");
         insertPhone = client.preparedQuery("INSERT INTO user_phone (phone, user_id, confirmed) VALUES ($1, $2, $3)");
         insertImage = client.preparedQuery("INSERT INTO user_image (user_id, image, content_type) VALUES ($1, $2, $3) RETURNING image_id");
@@ -194,7 +198,15 @@ public class DbUser {
      * Add social network and probably email and phone
      */
     public Uni<Void> addUserSocialNetwork(int userId, AuthProvider.UserInfo userInfo) {
-        return insertSocialNetwork.execute(Tuple.of(userInfo.getNetworkName(), userInfo.getId(), userId, userInfo.getLink()))
+        String display;
+        String displayName = userInfo.getDisplayName();
+        String nickName = userInfo.getNickName();
+        if (notBlank(displayName) && notBlank(nickName)) {
+            display = displayName.equals(nickName) ? displayName : (displayName + " aka " + nickName);
+        } else {
+            display = firstNonBlank(displayName, nickName);
+        }
+        return insertSocialNetwork.execute(Tuple.of(userInfo.getNetworkName(), userInfo.getId(), userId, userInfo.getLink(), display))
                 .onItem().transformToUni(u -> addEmail(userId, userInfo.getEmail()))
                 .onItem().transformToUni(u -> addPhone(userId, userInfo.getPhone()))
                 .onFailure().transform(e -> new RuntimeException("Error addSocialNetwork", e))
@@ -387,11 +399,13 @@ public class DbUser {
             private String networkName;
             private String id;
             private String link;
+            private String displayName;
 
             public EntitySocialNetwork loadFromDb(JsonObject row) {
                 this.networkName = row.getString("network_name");
                 this.id = row.getString("id");
                 this.link = row.getString("link");
+                this.link = row.getString("display_name");
                 return this;
             }
         }

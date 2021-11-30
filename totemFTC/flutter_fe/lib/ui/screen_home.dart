@@ -35,13 +35,13 @@ class ScreenHome extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              BlocProvider.streamBuilder<List<CrudEntityTicket>, CrudTicketBloc>(builder: (data) => Column(
+              BlocProvider.streamBuilder<List<CrudEntityTicket>, CrudTicketBloc>(builder: (ctx, data) => Column(
                   children: [
                     if (data.isNotEmpty) const UiDivider('Абонементы')
                     else const UiDivider('Абонементов нет'),
                     for (var ticket in data) UiTicket(ticket),
                   ])),
-              BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(builder: (data) {
+              BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(builder: (ctx, data) {
                 List<Widget> prevWidgets = [], nextWidgets = [];
                 DateTime now = DateTime.now();
                 for (var visit in data) {

@@ -56,6 +56,7 @@ public class AuthProviderOidcGoogle extends AuthProviderOidc {
                             userJson.getString("link"),
                             userJson.getString("email"),
                             null,
+                            userJson.getString("name"),
                             userJson.getString("given_name"),
                             userJson.getString("family_name"),
                             null,

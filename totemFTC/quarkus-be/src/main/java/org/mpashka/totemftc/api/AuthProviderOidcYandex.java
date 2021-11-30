@@ -64,6 +64,7 @@ public class AuthProviderOidcYandex extends AuthProviderOidc {
                             null,
                             userJson.getString("default_email"),
                             null,
+                            userJson.getString("display_name"),
                             userJson.getString("first_name"),
                             userJson.getString("last_name"),
                             userJson.getString("display_name"),

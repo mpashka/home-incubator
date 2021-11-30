@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/crud_api.dart';
 import 'package:flutter_fe/blocs/crud_user.dart';
@@ -9,7 +8,6 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
-import 'package:http/http.dart' as http;
 
 import '../misc/configuration.dart';
 import '../misc/utils.dart';
@@ -22,79 +20,69 @@ class Session {
   static final Logger log = Logger('Session');
 
   final Configuration _configuration;
-  final CrudApi _api;
-  final StreamController<LoginStateInfo> _loginController = StreamController<LoginStateInfo>();
-  late final Sink<LoginStateInfo> _loginStateIn;
-  late final Stream<LoginStateInfo> _loginState;
+  final CrudApi _backend;
 
   CrudEntityUser _user = emptyUser;
   CrudEntityUser get user => _user;
 
   Session(Injector injector):
         _configuration = injector.get<Configuration>(),
-        _api = injector.get<CrudApi>()
-  {
-    _loginState = _loginController.stream.asBroadcastStream();
-    _loginStateIn = _loginController.sink;
+        _backend = injector.get<CrudApi>();
+
+  /// In order to provide better user experience and reduce latency we process all urls on client side.
+  /// For web-based client we use {@link web/login-callback.html} as redirect URL
+  /// For native client we use site url + deep linking + site/.well-known in order to confirm ownership and get call back in router (still TBD;)
+  Future<CrudEntityUser?> login(LoginProvider provider, {SessionBloc? sessionBloc}) async {
+    return _login(provider, false, sessionBloc: sessionBloc);
   }
 
-  SessionBloc bloc() {
-    return SessionBloc(this);
+  Future<CrudEntityUser?> link(LoginProvider provider, {SessionBloc? sessionBloc}) {
+    return _login(provider, true, sessionBloc: sessionBloc);
   }
 
-  void dispose() {
-    _loginController.close();
-  }
-  
-  void login(LoginProvider provider) {
+  Future<CrudEntityUser?> _login(LoginProvider provider, bool link, {SessionBloc? sessionBloc}) {
+    final completer = Completer<CrudEntityUser?>();
     final redirectUrl = _configuration.loginRedirectUrl();
     final clientId = _configuration.loginProviderClientId(provider.name);
     // client_id=<client_id>&redirect_uri=<redirect_uri>&state=<state>&response_type=code&scope=<scope>&nonce=<nonce>
     final url = provider.url
         + (provider.url.contains('?') ? '&' : '?')
         + 'client_id=' + clientId
-        + '&state=my_state'
+        + '&state=state_client_flutter'
             '&response_type=code'
             '&scope=' + provider.scopes.join('+')
         + '&nonce=' + getRandomString(10)
         + '&redirect_uri=' + Uri.encodeComponent(redirectUrl);
     log.info('Launch login ${provider.name} $url');
-    login_helper.showLoginWindow(url, (loginParams) => onLoginCallback(loginParams, provider));
+    login_helper.showLoginWindow(url, (loginParams) =>
+        onLoginCallback(loginParams, provider, link, sessionBloc: sessionBloc)
+            .then((value) => completer.complete(value))
+    );
+    return completer.future;
   }
 
-  void onLoginCallback(String loginParams, LoginProvider provider) async {
+  Future<CrudEntityUser?> onLoginCallback(String loginParams, LoginProvider provider, bool link, {SessionBloc? sessionBloc}) async {
     if (loginParams.contains('error')) {
-      _loginStateIn.add(LoginStateInfo(LoginState.error, loginParams));
-      return;
+      sessionBloc?.state = LoginStateInfo(LoginState.error, loginParams);
+      return null;
     }
-    _loginStateIn.add(LoginStateInfo(LoginState.inProgress));
-    Uri? uri;
-    http.Response? loginResponse;
+    sessionBloc?.state = LoginStateInfo(LoginState.inProgress);
     try {
-      uri = Uri.parse('${_configuration.backendUrl()}/api/login/callback/${provider.name}$loginParams&action=login&client=${_configuration.clientId()}');
-      loginResponse = await http.get(uri);
-      if (loginResponse.statusCode != 200) {
-        log.severe('Error processing login $uri ${loginResponse.statusCode}\n${loginResponse.body}');
-        _loginStateIn.add(LoginStateInfo(LoginState.error, loginResponse.body));
-        return;
+      var login = EntityLogin.fromJson(jsonDecode(await _backend.requestJson('GET', '${_configuration.backendUrl()}/api/login/${link ? 'linkCallback' : 'loginCallback'}/${provider.name}$loginParams', params: {'client': _configuration.clientId()}, auth: link)));
+      if (!link) {
+        _configuration.sessionId = login.sessionId;
       }
-      var login = EntityLogin.fromJson(jsonDecode(loginResponse.body));
-      _configuration.sessionId = login.sessionId;
-      await loadUser();
-      _loginStateIn.add(LoginStateInfo(LoginState.done));
-    } on http.ClientException catch (e,s) {
-      log.severe('Http Error processing login $uri', e, s);
-      _loginStateIn.add(LoginStateInfo(LoginState.error, 'Backend Server Error'));
-    } catch (e,s) {
-      log.severe('[${e.runtimeType}] Error processing login $uri', e, s);
-      if (loginResponse != null) {
-        log.severe('loginResponseStatus: ${loginResponse.statusCode}\n${loginResponse.body}', e, s);
-      }
-      _loginStateIn.add(LoginStateInfo(LoginState.error, 'Error $e'));
+      final user = await loadUser();
+      sessionBloc?.state = LoginStateInfo(LoginState.done);
+      return user;
+    } catch (e) {
+      sessionBloc?.state = LoginStateInfo(LoginState.error, 'Error $e');
     }
   }
 
-  void logout() {
+  Future<void> logout() async {
+    await _backend.request('GET', '/api/user');
+    _configuration.sessionId = '';
   }
 
   bool isLoggedIn() {
@@ -102,7 +90,7 @@ class Session {
   }
 
   Future<CrudEntityUser> loadUser() async {
-    var json = await _api.requestJson('GET', '/api/user');
+    var json = await _backend.requestJson('GET', '/api/user');
     _user = CrudEntityUser.fromJson(json);
     return _user;
   }
@@ -116,21 +104,32 @@ const loginProviders = <LoginProvider>[
   LoginProvider("yandex", "https://oauth.yandex.ru/authorize", ["login:birthday", "login:email", "login:info", "login:avatar"], Icon(MdiIcons.alphaYCircle), true),
 ];
 
-class SessionBloc extends BlocBase {
-  Session session;
+class SessionBloc extends BlocBaseState<LoginStateInfo> {
   StreamSubscription? _loginStateSubscription;
 
-  SessionBloc(this.session);
+  SessionBloc([LoginState initialState = LoginState.none]): super(LoginStateInfo(initialState));
 
-  listenLoginState(Function(LoginStateInfo) onData) {
-    _loginStateSubscription = session._loginState.listen(onData);
+  listenLoginState(Function(LoginStateInfo loginStateInfo) onData) {
+    cancelSubscription();
+    _loginStateSubscription = stateOut.listen(onData);
+  }
+
+  Future<CrudEntityUser?> login(LoginProvider provider) {
+    return session.login(provider, sessionBloc: this);
   }
 
   @override
   void dispose() {
-    if (_loginStateSubscription != null) {
-      _loginStateSubscription!.cancel();
-    }
+    super.dispose();
+  }
+
+  void cancelSubscription() {
+    _loginStateSubscription?.cancel();
+    _loginStateSubscription = null;
+  }
+
+  void reset() {
+    state = LoginStateInfo(LoginState.none);
   }
 }
 
@@ -145,6 +144,7 @@ class LoginProvider {
 }
 
 class LoginStateInfo {
+
   LoginState state;
   String? description;
 
@@ -168,3 +168,4 @@ class EntityLogin {
 enum EntityLoginUserType {
  newUser, existing
 }
+

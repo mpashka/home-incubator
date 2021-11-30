@@ -48,6 +48,7 @@ public class AuthProviderOidcGitHub extends AuthProviderOidc {
                             userJson.getString("html_url"),
                             userJson.getString("email"),
                             null,
+                            name,
                             names.length > 0 ? names[0] : null,
                             names.length > 1 ? names[1] : null,
                             userJson.getString("login"),

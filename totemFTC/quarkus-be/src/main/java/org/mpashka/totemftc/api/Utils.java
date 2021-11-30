@@ -46,6 +46,23 @@ public class Utils {
         return !isEmpty(str);
     }
 
+    public static boolean isBlank(String str) {
+        return str == null || str.isBlank();
+    }
+
+    public static boolean notBlank(String str) {
+        return str != null && !str.isBlank();
+    }
+
+    public static String firstNonBlank(String... strings) {
+        for (String string : strings) {
+            if (notBlank(string)) {
+                return string;
+            }
+        }
+        return null;
+    }
+
     /**
      * Must return '+70123456789':
      *   replace 8 -> +7

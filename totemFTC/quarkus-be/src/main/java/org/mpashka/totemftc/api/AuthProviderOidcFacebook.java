@@ -40,7 +40,7 @@ public class AuthProviderOidcFacebook extends AuthProviderOidc {
     public Uni<UserInfo> readUserInfo(WebResourceLogin.LoginState loginState) {
         /* profile_pic -> This call requires a Page access token.*/
         return getWebClient()
-                .getAbs("https://graph.facebook.com/me?fields=id,email,gender,first_name,last_name,picture,birthday,link,location")
+                .getAbs("https://graph.facebook.com/me?fields=id,email,gender,first_name,last_name,name,picture,birthday,link,location")
                 .bearerTokenAuthentication(loginState.getToken())
                 .send()
                 .onItem().transform(HttpResponse::bodyAsJsonObject)
@@ -57,6 +57,7 @@ public class AuthProviderOidcFacebook extends AuthProviderOidc {
                             userJson.getString("link"),
                             userJson.getString("email"),
                             null,
+                            userJson.getString("name"),
                             userJson.getString("first_name"),
                             userJson.getString("last_name"),
                             null,

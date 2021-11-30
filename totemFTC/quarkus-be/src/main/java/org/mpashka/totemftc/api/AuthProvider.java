@@ -41,17 +41,20 @@ public abstract class AuthProvider {
         private String link;
         private String email;
         private String phone;
+        /** Used to show and identify user social network */
+        private String displayName;
         private String firstName;
         private String lastName;
         private String nickName;
         private String imageUrl;
 
-        public UserInfo(String networkName, String id, String link, String email, String phone, String firstName, String lastName, String nickName, String imageUrl) {
+        public UserInfo(String networkName, String id, String link, String email, String phone, String displayName, String firstName, String lastName, String nickName, String imageUrl) {
             this.networkName = networkName;
             this.id = id;
             this.link = link;
             this.email = email;
             this.phone = Utils.normalizePhone(phone);
+            this.displayName = displayName;
             this.firstName = firstName;
             this.lastName = lastName;
             this.nickName = nickName;
@@ -76,6 +79,10 @@ public abstract class AuthProvider {
 
         public String getPhone() {
             return phone;
+        }
+
+        public String getDisplayName() {
+            return displayName;
         }
 
         public String getFirstName() {

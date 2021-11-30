@@ -3,6 +3,7 @@ import 'package:logging/logging.dart';
 
 final Logger log = Logger('login_helper');
 
+/// loginParams - oidc redirect login parameters string starting with '?'
 void showLoginWindow(String url, void Function(String loginParams) onLoginCallback) {
   launch(url)
       .then((value) => log.info('Launched: $value'))

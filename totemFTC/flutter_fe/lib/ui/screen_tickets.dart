@@ -34,7 +34,7 @@ class ScreenTickets extends StatelessWidget {
         },
         child: UiScreen(body: Column(
               children: [
-                BlocProvider.streamBuilder<List<CrudEntityTicket>, CrudTicketBloc>(builder: (data) => Column(children: [
+                BlocProvider.streamBuilder<List<CrudEntityTicket>, CrudTicketBloc>(builder: (ctx, data) => Column(children: [
                   if (data.isNotEmpty) UiDivider('Абонементы'),
                   for (var ticket in data)
                     GestureDetector(
@@ -42,7 +42,7 @@ class ScreenTickets extends StatelessWidget {
                       child: UiTicket(ticket),
                     )
                 ])),
-                BlocProvider.streamBuilder<List<CrudEntityVisit>, SelectedVisitBloc>(builder: (data) => Column(
+                BlocProvider.streamBuilder<List<CrudEntityVisit>, SelectedVisitBloc>(builder: (ctx, data) => Column(
                   children: [
                     UiDivider(_ticketName('Выберите абонемент', 'Посещения', visitBloc.selectedTicket)),
                     for (var visit in data) UiVisit(visit),

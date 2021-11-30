@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS user_social_network (
     id VARCHAR(30) NOT NULL,
     user_id INTEGER NOT NULL REFERENCES user_info (user_id),
     link VARCHAR(400) NULL,
+    display_name VARCHAR(60) NULL,
     PRIMARY KEY (network_name,id));
 
 

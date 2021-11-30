@@ -65,6 +65,7 @@ public class AuthProviderOidcInstagram extends AuthProviderOidc {
                                         "https://www.instagram.com/<username>/".replace("<username>", username),
                                         null,
                                         null,
+                                        userJson.getString("username"),
                                         names.length > 0 ? names[0] : null,
                                         names.length > 1 ? names[1] : null,
                                         userJson.getString("username"),

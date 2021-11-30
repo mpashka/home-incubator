@@ -36,7 +36,7 @@ public class AuthProviderOidcVk extends AuthProviderOidc {
      */
     void processTokenResponse(WebResourceLogin.LoginState loginState, JsonObject tokenJson) {
         loginState.setAuthUserInfo(new UserInfo(getName(),
-                tokenJson.getString("user_id"), null, tokenJson.getString("email"), null, null, null, null, null
+                tokenJson.getString("user_id"), null, tokenJson.getString("email"), null, null, null, null, null, null
         ));
     }
 
@@ -57,7 +57,7 @@ public class AuthProviderOidcVk extends AuthProviderOidc {
      */
     @Override
     public Uni<UserInfo> readUserInfo(WebResourceLogin.LoginState loginState) {
-        String fields = "id,first_name,last_name,photo_max_orig,connections,contacts,domain";
+        String fields = "id,first_name,last_name,nickname,bdate,photo_max_orig,connections,contacts,domain";
         return getWebClient()
                 .getAbs("https://api.vk.com/method/users.get?fields=<fields>&name_case=nom&v=<vk_version>&access_token=<access_token>"
                         .replace("<access_token>", loginState.getToken())
@@ -70,7 +70,7 @@ public class AuthProviderOidcVk extends AuthProviderOidc {
                     JsonObject userJson = userResponseJson.getJsonArray("response").getJsonObject(0);
                     String email = loginState.getAuthUserInfo().getEmail();
                     String domain = userJson.getString("domain");
-                    boolean isNick = domain.matches("id\\d+");
+                    boolean domainIsId = domain.matches("id\\d+");
 
                     // todo - other social network links are present: skype, facebook (+facebook_name), twitter, livejournal, instagram
 
@@ -79,9 +79,10 @@ public class AuthProviderOidcVk extends AuthProviderOidc {
                             "https://vk.com/<domain>".replace("<domain>", domain),
                             email,
                             null,
+                            userJson.getString("nick_name"),
                             userJson.getString("first_name"),
                             userJson.getString("last_name"),
-                            isNick ? domain : null,
+                            domainIsId ? null : domain,
                             userJson.getString("photo_max_orig"));
                 });
     }

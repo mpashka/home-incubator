@@ -21,7 +21,7 @@ class CrudApi {
     _httpClient.close();
   }
 
-  Future<http.Response> request(String method, String apiUri, {Map<String, dynamic>? params, Object? body}) async {
+  Future<http.Response> request(String method, String apiUri, {Map<String, dynamic>? params, Object? body, bool auth=true}) async {
     try {
       String uriStr = '${_configuration.backendUrl()}$apiUri';
       if (params != null) {
@@ -34,7 +34,9 @@ class CrudApi {
         request.headers['Content-Type'] = 'application/json;charset=utf-8';
         request.bodyBytes = utf8.encode(jsonEncode(body));
       }
-      request.headers['Authorization'] = 'Bearer ${_configuration.sessionId}';
+      if (auth) {
+        request.headers['Authorization'] = 'Bearer ${_configuration.sessionId}';
+      }
     // Accept: application/json
       var responseStream = await _httpClient.send(request);
       log.fine('Received streamed response: ${responseStream.statusCode}');
@@ -51,9 +53,9 @@ class CrudApi {
     }
   }
 
-  Future<dynamic> requestJson(String method, String apiUri, {Map<String, dynamic>? params, Object? body}) async {
+  Future<dynamic> requestJson(String method, String apiUri, {Map<String, dynamic>? params, Object? body, bool auth=true}) async {
     try {
-      var decoded = jsonDecode(utf8.decode((await request(method, apiUri, body: body, params: params)).bodyBytes));
+      var decoded = jsonDecode(utf8.decode((await request(method, apiUri, body: body, params: params, auth: auth)).bodyBytes));
       log.fine('Response decoded $decoded');
       return decoded;
     } on ApiException {

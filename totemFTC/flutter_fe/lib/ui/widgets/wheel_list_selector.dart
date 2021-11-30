@@ -25,8 +25,8 @@ class WheelListSelector<E, B extends BlocBaseState<List<E>>> extends StatelessWi
     return Stack(
       children: [
         Positioned.fill(
-            child: BlocProvider.streamBuilder<List<E>, B>(builder: (_data) {
-              List workingData = dataTransformer != null ? dataTransformer!(_data) : _data;
+            child: BlocProvider.streamBuilder<List<E>, B>(builder: (ctx, data) {
+              List workingData = dataTransformer != null ? dataTransformer!(data) : data;
               return ListWheelScrollView.useDelegate(
                   onSelectedItemChanged: (itemIndex) {
                     // log.finest("Item selected: $itemIndex");

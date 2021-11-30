@@ -43,6 +43,7 @@ public class AuthProviderOidcMailRu extends AuthProviderOidc {
                             null,
                             userJson.getString("email"),
                             null,
+                            userJson.getString("name"),
                             userJson.getString("first_name"),
                             userJson.getString("last_name"),
                             userJson.getString("nickname"),

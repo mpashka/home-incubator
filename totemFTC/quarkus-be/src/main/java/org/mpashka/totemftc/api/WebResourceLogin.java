@@ -1,5 +1,6 @@
 package org.mpashka.totemftc.api;
 
+import io.quarkus.security.Authenticated;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.ext.web.client.WebClient;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
@@ -71,28 +72,39 @@ public class WebResourceLogin {
      * @param client client id used to create appropriate redirectUrl
      */
     @GET
-    @Path("callback/{providerName}")
+    @Path("loginCallback/{providerName}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<LoginResult> callback(UriInfo uriInfo, @RestPath String providerName,
-                                     @RestQuery("sessionId") String sessionId,
-                                     @RestQuery("action") ProviderAction action,
-                                     @RestQuery("client") String client) {
+    public Uni<LoginResult> onLoginCallback(UriInfo uriInfo, @RestPath String providerName,
+                                          @RestQuery("client") String client) {
         try {
-            return processCallback(uriInfo, providerName, sessionId, action, client);
+            return processCallback(uriInfo, providerName, null, ProviderAction.login, client);
         } catch (Exception e) {
             log.error("Login callback error", e);
             throw new RuntimeException(e);
         }
     }
 
-    private Uni<LoginResult> processCallback(UriInfo uriInfo, String providerName, String sessionId, ProviderAction action, String client) {
-        log.info("Callback: {}. SessionId: {}. Action: {}. Client: {}", uriInfo.getRequestUri(), sessionId, action, client);
-
-        WebSessionService.Session linkSession = null;
-        if (action == ProviderAction.link && (Utils.isEmpty(sessionId) || (linkSession = webSessionService.getSession(sessionId)) == null)) {
-            throw new LoginException("Session not found");
+    /**
+     * todo proper error handling
+     * Response params: state&code&scope
+     * @param client client id used to create appropriate redirectUrl
+     */
+    @GET
+    @Path("linkCallback/{providerName}")
+    @Authenticated
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<LoginResult> onLinkCallback(UriInfo uriInfo, @RestPath String providerName,
+                                          @RestQuery("client") String client) {
+        try {
+            return processCallback(uriInfo, providerName, webSessionService.getSession(), ProviderAction.link, client);
+        } catch (Exception e) {
+            log.error("Login callback error", e);
+            throw new RuntimeException(e);
         }
-        WebSessionService.Session session = linkSession;
+    }
+
+    private Uni<LoginResult> processCallback(UriInfo uriInfo, String providerName, WebSessionService.Session linkSession, ProviderAction action, String client) {
+        log.info("Callback: {}. Action: {}. Client: {}", uriInfo.getRequestUri(), action, client);
 
         /* error_reason, error, error_description */
         String error = uriInfo.getQueryParameters().getFirst("error");
@@ -112,8 +124,7 @@ public class WebResourceLogin {
                 .onItem().transformToUni(u -> {
                     switch (action) {
                         case login: return userIdLogin(loginState);
-                        case link:
-                            return userIdLink(session, loginState);
+                        case link: return userIdLink(linkSession, loginState);
                         default: throw new InternalException("Unknown action " + action);
                     }
                 })
@@ -128,7 +139,7 @@ public class WebResourceLogin {
                             break;
 
                         case link:
-                            newSession = session;
+                            newSession = linkSession;
                             break;
                         default: throw new InternalException("Unknown action " + action);
                     }

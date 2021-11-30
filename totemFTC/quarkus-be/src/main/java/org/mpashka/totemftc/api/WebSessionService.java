@@ -13,6 +13,7 @@ import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.HttpHeaders;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -125,6 +126,8 @@ public class WebSessionService {
     @Singleton
     public static class MySecurityFilter implements ContainerRequestFilter {
 
+        private static final String AUTH_PREFIX = "bearer ";
+
         @Inject
         WebSessionService.RequestParameters requestParameters;
 
@@ -135,10 +138,11 @@ public class WebSessionService {
         public void filter(ContainerRequestContext requestContext) {
             String auth = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
             log.debug("Auth[{}]: {}", requestContext.getUriInfo().getRequestUri(), auth);
-            if (auth == null || !auth.startsWith("Bearer ")) {
+            if (auth == null || !auth.toLowerCase().startsWith(AUTH_PREFIX)) {
                 return;
             }
-            WebSessionService.Session session = webSessionService.getSession(auth.substring(7));
+            String sessionId = auth.substring(AUTH_PREFIX.length()).trim();
+            WebSessionService.Session session = webSessionService.getSession(sessionId);
             log.debug("Session: {}", session);
             if (session == null) {
                 return;

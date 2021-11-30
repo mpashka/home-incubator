@@ -44,7 +44,7 @@ class ScreenTrainingsState extends State<ScreenTrainings> {
           filteredVisitBloc = blocProvider.addBloc(bloc: CrudVisitBlocFiltered(visitBloc, firstDay));
         },
         child: UiScreen(body: BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(
-          builder: (data) => Column(children: [
+          builder: (ctx, data) => Column(children: [
             UiCalendar(
               weeks: weeks,
               selectedDates: data.where((v) => v.isVisible()).map((v) => v.training!.time).map((t) => DateTime(t.year, t.month, t.day)).toSet(),
