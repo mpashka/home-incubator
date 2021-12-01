@@ -10,15 +10,22 @@ import 'package:logging/logging.dart';
 import 'crud_api.dart';
 
 class BlocProvider extends StatefulWidget {
-  static final Logger log = Logger('BlocProvider');
+  late final Logger log /*= Logger('BlocProvider')*/;
 
   final Widget child;
   final void Function(BlocProviderState) init;
+  final int? parentWidget;
 
-  const BlocProvider({Key? key, required this.init, required this.child}): super(key: key);
+  BlocProvider({Key? key, required this.init, required this.child, this.parentWidget}): super(key: key) {
+    log = Logger('BlocProvider[$hashCode of $parentWidget]');
+    log.finer('Create blocProvider');
+  }
 
   @override
-  BlocProviderState createState() => BlocProviderState();
+  BlocProviderState createState() {
+    log.finer('Create blocProviderState');
+    return BlocProviderState();
+  }
 
   static Widget streamBuilder<T, B extends BlocBaseState<T>>({required Widget Function(BuildContext context, T data) builder, String? name}) {
     return Builder(builder: (ctx) {
@@ -46,13 +53,16 @@ class BlocProvider extends StatefulWidget {
 }
 
 class BlocProviderState extends State<BlocProvider> {
-  static final Logger log = Logger('BlocProviderState');
+  late final Logger log /*= Logger('BlocProviderState')*/;
 
   final Map<String, BlocBase> blocs = HashMap();
   bool stateInit = false;
 
+
   @override
   void initState() {
+    log = Logger('BlocProviderState[$hashCode of ${widget.parentWidget}]');
+
     log.finer('Init state...');
     super.initState();
     stateInit = true;
@@ -70,6 +80,7 @@ class BlocProviderState extends State<BlocProvider> {
 
   @override
   Widget build(BuildContext context) {
+    log.finer('Build widget');
     return widget.child;
   }
 

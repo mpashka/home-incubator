@@ -39,14 +39,14 @@ class Initializer {
     log.info('Application initializing...');
 
     try {
-      var configurationFuture = _configuration.load().then((value) {
-            _initialized = true;
-            // todo configure logging
-            log.info('Configuration loaded');
-          });
-      future = Future.wait([configurationFuture])
-              .then((value) => log.info('Application initialized'))
-              .onError((error, stackTrace) => log.severe('Error loading configuration', error, stackTrace));
+      Future<List> configurationFuture = _configuration.load().whenComplete(() {
+        // todo configure logging
+        log.info('Configuration loaded');
+      });
+      future = Future.wait([configurationFuture]).then((value) {
+        _initialized = true;
+        log.info('Application initialized');
+      }, onError: (error, stackTrace) => log.severe('Error loading configuration', error, stackTrace));
     } catch (e) {
       log.severe('Error loading configuration', e);
     }

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/misc/initializer.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
-
-import '../misc/configuration.dart';
+import 'package:logging/logging.dart';
 
 class ScreenInit extends StatefulWidget {
   const ScreenInit({Key? key}) : super(key: key);
@@ -12,13 +11,21 @@ class ScreenInit extends StatefulWidget {
 }
 
 class ScreenInitState extends State<ScreenInit> {
+  late final Logger log/* = Logger('ScreenInit[$hashCode]')*/;
 
+  ScreenInitState() {
+    log = Logger('ScreenInit[$hashCode]');
+  }
 
   @override
   void initState() {
     super.initState();
+    log.finer('Wait for init ...');
     final initializer = Injector().get<Initializer>();
-    initializer.future.then((value) => Navigator.pushReplacementNamed(context, '/login'));
+    initializer.future.then((value) {
+      log.finer('Init completed. Redirect to login');
+      Navigator.pushReplacementNamed(context, '/login');
+    });
   }
 
 

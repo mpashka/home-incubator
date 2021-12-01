@@ -52,19 +52,27 @@ class MyApp extends StatelessWidget {
         '/master_people': (context) => MasterPeopleScreen(),
       },
 */
-      initialRoute: showInitScreen(initializer),
+      // initialRoute: showInitScreen(initializer),
       onGenerateRoute: (settings) {
-        log.info('New route received: ${settings.name}, ${settings.arguments} / $settings');
+        log.info('New route received: $settings');
 
         if (!initializer.isInitialized()) {
+          log.finer('Not initialized. Show ScreenInit');
           return MaterialPageRoute(builder: (context) => ScreenInit());
         }
 
         if (!session.isLoggedIn()) {
-          return MaterialPageRoute(builder: (context) => ScreenLogin());
+          log.finer('Not logged in. Show ScreenLogin');
+          final screenLogin = ScreenLogin();
+          return MaterialPageRoute(builder: (context) {
+            log.finer('Build login screen'/*, null, StackTrace.current*/);
+            return screenLogin;
+          });
         } else if (settings.name == '/login') {
+          log.finer('Logged in. Show ScreenHome');
           return MaterialPageRoute(builder: (context) => ScreenHome());
         } else {
+          log.finer('Normal screen show');
           switch (settings.name) {
             case '/': return MaterialPageRoute(builder: (context) => ScreenHome());
             case '/login': return MaterialPageRoute(builder: (context) => ScreenLogin());
@@ -93,7 +101,9 @@ class MyApp extends StatelessWidget {
   }
 
   showInitScreen(Initializer initializer) {
-    return initializer.isInitialized() ? '/login' : '/init';
+    var s = initializer.isInitialized() ? '/login' : '/init';
+    log.finer('Start from screen: $s');
+    return s;
   }
 }
 

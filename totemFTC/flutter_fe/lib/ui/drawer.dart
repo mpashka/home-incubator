@@ -5,12 +5,14 @@ import 'package:flutter_fe/blocs/session.dart';
 import 'package:flutter_fe/ui/screen_about.dart';
 import 'package:flutter_fe/ui/screen_master_trainings.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
+import 'package:logging/logging.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import 'screen_schedule.dart';
 import 'widgets/ui_selector_user.dart';
 
 class MyDrawer extends StatelessWidget {
+  static final Logger log = Logger('MyDrawer');
 
   static final Map<CrudEntityUserType, IconData> userTypeIcons = {
     CrudEntityUserType.guest: MdiIcons.abjadArabic,
@@ -44,7 +46,10 @@ class MyDrawer extends StatelessWidget {
           ),
           ListTile(
             title: Text('Главная'),
-            onTap: () => Navigator.pushNamed(context, '/',),
+            onTap: () {
+              log.finer('Drawer redirect to root');
+              Navigator.pushNamed(context, '/',);
+              },
           ),
           ListTile(
             title: Text('Абонементы'),

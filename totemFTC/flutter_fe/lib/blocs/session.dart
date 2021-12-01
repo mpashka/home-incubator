@@ -68,7 +68,7 @@ class Session {
     }
     sessionBloc?.state = LoginStateInfo(LoginState.inProgress);
     try {
-      var login = EntityLogin.fromJson(jsonDecode(await _backend.requestJson('GET', '${_configuration.backendUrl()}/api/login/${link ? 'linkCallback' : 'loginCallback'}/${provider.name}$loginParams', params: {'client': _configuration.clientId()}, auth: link)));
+      var login = EntityLogin.fromJson(jsonDecode(await _backend.requestJson('GET', '/api/login/${link ? 'linkCallback' : 'loginCallback'}/${provider.name}$loginParams', params: {'client': _configuration.clientId()}, auth: link)));
       if (!link) {
         _configuration.sessionId = login.sessionId;
       }

@@ -6,14 +6,23 @@ import 'package:flutter_fe/blocs/session.dart';
 import 'package:logging/logging.dart';
 
 class ScreenLogin extends StatelessWidget {
-  static final Logger log = Logger('ScreenLogin');
+  late final Logger log/* = Logger('ScreenLogin')*/;
+
+  ScreenLogin() {
+    log = Logger('ScreenLogin [$hashCode]');
+    // log.finer('Create', null, StackTrace.current);
+  }
 
   @override
   Widget build(BuildContext context) {
+    log.finer('build()');
+
     late final SessionBloc sessionBloc;
     return BlocProvider(
+      parentWidget: hashCode,
       init: (blocProvider) {
         sessionBloc = blocProvider.addBloc(bloc: SessionBloc());
+        log.finer('Init BlocProvider. $sessionBloc');
       },
       child: Scaffold(
         appBar: AppBar(title: const Text('Totem FC'),),
@@ -29,13 +38,16 @@ class ScreenLogin extends StatelessWidget {
               for (var provider in loginProviders)
                 IconButton(
                   icon: provider.icon,
-                  onPressed: () =>
-                      sessionBloc.login(provider).then((user) {
-                        // onPressed: log.fine(''),
-                        if (user != null) {
-                          Navigator.pushReplacementNamed(context, '/',);
-                        }
-                      }),
+                  onPressed: () {
+                    log.finer('onPressed');
+
+                    sessionBloc.login(provider).then((user) {
+                      // onPressed: log.fine(''),
+                      if (user != null) {
+                        Navigator.pushReplacementNamed(context, '/',);
+                      }
+                    });
+                  }
                 )
             ])
           ],),
