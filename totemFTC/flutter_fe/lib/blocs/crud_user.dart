@@ -11,8 +11,7 @@ part 'crud_user.g.dart';
 
 class CrudUserBloc extends BlocBaseState<CrudEntityUser> {
 
-
-  CrudUserBloc(): super(Injector().get<Session>().user);
+  CrudUserBloc({required BlocProvider provider, String? name}): super(provider: provider, state: Injector().get<Session>().user, name: name);
 
   void updateUser(CrudEntityUser user) async {
     await backend.request('PUT', '/api/user', body: user);

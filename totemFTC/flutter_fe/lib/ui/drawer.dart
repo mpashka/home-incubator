@@ -3,12 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/crud_user.dart';
 import 'package:flutter_fe/blocs/session.dart';
 import 'package:flutter_fe/ui/screen_about.dart';
+import 'package:flutter_fe/ui/screen_config.dart';
+import 'package:flutter_fe/ui/screen_home.dart';
 import 'package:flutter_fe/ui/screen_master_trainings.dart';
+import 'package:flutter_fe/ui/screen_tickets.dart';
+import 'package:flutter_fe/ui/screen_trainings.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
 import 'screen_schedule.dart';
+import 'screen_selector_user.dart';
 import 'widgets/ui_selector_user.dart';
 
 class MyDrawer extends StatelessWidget {
@@ -48,16 +53,16 @@ class MyDrawer extends StatelessWidget {
             title: Text('Главная'),
             onTap: () {
               log.finer('Drawer redirect to root');
-              Navigator.pushNamed(context, '/',);
+              Navigator.pushNamed(context, ScreenHome.routeName,);
               },
           ),
           ListTile(
             title: Text('Абонементы'),
-            onTap: () => Navigator.pushNamed(context, '/tickets',),
+            onTap: () => Navigator.pushNamed(context, ScreenTickets.routeName,),
           ),
           ListTile(
             title: Text('Тренировки'),
-            onTap: () => Navigator.pushNamed(context, '/trainings',),
+            onTap: () => Navigator.pushNamed(context, ScreenTrainings.routeName,),
           ),
 /*
           ListTile(
@@ -72,7 +77,7 @@ class MyDrawer extends StatelessWidget {
           ),
           if (trainer) ListTile(
             title: Text('Мои ученики'),
-            onTap: () => Navigator.pushNamed(context, UiSelectorUser.routeName,),
+            onTap: () => Navigator.pushNamed(context, ScreenSelectorUser.routeName,),
           ),
           if (trainer) ListTile(
             title: Text('Мое расписание'),
@@ -87,6 +92,10 @@ class MyDrawer extends StatelessWidget {
           ListTile(
             title: Text('О нас'),
             onTap: () => Navigator.pushNamed(context, ScreenAbout.routeName,),
+          ),
+          ListTile(
+            title: Text('Настройки'),
+            onTap: () => Navigator.pushNamed(context, ScreenConfig.routeName,),
           ),
         ],
       ),

@@ -3,8 +3,6 @@ package org.mpashka.totemftc.api;
 import io.quarkus.security.Authenticated;
 import io.smallrye.mutiny.Uni;
 import io.vertx.mutiny.ext.web.client.WebClient;
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-import org.jboss.resteasy.reactive.RestCookie;
 import org.jboss.resteasy.reactive.RestPath;
 import org.jboss.resteasy.reactive.RestQuery;
 import org.slf4j.Logger;
@@ -17,7 +15,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
@@ -77,7 +74,7 @@ public class WebResourceLogin {
     public Uni<LoginResult> onLoginCallback(UriInfo uriInfo, @RestPath String providerName,
                                           @RestQuery("client") String client) {
         try {
-            return processCallback(uriInfo, providerName, null, ProviderAction.login, client);
+            return processCallback(uriInfo, providerName, ProviderAction.login, client, null);
         } catch (Exception e) {
             log.error("Login callback error", e);
             throw new RuntimeException(e);
@@ -96,15 +93,15 @@ public class WebResourceLogin {
     public Uni<LoginResult> onLinkCallback(UriInfo uriInfo, @RestPath String providerName,
                                           @RestQuery("client") String client) {
         try {
-            return processCallback(uriInfo, providerName, webSessionService.getSession(), ProviderAction.link, client);
+            return processCallback(uriInfo, providerName, ProviderAction.link, client, webSessionService.getSession());
         } catch (Exception e) {
             log.error("Login callback error", e);
             throw new RuntimeException(e);
         }
     }
 
-    private Uni<LoginResult> processCallback(UriInfo uriInfo, String providerName, WebSessionService.Session linkSession, ProviderAction action, String client) {
-        log.info("Callback: {}. Action: {}. Client: {}", uriInfo.getRequestUri(), action, client);
+    private Uni<LoginResult> processCallback(UriInfo uriInfo, String providerName, ProviderAction action, String client, WebSessionService.Session linkSession) {
+        log.info("Callback: {}. Action: {}. Client: {}, LinkSession: {}", uriInfo.getRequestUri(), action, client, linkSession);
 
         /* error_reason, error, error_description */
         String error = uriInfo.getQueryParameters().getFirst("error");

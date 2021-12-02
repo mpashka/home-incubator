@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
@@ -10,63 +12,62 @@ import 'screen_base.dart';
 import 'widgets/ui_divider.dart';
 
 class ScreenConfig extends StatefulWidget {
+  static const routeName = '/config';
+
   @override
   State createState() => ScreenConfigState();
 }
 
-class ScreenConfigState extends State<ScreenConfig> {
-  static final Logger log = Logger('ScreenConfig');
+class ScreenConfigState extends BlocProvider<ScreenConfig> {
 
-  late final FocusNode firstNameFocusNode;
-  late final FocusNode lastNameFocusNode;
-  late final FocusNode nickNameFocusNode;
+  late final CrudUserBloc crudUserBloc;
   late final TextEditingController firstNameController;
   late final TextEditingController lastNameController;
   late final TextEditingController nickNameController;
+  bool isNameModified = false;
+  late final StreamController<bool> nameModifiedController;
+  late final Sink<bool> nameModifiedIn;
+  late final Stream<bool> nameModifiedOut;
 
   @override
   void initState() {
     super.initState();
-    firstNameFocusNode = FocusNode();
-    lastNameFocusNode = FocusNode();
-    nickNameFocusNode = FocusNode();
+    crudUserBloc = CrudUserBloc(provider: this);
+    final user = crudUserBloc.state;
+    for (var provider in loginProviders) {
+      bool userNetworkFound = user.socialNetworks?.any((s) => s.networkName == provider.name) ?? false;
+      SessionBloc(state: LoginStateInfo(userNetworkFound ? LoginState.done : LoginState.none), provider:this, name: 'sessionBloc_${provider.name}');
+    }
+
     firstNameController = TextEditingController();
     lastNameController = TextEditingController();
     nickNameController = TextEditingController();
+    nameModifiedController = StreamController<bool>();
+    nameModifiedIn = nameModifiedController.sink;
+    nameModifiedOut = nameModifiedController.stream.asBroadcastStream();
+    _resetName(user);
+    firstNameController.addListener(checkNameModified);
+    lastNameController.addListener(checkNameModified);
+    nickNameController.addListener(checkNameModified);
   }
 
   @override
   void dispose() {
-    firstNameFocusNode.dispose();
-    lastNameFocusNode.dispose();
-    nickNameFocusNode.dispose();
     super.dispose();
+    nameModifiedIn.close();
+    nameModifiedController.close();
   }
 
   @override
   Widget build(BuildContext context) {
-    late final CrudUserBloc crudUserBloc;
-    return BlocProvider(
-      init: (blocProvider) {
-        crudUserBloc = blocProvider.addBloc(bloc: CrudUserBloc());
-        final user = crudUserBloc.state;
-        for (var provider in loginProviders) {
-          var userNetwork = user.socialNetworks?.firstWhere((s) => s.networkName == provider.name);
-          blocProvider.addBloc(bloc: SessionBloc(userNetwork == null ? LoginState.none : LoginState.done), name: 'sessionBloc_${provider.name}');
-        }
-      },
-      child: UiScreen(body: _renderConfig(crudUserBloc)
-        ,),);
-  }
-
-  Widget _renderConfig(CrudUserBloc crudUserBloc) {
-    return BlocProvider.streamBuilder<CrudEntityUser, CrudUserBloc>(builder: (ctx, user) {
+    return UiScreen(body: BlocProvider.streamBuilder<CrudEntityUser, CrudUserBloc>(builder: (ctx, user) {
+      _resetName(user);
       return Column(children: [
-        ..._renderName(crudUserBloc, user),
+        ..._renderName(user),
         UiDivider('Фото'),
         Text('To be done'),
         UiDivider('Социальные сети'),
-        ..._renderSocialNetworks(ctx, crudUserBloc),
+        ..._renderSocialNetworks(),
         UiDivider('e-mail'),
         if (user.emails != null) for (var email in user.emails!) Row(children: [
           Text(email.email),
@@ -83,70 +84,71 @@ class ScreenConfigState extends State<ScreenConfig> {
             )
         ),
       ],);
-    },);
+    },));
   }
 
-  List<Widget> _renderName(CrudUserBloc crudUserBloc, CrudEntityUser user) {
-    firstNameController.text = user.firstName ?? '';
-    lastNameController.text = user.lastName ?? '';
-    nickNameController.text = user.nickName ?? '';
-
+  List<Widget> _renderName(CrudEntityUser user) {
     return [
       UiDivider('Имя'),
+      TextField(controller: firstNameController, decoration: InputDecoration(labelText: 'Имя', hintText: 'Введите свое имя'),),
+      TextField(controller: lastNameController, decoration: InputDecoration(labelText: 'Фамилия', hintText: 'Введите свою фамилию',),),
+      TextField(controller: nickNameController, decoration: InputDecoration(labelText: 'Ник', hintText: 'Введите отображаемое имя',),),
       Container(
-        padding: EdgeInsets.only(left: 3, right: 3),
-        child: GestureDetector(
-            onTap: () => firstNameFocusNode.requestFocus(),
-            child: Column(children: [
-              Text('Имя'),
-              TextField(
-                focusNode: firstNameFocusNode,
-                controller: firstNameController,
-              ),
-            ],)),),
-      Container(
-        padding: EdgeInsets.only(left: 3, right: 3),
-        child: GestureDetector(
-            onTap: () => lastNameFocusNode.requestFocus(),
-            child: Column(children: [
-              Text('Фамилия'),
-              TextField(
-                focusNode: lastNameFocusNode,
-                controller: lastNameController,
-              ),
-            ],)),),
-      Container(
-        padding: EdgeInsets.only(left: 3, right: 3),
-        child: GestureDetector(
-            onTap: () => nickNameFocusNode.requestFocus(),
-            child: Column(children: [
-              Text('Отображаемое имя'),
-              TextField(
-                focusNode: nickNameFocusNode,
-                controller: nickNameController,
-              ),
-            ],)),),
-      Container(
-          padding: EdgeInsets.only(left: 3, right: 3),
           alignment: Alignment.centerRight,
-          child: ElevatedButton(
-            child: Text('Ok'),
-            onPressed: () => _updateName(crudUserBloc, user),
-          )
+          padding: EdgeInsets.only(top: 3, left: 3, right: 3),
+          child: StreamBuilder<bool>(initialData: isNameModified, stream: nameModifiedOut, builder: (ctx, modified) => Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+            ElevatedButton(
+              child: Text('Ok'),
+              onPressed: modified.requireData ? () => _updateName(user) : null,
+            ),
+            ElevatedButton(
+              child: Text('Reset'),
+              onPressed: modified.requireData ? () => _resetName(user) : null,
+            ),
+          ],),),
       ),
     ];
   }
 
-  List<Widget> _renderSocialNetworks(BuildContext context, CrudUserBloc crudUserBloc) {
+  void checkNameModified() {
+    CrudEntityUser user = crudUserBloc.state;
+
+    bool same(String text, String? value) => value != null ? text == value : text.isEmpty;
+    bool modified = !same(firstNameController.text.trim(), user.firstName?.trim()) ||
+        !same(lastNameController.text.trim(), user.lastName?.trim()) ||
+        !same(nickNameController.text.trim(), user.nickName?.trim());
+
+    if (modified != isNameModified) {
+      isNameModified = modified;
+      nameModifiedIn.add(modified);
+    }
+  }
+
+  void _resetName(CrudEntityUser user) {
+    firstNameController.text = user.firstName?.trim() ?? '';
+    lastNameController.text = user.lastName?.trim() ?? '';
+    nickNameController.text = user.nickName?.trim() ?? '';
+  }
+
+  void _updateName(CrudEntityUser user) {
+    String? name(String text) => text.isNotEmpty ? text : null;
+    user.firstName = name(firstNameController.text.trim());
+    user.lastName = name(lastNameController.text.trim());
+    user.nickName = name(nickNameController.text.trim());
+    crudUserBloc.updateUser(user);
+  }
+
+  List<Widget> _renderSocialNetworks() {
     final user = crudUserBloc.state;
     List<Widget> result = [];
     for (var provider in loginProviders) {
       final blocName = 'sessionBloc_${provider.name}';
-      final sessionBloc = BlocProvider.getBloc<SessionBloc>(context, name: blocName);
+      final sessionBloc = getBloc<SessionBloc>(blocName);
       result.add(BlocProvider.streamBuilder<LoginStateInfo, SessionBloc>(
-          name: blocName,
+          blocName: blocName,
           builder: (ctx, state) {
-            CrudEntityUserSocialNetwork? userNetwork = user.socialNetworks?.firstWhere((s) => s.networkName == provider.name);
+            var networkIter = user.socialNetworks?.where((s) => s.networkName == provider.name).iterator;
+            CrudEntityUserSocialNetwork? userNetwork = networkIter?.moveNext() == true ? networkIter?.current : null;
             final text = userNetwork?.displayName != null ? userNetwork!.displayName! : provider.name;
             final uiWidgets = <Widget>[
               provider.icon,
@@ -190,12 +192,5 @@ class ScreenConfigState extends State<ScreenConfig> {
       ));
     }
     return result;
-  }
-
-  void _updateName(CrudUserBloc crudUserBloc, CrudEntityUser user) {
-    user.firstName = firstNameController.text.isNotEmpty ? firstNameController.text : null;
-    user.lastName = lastNameController.text.isNotEmpty ? lastNameController.text : null;
-    user.nickName = nickNameController.text.isNotEmpty ? nickNameController.text : null;
-    crudUserBloc.updateUser(user);
   }
 }

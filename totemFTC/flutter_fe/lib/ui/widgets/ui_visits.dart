@@ -83,9 +83,9 @@ class CrudVisitBlocFiltered extends BlocBaseState<FilteredVisits> {
   DateFilterInfo filter;
   Set<CrudEntityTrainingType> trainingTypesSet = {};
 
-  CrudVisitBlocFiltered(this._visitBloc, DateTime firstDay) :
+  CrudVisitBlocFiltered(this._visitBloc, DateTime firstDay, {required BlocProvider provider, String? name}) :
         filter = DateFilterInfo((d) => true, DateTimeRange(start: DateTime.now().subtract(Duration(days: 7 * 6)), end: DateTime.now()), DateSelectionType.none),
-        super(FilteredVisits([], [], {})) {
+        super(state: FilteredVisits([], [], {}), provider: provider, name: name) {
     _visitBloc.stateOut.listen((e) => _updateVisits());
   }
 

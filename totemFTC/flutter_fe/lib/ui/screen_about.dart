@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/misc/configuration.dart';
 import 'package:flutter_fe/ui/screen_base.dart';
@@ -13,11 +15,13 @@ class ScreenAbout extends StatelessWidget {
   const ScreenAbout({Key? key}) : super(key: key);
 
   // https://t.me/_user_ -> tg://resolve?domain=_user_
+  // https://api.whatsapp.com/send?phone=79777068095&text=
   @override
   Widget build(BuildContext context) {
     var config = Injector().get<Configuration>();
 
     return UiScreen(body: Column(children: [
+      Text('Фитнес-студия функционального тренинга и кроссфита в старых Химках', textScaleFactor: 1.5,),
       Image.asset('images/logo.png', fit: BoxFit.contain),
       Row(children: [
         GestureDetector(child: Icon(Icons.public),
@@ -41,13 +45,13 @@ class ScreenAbout extends StatelessWidget {
       Divider(thickness: 3,),
 
       GestureDetector(child: Row(
-        children: [Icon(Icons.phone), Text(config.masterPhoneUi()),],),
+        children: [Icon(Icons.phone), SelectableText(config.masterPhoneUi()),],),
         onTap: () => launch('tel://+${config.masterPhone()}'),),
       GestureDetector(child: Row(
-        children: [Icon(Icons.email), Text(config.masterEmail()),],),
+        children: [Icon(Icons.email), SelectableText(config.masterEmail()),],),
         onTap: () => launch('mailto:${config.masterEmail()}'),),
       GestureDetector(child: Column(children: [
-        Row(children: const [Icon(Icons.maps_home_work), Text('МО, г.Химки, ул.Академика Грушина, д.8'),],),
+        Row(children: const [Icon(Icons.maps_home_work), SelectableText('МО, г.Химки, ул.Академика Грушина, д.8'),],),
       ]),
         onTap: () async {
           // https://yandex.ru/dev/yandex-apps-launch/maps/doc/concepts/About.html
@@ -63,7 +67,7 @@ class ScreenAbout extends StatelessWidget {
           }
         },),
       GestureDetector(child: Row(
-        children: const [Icon(Icons.public), Text('totemftc.ru'),],),
+        children: [Icon(Icons.public, color: Colors.blue.shade900,), Text('totemftc.ru', style: TextStyle(color: Colors.blue.shade900, decoration: TextDecoration.underline),),],),
         onTap: () => launch('https://totemftc.ru/'),),
 
       Divider(thickness: 3,),
@@ -74,10 +78,10 @@ class ScreenAbout extends StatelessWidget {
         GestureDetector(child: Icon(MdiIcons.github),
             onTap: () => launch('https://github.com/mpashka/home-incubator/issues')),
         GestureDetector(child: FaIcon(FontAwesomeIcons.telegram),
-          onTap: () => launch('https://t.me/${config.devTelegram
-          }()}'),),
+          onTap: () => launch('https://t.me/${config.devTelegram()}'),),
         GestureDetector(child: Icon(MdiIcons.whatsapp),
-          onTap: () => launch('https://wa.me/${config.devPhone()}'),),
+          // onTap: () => launch('https://wa.me/${config.devPhone()}'),),
+          onTap: () => launch('https://api.whatsapp.com/send?phone=${config.devPhone()}&text=TotemFTC_${Platform.operatingSystem}'),),
       ],)
     ],),);
   }

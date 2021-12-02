@@ -4,6 +4,8 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
 
 class ScreenInit extends StatefulWidget {
+  static const routeName = '/init';
+
   const ScreenInit({Key? key}) : super(key: key);
 
   @override

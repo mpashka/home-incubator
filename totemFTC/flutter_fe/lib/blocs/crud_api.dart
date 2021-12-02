@@ -25,8 +25,11 @@ class CrudApi {
     try {
       String uriStr = '${_configuration.backendUrl()}$apiUri';
       if (params != null) {
-        var delimiter = '?';
-        params.forEach((key, value) { uriStr += '$delimiter$key=${Uri.encodeComponent(value.toString())}'; delimiter = '&'; });
+        var delimiter = apiUri.contains('?') ? '&' : '?';
+        params.forEach((key, value) {
+          uriStr += '$delimiter$key=${Uri.encodeComponent(value.toString())}';
+          delimiter = '&';
+        });
       }
       http.Request request = http.Request(method, Uri.parse(uriStr));
       request.encoding = utf8;
@@ -42,10 +45,12 @@ class CrudApi {
       log.fine('Received streamed response: ${responseStream.statusCode}');
       http.Response response = await http.Response.fromStream(responseStream);
       if (response.statusCode != 200 && response.statusCode != 204) {
-        log.severe('Backend error get $apiUri ${response.statusCode}\n${response.body}');
+        log.info('Backend error $method $apiUri ${response.statusCode}');
+        log.finer(response.body);
         throw ApiException('Server error ${response.statusCode}', response.body);
       }
-      log.fine('Response received $apiUri ${response.statusCode}\n${response.body}');
+      log.fine('Response received $apiUri ${response.statusCode}');
+      log.finer(response.body);
       return response;
     } catch (e,s) {
       log.severe('Internal error $method $apiUri', e, s);

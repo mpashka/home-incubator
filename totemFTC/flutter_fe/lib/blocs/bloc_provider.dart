@@ -9,79 +9,34 @@ import 'package:logging/logging.dart';
 
 import 'crud_api.dart';
 
-class BlocProvider extends StatefulWidget {
-  late final Logger log /*= Logger('BlocProvider')*/;
-
-  final Widget child;
-  final void Function(BlocProviderState) init;
-  final int? parentWidget;
-
-  BlocProvider({Key? key, required this.init, required this.child, this.parentWidget}): super(key: key) {
-    log = Logger('BlocProvider[$hashCode of $parentWidget]');
-    log.finer('Create blocProvider');
-  }
-
-  @override
-  BlocProviderState createState() {
-    log.finer('Create blocProviderState');
-    return BlocProviderState();
-  }
-
-  static Widget streamBuilder<T, B extends BlocBaseState<T>>({required Widget Function(BuildContext context, T data) builder, String? name}) {
-    return Builder(builder: (ctx) {
-      var bloc = of(ctx).getBloc<B>(name);
-      return StreamBuilder<T>(
-        stream: bloc._stateOut,
-        initialData: bloc.state,
-        builder: (BuildContext context, AsyncSnapshot<T> snapshot) => builder(context, snapshot.requireData),
-      );
-    });
-  }
-
-  static BlocProviderState of(BuildContext context) {
-    BlocProviderState? provider = context.findAncestorStateOfType<BlocProviderState>();
-    if (provider == null) {
-      throw Exception('Internal error. BlocProvider not found in widget tree');
-    }
-    return provider;
-  }
-
-  /// Can be called by widgets to get appropriate bloc
-  static T getBloc<T extends BlocBase>(BuildContext context, {String? name}) {
-    return of(context).getBloc<T>(name);
-  }
-}
-
-class BlocProviderState extends State<BlocProvider> {
+abstract class BlocProvider<TWidget extends StatefulWidget> extends State<TWidget> {
   late final Logger log /*= Logger('BlocProviderState')*/;
 
   final Map<String, BlocBase> blocs = HashMap();
-  bool stateInit = false;
 
 
   @override
   void initState() {
-    log = Logger('BlocProviderState[$hashCode of ${widget.parentWidget}]');
-
+    log = Logger('$runtimeType[$hashCode of ${widget.hashCode}]');
     log.finer('Init state...');
     super.initState();
-    stateInit = true;
-    widget.init(this);
-    stateInit = false;
-    log.finer('Init complete');
   }
 
   @override
   void dispose() {
-    log.finer('Dispose');
+    log.finer('Dispose...');
     super.dispose();
     blocs.values.forEach((b) => b.dispose());
   }
 
-  @override
-  Widget build(BuildContext context) {
-    log.finer('Build widget');
-    return widget.child;
+  T addBloc<T extends BlocBase>({required T bloc, String? name}) {
+    name ??= bloc.runtimeType.toString();
+    if (blocs[name] != null) {
+      throw Exception('Internal error. Bloc $name was already present');
+    } else {
+      blocs[name] = bloc;
+    }
+    return bloc;
   }
 
   T getBloc<T extends BlocBase>([String? name]) {
@@ -96,22 +51,42 @@ class BlocProviderState extends State<BlocProvider> {
     return bloc;
   }
 
-  T addBloc<T extends BlocBase>({required T bloc, String? name}) {
-    if (!stateInit) {
-      throw Exception('Internal error. Attempt to create bloc out of init() method');
-    }
-    name ??= bloc.runtimeType.toString();
-    if (blocs[name] != null) {
-      throw Exception('Internal error. Bloc $name was already present');
-    } else {
-      blocs[name] = bloc;
-    }
-    return bloc;
+  //
+  // Static helpers
+  //
+
+  static Widget streamBuilder<T, B extends BlocBaseState<T>>({required Widget Function(BuildContext context, T data) builder, String? blocName}) {
+    return Builder(builder: (ctx) {
+      var bloc = of(ctx).getBloc<B>(blocName);
+      return StreamBuilder<T>(
+        stream: bloc._stateOut,
+        initialData: bloc.state,
+        // snapshot.requireData can't report null
+        builder: (BuildContext context, AsyncSnapshot<T> snapshot) => builder(context, bloc.state),
+      );
+    });
   }
 
+  static BlocProvider of(BuildContext context) {
+    BlocProvider? provider = context.findAncestorStateOfType<BlocProvider>();
+    if (provider == null) {
+      throw Exception('Internal error. BlocProvider not found in widget tree');
+    }
+    return provider;
+  }
+
+  /// Can be called by widgets to get appropriate bloc
+  static T getProviderBloc<T extends BlocBase>(BuildContext context, {String? name}) {
+    return of(context).getBloc<T>(name);
+  }
 }
 
 abstract class BlocBase {
+
+  BlocBase({required BlocProvider provider, String? name}) {
+    provider.addBloc(bloc: this, name: name);
+  }
+
   void dispose();
 }
 
@@ -126,7 +101,7 @@ class BlocBaseState<T> extends BlocBase {
   late final Stream<T> _stateOut;
   T _state;
 
-  BlocBaseState(this._state) {
+  BlocBaseState({required T state, required BlocProvider provider, String? name}): _state = state, super(provider: provider, name: name) {
     log = Logger('${runtimeType.toString()}<${typeOf<T>()}>');
     log.fine('Init');
     Injector injector = Injector();
@@ -157,5 +132,5 @@ class BlocBaseState<T> extends BlocBase {
 }
 
 abstract class BlocBaseList<T> extends BlocBaseState<List<T>> {
-  BlocBaseList(): super([]);
+  BlocBaseList({List<T> state = const [], required BlocProvider provider, String? name}): super(state: state, provider: provider, name: name);
 }

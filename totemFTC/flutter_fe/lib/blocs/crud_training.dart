@@ -4,9 +4,7 @@ import 'dart:core';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/crud_visit.dart';
-import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:logging/logging.dart';
 
 import '../misc/utils.dart';
 import 'bloc_provider.dart';
@@ -17,13 +15,15 @@ part 'crud_training.g.dart';
 
 class CrudTrainingBloc extends BlocBaseList<CrudEntityTraining> {
 
+  CrudTrainingBloc({List<CrudEntityTraining> state = const [], required BlocProvider provider, String? name}): super(provider: provider, state: state, name: name);
+
   void loadTrainings(DateTime from, DateTime to) async {
-    state = (await backend.requestJson('GET', 'userTraining/byDateInterval', params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
+    state = (await backend.requestJson('GET', '/api/userTraining/byDateInterval', params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
         .map((item) => CrudEntityTraining.fromJson(item)).toList();
   }
 
   void loadMasterTrainings(DateTime from, DateTime to) async {
-    state = (await backend.requestJson('GET', 'masterTraining/byDateInterval', params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
+    state = (await backend.requestJson('GET', '/api/masterTraining/byDateInterval', params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
         .map((item) => CrudEntityTraining.fromJson(item)..trainer = session.user).toList();
   }
 }
@@ -35,7 +35,7 @@ class CrudTrainingTypeFilteredBloc extends BlocBaseList<CrudEntityTrainingType> 
   List<CrudEntityTraining> _allTrainings = [];
   CrudEntityTraining? selectedTraining;
 
-  CrudTrainingTypeFilteredBloc(this._crudTrainingBloc);
+  CrudTrainingTypeFilteredBloc(this._crudTrainingBloc, {List<CrudEntityTrainingType> state = const [], required BlocProvider provider, String? name}): super(provider: provider, state: state, name: name);
 
   Future<void> loadTrainings({List<CrudEntityTrainingType>? types, DateTimeRange? dateRange, DateFilterInfo? dateFilter, TrainingFilter? trainingFilter}) async {
     if (dateRange == null && dateFilter == null) {

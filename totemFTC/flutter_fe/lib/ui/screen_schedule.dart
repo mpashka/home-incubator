@@ -64,17 +64,8 @@ class ScreenScheduleState extends BlocProvider<ScreenSchedule> {
           }
           currentDay.schedule.add(training);
         }
-        return ListView(children: [
-            for (var day in result) Column(children: [
-              Text('Date: ${localDateFormat.format(day.date)}'),
-              for (var item in day.schedule)
-                if (item == now) Text('Сейчас')
-                else UiTraining(item as CrudEntityTraining, forSchedule: true,)
-            ],)
-          ]);
 
-/*
-        return Expanded(child: CustomScrollView(slivers: [
+        return CustomScrollView(slivers: [
           for (var day in result) SliverStickyHeader.builder(
             builder: (context, state) => Card(
               elevation: 8.0,
@@ -107,8 +98,7 @@ class ScreenScheduleState extends BlocProvider<ScreenSchedule> {
               ),
             ),
           )
-        ],),);
-*/
+        ],);
       },),);
   }
 

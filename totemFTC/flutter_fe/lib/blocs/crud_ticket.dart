@@ -15,6 +15,8 @@ part 'crud_ticket.g.dart';
 
 class CrudTicketBloc extends BlocBaseList<CrudEntityTicket> {
 
+  CrudTicketBloc({List<CrudEntityTicket> state = const [], required BlocProvider provider, String? name}): super(provider: provider, state: state, name: name);
+
   Future<void> loadTickets() async {
     state = (await backend.requestJson('GET', '/api/tickets/byUser') as List)
         .map((item) => CrudEntityTicket.fromJson(item)..user = session.user).toList();

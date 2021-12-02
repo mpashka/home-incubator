@@ -19,6 +19,9 @@ part 'crud_visit.g.dart';
 // todo in mark*** methods we must take care about returning ticket
 class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
 
+  CrudVisitBloc({List<CrudEntityVisit> state = const [], required BlocProvider provider, String? name}): super(state: state, provider: provider, name: name);
+
+
   Future<void> loadVisits(DateTime from, int rows) async {
     state = (await backend.requestJson('GET', '/api/visit/byUser', params: {'from': dateTimeFormat.format(from), 'rows': rows}) as List)
         .map((item) => CrudEntityVisit.fromJson(item)..user = session.user).toList();

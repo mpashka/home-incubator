@@ -11,48 +11,33 @@ import 'ui_user.dart';
 import 'wheel_list_selector.dart';
 
 
-class UiSelectorUser {
+class UiSelectorUserDialog extends StatefulWidget {
 
-  static const routeName = '/master_users';
+  final String title;
 
-  Widget buildPage(BuildContext context) {
-    final TextEditingController searchTextController = TextEditingController();
-    return _buildBloc(UiScreen(body: Column(
-      children: _buildContent(context, searchTextController, (user) => Navigator.pushNamed(context, ScreenMasterUser.routeName, arguments: user)),
-    ),), searchTextController);
+
+  const UiSelectorUserDialog(this.title);
+
+  @override
+  State createState() => UiSelectorUserDialogState();
+
+  Future<CrudEntityUser?> selectUserDialog(BuildContext context) async {
+    return await showDialog(context: context, builder: (ctx) => this);
+  }
+}
+
+abstract class UiSelectorUserStateBase<TWidget extends StatefulWidget> extends BlocProvider<TWidget> {
+  late final TextEditingController searchTextController;
+
+  @override
+  void initState() {
+    super.initState();
+    FilteredUsersBloc userBloc = FilteredUsersBloc(provider: this);
+    searchTextController = TextEditingController();
+    searchTextController.addListener(() => userBloc.filter(searchTextController.text));
   }
 
-  Future<CrudEntityUser?> selectUserDialog(BuildContext context, String title) async {
-    return await showDialog(context: context,
-        builder: (ctx) => _buildDialog(context, title));
-  }
-
-  SimpleDialog _buildDialog(BuildContext context, String title) {
-    final TextEditingController searchTextController = TextEditingController();
-    return SimpleDialog(
-        title: Text(title),
-        elevation: 5,
-        children: [
-          ..._buildContent(context, searchTextController, (user) => Navigator.pop(context, user)),
-          Row(children: [
-            SimpleDialogOption(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],)
-        ]);
-  }
-
-  Widget _buildBloc(Widget body, TextEditingController searchTextController) {
-    return BlocProvider(
-        init: (blocProvider) {
-          FilteredUsersBloc userBloc = blocProvider.addBloc(bloc: FilteredUsersBloc());
-          searchTextController.addListener(() => userBloc.filter(searchTextController.text));
-        },
-        child: body);
-  }
-
-  List<Widget> _buildContent(BuildContext context, TextEditingController searchTextController, UserListener userListener) {
+  List<Widget> buildContent(void Function(CrudEntityUser user) userSelector) {
     return [
       Row(children: [
         Icon(Icons.search),
@@ -69,17 +54,37 @@ class UiSelectorUser {
         child: BlocProvider.streamBuilder<List<CrudEntityUser>, FilteredUsersBloc>(builder: (ctx, users) => ListView(children: [
           for (var user in users) GestureDetector(
             child: UiUser(user),
-            onTap: () => userListener(user),
+            onTap: () => userSelector(user),
           )
         ],),),),
     ];
   }
 }
 
-typedef UserListener = void Function(CrudEntityUser user);
+class UiSelectorUserDialogState extends UiSelectorUserStateBase<UiSelectorUserDialog> {
+
+  @override
+  Widget build(BuildContext context) {
+    return SimpleDialog(
+        title: Text(widget.title),
+        elevation: 5,
+        children: [
+          ...buildContent((user) => Navigator.pop(context, user)),
+          Row(children: [
+            SimpleDialogOption(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.pop(context),
+            ),
+          ],)
+        ]);
+  }
+}
 
 class FilteredUsersBloc extends BlocBaseList<CrudEntityUser> {
   List<CrudEntityUser> allUsers = [];
+
+  FilteredUsersBloc({required BlocProvider provider, String? name}): super(provider: provider, name: name);
+
   void loadUsers() async {
     allUsers = state = (await backend.requestJson('GET', '/api/user/list') as List)
         .map((item) => CrudEntityUser.fromJson(item)).toList();

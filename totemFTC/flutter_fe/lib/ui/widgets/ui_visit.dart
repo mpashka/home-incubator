@@ -26,7 +26,7 @@ class UiVisit extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    CrudVisitBloc visitBloc = BlocProvider.getBloc<CrudVisitBloc>(context);
+    CrudVisitBloc visitBloc = BlocProvider.getProviderBloc<CrudVisitBloc>(context);
 
     final CrudEntityTraining training = _visit.training!;
     final CrudEntityUser user = _visit.user!;

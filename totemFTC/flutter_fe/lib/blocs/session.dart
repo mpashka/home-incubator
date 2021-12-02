@@ -68,7 +68,7 @@ class Session {
     }
     sessionBloc?.state = LoginStateInfo(LoginState.inProgress);
     try {
-      var login = EntityLogin.fromJson(jsonDecode(await _backend.requestJson('GET', '/api/login/${link ? 'linkCallback' : 'loginCallback'}/${provider.name}$loginParams', params: {'client': _configuration.clientId()}, auth: link)));
+      var login = EntityLogin.fromJson(await _backend.requestJson('GET', '/api/login/${link ? 'linkCallback' : 'loginCallback'}/${provider.name}$loginParams', params: {'client': _configuration.clientId()}, auth: link));
       if (!link) {
         _configuration.sessionId = login.sessionId;
       }
@@ -90,8 +90,7 @@ class Session {
   }
 
   Future<CrudEntityUser> loadUser() async {
-    var json = await _backend.requestJson('GET', '/api/user');
-    _user = CrudEntityUser.fromJson(json);
+    _user = CrudEntityUser.fromJson(await _backend.requestJson('GET', '/api/user'));
     return _user;
   }
 
@@ -107,7 +106,7 @@ const loginProviders = <LoginProvider>[
 class SessionBloc extends BlocBaseState<LoginStateInfo> {
   StreamSubscription? _loginStateSubscription;
 
-  SessionBloc([LoginState initialState = LoginState.none]): super(LoginStateInfo(initialState));
+  SessionBloc({LoginStateInfo state = const LoginStateInfo(LoginState.none), required BlocProvider provider, String? name}): super(provider: provider, state: state, name: name);
 
   listenLoginState(Function(LoginStateInfo loginStateInfo) onData) {
     cancelSubscription();
@@ -145,10 +144,10 @@ class LoginProvider {
 
 class LoginStateInfo {
 
-  LoginState state;
-  String? description;
+  final LoginState state;
+  final String? description;
 
-  LoginStateInfo(this.state, [this.description]);
+  const LoginStateInfo(this.state, [this.description]);
 }
 
 enum LoginState {

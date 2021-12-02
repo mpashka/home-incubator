@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_fe/ui/screen_config.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
@@ -7,6 +8,7 @@ import 'blocs/crud_user.dart';
 import 'blocs/session.dart';
 import 'ui/screen_home.dart';
 import 'ui/screen_schedule.dart';
+import 'ui/screen_selector_user.dart';
 import 'ui/screen_trainings.dart';
 import 'ui/screen_init.dart';
 import 'ui/screen_master_user.dart';
@@ -26,6 +28,7 @@ void main() {
   runApp(MyApp());
 }
 
+// todo navigator must be updated. Regular drawer call must replace route. But scenarios must remain history (e.g. user select screen -> user info)
 class MyApp extends StatelessWidget {
   static final Logger log = Logger('MyApp');
 
@@ -37,8 +40,8 @@ class MyApp extends StatelessWidget {
     var session = injector.get<Session>();
 
     return MaterialApp(
-      title: 'Totem FC App',
-      theme: uiCreateTheme(),
+      title: 'Totem FTC App',
+      theme: ThemeData(primarySwatch: Colors.blue),
 /*
       routes: {
         '/': (context) => HomeScreen(),
@@ -63,40 +66,31 @@ class MyApp extends StatelessWidget {
 
         if (!session.isLoggedIn()) {
           log.finer('Not logged in. Show ScreenLogin');
-          final screenLogin = ScreenLogin();
-          return MaterialPageRoute(builder: (context) {
-            log.finer('Build login screen'/*, null, StackTrace.current*/);
-            return screenLogin;
-          });
-        } else if (settings.name == '/login') {
+          return MaterialPageRoute(builder: (context) => ScreenLogin());
+        } else if (settings.name == ScreenLogin.routeName) {
           log.finer('Logged in. Show ScreenHome');
           return MaterialPageRoute(builder: (context) => ScreenHome());
         } else {
           log.finer('Normal screen show');
           switch (settings.name) {
-            case '/': return MaterialPageRoute(builder: (context) => ScreenHome());
-            case '/login': return MaterialPageRoute(builder: (context) => ScreenLogin());
-            case '/init': return MaterialPageRoute(builder: (context) => ScreenInit());
+            case ScreenHome.routeName: return MaterialPageRoute(builder: (context) => ScreenHome());
+            case ScreenLogin.routeName: return MaterialPageRoute(builder: (context) => ScreenLogin());
+            case ScreenInit.routeName: return MaterialPageRoute(builder: (context) => ScreenInit());
             case ScreenAbout.routeName: return MaterialPageRoute(builder: (context) => ScreenAbout());
-            case '/tickets': return MaterialPageRoute(builder: (context) => ScreenTickets());
-            case '/trainings': return MaterialPageRoute(builder: (context) => ScreenTrainings());
+            case ScreenTickets.routeName: return MaterialPageRoute(builder: (context) => ScreenTickets());
+            case ScreenTrainings.routeName: return MaterialPageRoute(builder: (context) => ScreenTrainings());
             case ScreenSchedule.routeName: return MaterialPageRoute(builder: (context) => ScreenSchedule());
             case ScreenSchedule.routeNameMaster: return MaterialPageRoute(builder: (context) => ScreenSchedule(forTrainer: true,));
             // case '/purchases': return MaterialPageRoute(builder: (context) => ScreenPurchases());
             case ScreenMasterTrainings.routeName: return MaterialPageRoute(builder: (context) => ScreenMasterTrainings());
-            case UiSelectorUser.routeName: return MaterialPageRoute(builder: (context) => UiSelectorUser().buildPage(context));
+            case ScreenSelectorUser.routeName: return MaterialPageRoute(builder: (context) => ScreenSelectorUser());
             case ScreenMasterUser.routeName:
               final user = settings.arguments as CrudEntityUser;
               return MaterialPageRoute(builder: (context) => ScreenMasterUser(user));
+            case ScreenConfig.routeName: return MaterialPageRoute(builder: (context) => ScreenConfig());
           }
         }
       },
-    );
-  }
-
-  uiCreateTheme() {
-    return ThemeData(
-      primarySwatch: Colors.blue,
     );
   }
 

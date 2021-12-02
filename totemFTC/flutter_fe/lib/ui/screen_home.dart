@@ -19,54 +19,62 @@ import 'widgets/ui_divider.dart';
 import 'widgets/ui_ticket.dart';
 import 'widgets/ui_selector_training.dart';
 
-class ScreenHome extends StatelessWidget {
-  static final Logger log = Logger('ScreenHome');
+class ScreenHome extends StatefulWidget {
+  static const routeName = '/';
 
+  @override
+  State createState() => ScreenHomeState();
+}
+
+class ScreenHomeState extends BlocProvider<ScreenHome> {
   final GlobalKey _keyFAB = GlobalKey();
+  late final CrudVisitBloc visitBloc;
+
+  @override
+  void initState() {
+    super.initState();
+    CrudTicketBloc(provider: this).loadTickets();
+    visitBloc = CrudVisitBloc(provider: this)
+      ..loadVisits(DateTime.now().subtract(const Duration(days: 14)), 10);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-        init: (blocProvider) {
-          blocProvider.addBloc(bloc: CrudTicketBloc()).loadTickets();
-          blocProvider.addBloc(bloc: CrudVisitBloc()).loadVisits(DateTime.now().subtract(const Duration(days: 14)), 10);
-        },
-        child: UiScreen(body: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              BlocProvider.streamBuilder<List<CrudEntityTicket>, CrudTicketBloc>(builder: (ctx, data) => Column(
-                  children: [
-                    if (data.isNotEmpty) const UiDivider('Абонементы')
-                    else const UiDivider('Абонементов нет'),
-                    for (var ticket in data) UiTicket(ticket),
-                  ])),
-              BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(builder: (ctx, data) {
-                List<Widget> prevWidgets = [], nextWidgets = [];
-                DateTime now = DateTime.now();
-                for (var visit in data) {
-                  var training = visit.training!;
-                  var widget = UiVisit(visit);
-                  // var widget = Text(visit.toJson().toString());
-                  (training.time.isBefore(now) ? prevWidgets : nextWidgets).add(widget);
-                }
-                return Column(children: [
-                  if (prevWidgets.isEmpty && nextWidgets.isEmpty) const UiDivider('Тренировок нет'),
-                  if (prevWidgets.isNotEmpty) const UiDivider('Тренировки'),
-                  for (var widget in prevWidgets) widget,
-                  if (nextWidgets.isNotEmpty) const UiDivider('Записи'),
-                  for (var widget in nextWidgets) widget,
-                ]);
-              }),
-            ],
-          ),
-          floatingActionButton: FloatingActionButton(
-            key: _keyFAB,
-            onPressed: _showAddMenu,
-            tooltip: 'Add',
-            child: const Icon(Icons.add),
-          ), // This trailing comma makes auto-formatting nicer for build methods.
-        )
+    return UiScreen(body: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            BlocProvider.streamBuilder<List<CrudEntityTicket>, CrudTicketBloc>(builder: (ctx, data) => Column(
+                children: [
+                  if (data.isNotEmpty) const UiDivider('Абонементы')
+                  else const UiDivider('Абонементов нет'),
+                  for (var ticket in data) UiTicket(ticket),
+                ])),
+            BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(builder: (ctx, data) {
+              List<Widget> prevWidgets = [], nextWidgets = [];
+              DateTime now = DateTime.now();
+              for (var visit in data) {
+                var training = visit.training!;
+                var widget = UiVisit(visit);
+                // var widget = Text(visit.toJson().toString());
+                (training.time.isBefore(now) ? prevWidgets : nextWidgets).add(widget);
+              }
+              return Column(children: [
+                if (prevWidgets.isEmpty && nextWidgets.isEmpty) const UiDivider('Тренировок нет'),
+                if (prevWidgets.isNotEmpty) const UiDivider('Тренировки'),
+                for (var widget in prevWidgets) widget,
+                if (nextWidgets.isNotEmpty) const UiDivider('Записи'),
+                for (var widget in nextWidgets) widget,
+              ]);
+            }),
+          ],
+        ),
+        floatingActionButton: FloatingActionButton(
+          key: _keyFAB,
+          onPressed: _showAddMenu,
+          tooltip: 'Add',
+          child: const Icon(Icons.add),
+        ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
 
@@ -97,15 +105,14 @@ class ScreenHome extends StatelessWidget {
 
   Future<void> _onAddTraining(BuildContext context, bool past) async {
     DateTime now = DateTime.now();
-    var result = await UiSelectorTraining('Выберите тренировку').selectTraining(context,
-        dateRange: DateTimeRange(
-            start: now.subtract(Duration(days: past ? 4 : 0)),
-            end: now.add(Duration(days: past ? 4 : 0))));
+    var result = await UiSelectorTrainingDialog(title: 'Выберите тренировку', dateRange: DateTimeRange(
+        start: now.subtract(Duration(days: past ? 4 : 0)),
+        end: now.add(Duration(days: past ? 4 : 0)))
+    ).selectTraining(context);
     log.finer("Dialog result: $result");
     if (result != null) {
       bool _past = result.time.isBefore(now);
       final Session session = Injector().get<Session>();
-      CrudVisitBloc visitBloc = BlocProvider.getBloc(context);
 
       CrudEntityVisit visit = CrudEntityVisit(
           user: session.user,
