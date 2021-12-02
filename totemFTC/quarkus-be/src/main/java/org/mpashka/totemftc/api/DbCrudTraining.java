@@ -153,9 +153,11 @@ public class DbCrudTraining {
         public Entity loadFromDb(Row row) {
             this.id = row.getInteger("training_id");
             this.time = row.getLocalDateTime("training_time");
-            JsonObject trainerJson = row.getJsonObject("trainer");
-            if (trainerJson != null) {
-                this.trainer = new DbUser.EntityUser().loadFromDb(trainerJson);
+            if (row.getColumnIndex("trainer") >=0) {
+                JsonObject trainerJson = row.getJsonObject("trainer");
+                if (trainerJson != null) {
+                    this.trainer = new DbUser.EntityUser().loadFromDb(trainerJson);
+                }
             }
             this.trainingType = new EntityTrainingType().loadFromDb(row.getJsonObject("training_type_obj"));
             this.comment = row.getString("training_comment");

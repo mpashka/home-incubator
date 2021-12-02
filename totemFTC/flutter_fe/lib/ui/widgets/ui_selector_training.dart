@@ -58,7 +58,7 @@ class UiSelectorTrainingDialogState extends BlocProvider<UiSelectorTrainingDialo
               Expanded(
                   flex: 15,
                   child: WheelListSelector<CrudEntityTraining, CrudTrainingBloc>(
-                    childBuilder: (context, index, training) => Text('${localDateTimeFormat.format(training.time)} ${training.trainer.nickName}'),
+                    childBuilder: (context, index, training) => Text('${localDateTimeFormat.format(training.time)} ${training.trainer?.nickName}'),
                     onSelectedItemChanged: (ctx, i, data) => selectedTraining = data,
                   )),
             ],),

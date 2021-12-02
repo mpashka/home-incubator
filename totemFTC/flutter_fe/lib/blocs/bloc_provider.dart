@@ -8,6 +8,7 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
 
 import 'crud_api.dart';
+import 'data_storage.dart';
 
 abstract class BlocProvider<TWidget extends StatefulWidget> extends State<TWidget> {
   late final Logger log /*= Logger('BlocProviderState')*/;
@@ -95,6 +96,7 @@ class BlocBaseState<T> extends BlocBase {
 
   late final CrudApi backend;
   late final Session session;
+  late final DataStorage dataStorage;
 
   final StreamController<T> _streamController = StreamController<T>();
   late final Sink<T> stateIn;
@@ -107,6 +109,7 @@ class BlocBaseState<T> extends BlocBase {
     Injector injector = Injector();
     backend = injector.get<CrudApi>();
     session = injector.get<Session>();
+    dataStorage = injector.get<DataStorage>();
     _stateOut = _streamController.stream.asBroadcastStream();
     stateIn = _streamController.sink;
   }
@@ -133,4 +136,22 @@ class BlocBaseState<T> extends BlocBase {
 
 abstract class BlocBaseList<T> extends BlocBaseState<List<T>> {
   BlocBaseList({List<T> state = const [], required BlocProvider provider, String? name}): super(state: state, provider: provider, name: name);
+
+  Future<List<T>> cache(String name, LoadFunction<T> load) async {
+    var cacheKey = '${typeOf<T>()}_$name';
+    if (state.isEmpty) {
+      List? cached = dataStorage.caches[cacheKey];
+      if (cached != null) {
+        log.fine('Cached data found for $cacheKey $cached');
+        _state = cached as List<T>;
+      } else {
+        log.fine('Cached data not found for $cacheKey');
+      }
+    }
+    List<T> data = await load();
+    dataStorage.caches[cacheKey] = data;
+    return data;
+  }
 }
+
+typedef LoadFunction<T> = Future<List<T>> Function();

@@ -11,7 +11,9 @@ CREATE TYPE ticket_and_type AS (
                                    ticket_name VARCHAR(20),
                                    ticket_cost INTEGER,
                                    ticket_visits INTEGER,
-                                   ticket_days INTEGER
+                                   ticket_days INTEGER,
+
+                                   ticket_training_types_obj JSONB[]
                                );
 
 -- Add ticket, find existing non ticketed trainings and apply them
@@ -81,10 +83,11 @@ CREATE OR REPLACE FUNCTION mark_visit(p_training_id INTEGER, p_user_id INTEGER,
                                       -- Is used to find appropriate ticket if current visit doesn't have correct one
                                       p_ticket_user_id INTEGER DEFAULT NULL,
                                       -- This is used to update presented ticket. Usually only one of those must be specified for instance update
+                                      p_mark_schedule BOOLEAN DEFAULT NULL,
                                       p_mark_self mark_type_enum DEFAULT NULL,
                                       p_mark_master mark_type_enum DEFAULT NULL,
-                                      p_mark_schedule BOOLEAN DEFAULT NULL,
                                       -- Next params are used to create new instance
+                                      p_default_mark_schedule BOOLEAN DEFAULT NULL,
                                       p_default_mark_self mark_type_enum DEFAULT NULL,
                                       p_default_mark_master mark_type_enum DEFAULT NULL,
                                       p_comment VARCHAR(200) DEFAULT NULL
@@ -139,8 +142,9 @@ BEGIN
         END IF;
     ELSE
         p_ticket_user_id := COALESCE(p_ticket_user_id, p_user_id);
-        p_mark_self := COALESCE(p_mark_self, p_default_mark_self);
-        p_mark_master := COALESCE(p_mark_master, p_default_mark_master);
+        p_mark_schedule := COALESCE(p_mark_schedule, p_default_mark_schedule, false);
+        p_mark_self := COALESCE(p_mark_self, p_default_mark_self, 'unmark'::mark_type_enum);
+        p_mark_master := COALESCE(p_mark_master, p_default_mark_master, 'unmark'::mark_type_enum);
         v_diff_visits := mark_visit_calc_count(p_mark_self, p_mark_master);
         v_ticket_cursor := mark_visit_find_ticket(NULL, p_ticket_user_id, v_diff_visits, v_training.training_type);
         FETCH NEXT FROM v_ticket_cursor INTO v_ticket;
@@ -253,14 +257,14 @@ BEGIN
     IF p_ticket_id IS NOT NULL THEN
         v_where := ' trt.ticket_id=$1 ';
     ELSE
-        v_where := $$ trt.user_id=$2 AND tty.ticket_training_types && ARRAY[$3] $$;
+        v_where := $$ trt.user_id=$2 AND tity.ticket_training_types && ARRAY[$3] $$;
     END IF;
 
     IF p_visits_delta >= 0 THEN
         IF p_ticket_id IS NOT NULL AND p_visits_delta=0 THEN
-            v_where := v_where || ' AND trt.training_visits <= tty.ticket_visits ';
+            v_where := v_where || ' AND trt.training_visits <= tity.ticket_visits ';
         ELSE
-            v_where := v_where || ' AND trt.training_visits < tty.ticket_visits ';
+            v_where := v_where || ' AND trt.training_visits < tity.ticket_visits ';
         END IF;
         v_order_visit := 'DESC';
         v_order_date := 'ASC';
@@ -273,13 +277,20 @@ BEGIN
     OPEN p_ticket_cursor NO SCROLL FOR EXECUTE
         format(
                 'SELECT trt.ticket_id, trt.ticket_type_id, trt.user_id, trt.ticket_buy, trt.ticket_start, trt.ticket_end, trt.training_visits,
-                    tty.ticket_training_types, tty.ticket_name, tty.ticket_cost, tty.ticket_visits, tty.ticket_days
+                    tity.ticket_training_types, tity.ticket_name, tity.ticket_cost, tity.ticket_visits, tity.ticket_days,
+                    trto.ticket_training_types_obj
                  FROM training_ticket trt
-                          JOIN ticket_type tty ON trt.ticket_type_id=tty.ticket_type_id
+                          JOIN ticket_type tity USING (ticket_type_id),
+                    LATERAL (
+                        SELECT array_agg(to_jsonb(trty.*)) AS ticket_training_types_obj
+                        FROM training_type trty
+                        WHERE trty.training_type=ANY(tity.ticket_training_types)
+                    ) trto
                  WHERE %s
                  ORDER BY trt.training_visits %s, trt.ticket_buy %s
-                 LIMIT 1
-                     FOR UPDATE', v_where, v_order_visit, v_order_date)
+                 LIMIT 1'
+                     --FOR UPDATE'
+            , v_where, v_order_visit, v_order_date)
         USING p_ticket_id, p_ticket_user_id, p_training_type;
 END
 $i$ LANGUAGE plpgsql;

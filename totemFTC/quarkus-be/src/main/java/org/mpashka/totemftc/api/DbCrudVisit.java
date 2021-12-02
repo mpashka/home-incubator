@@ -33,21 +33,20 @@ public class DbCrudVisit {
 
     @PostConstruct
     void init() {
-        selectByTraining = client.preparedQuery("SELECT * FROM training_visit v " +
-                "JOIN user_info u ON v.user_id = u.user_id " +
-                "LEFT OUTER JOIN training_ticket trt ON trt.ticket_id=v.ticket_id " +
-                "LEFT JOIN ticket_type tit ON tit.ticket_type_id=trt.ticket_type_id " +
-                // todo check optimization WHERE tv.ticket_id=v.ticket_id
-                "LEFT OUTER JOIN (SELECT ticket_id, COUNT(*) training_visit_count FROM training_visit tv WHERE tv.ticket_id=v.ticket_id GROUP BY ticket_id) vc ON v.ticket_id=vc.ticket_id " +
-                "WHERE v.training_id=$1 " +
-                "ORDER BY u.last_name, u.first_name, u.nick_name");
+        selectByTraining = client.preparedQuery(
+                "SELECT * " +
+                        "FROM training_visit v " +
+                        "   JOIN user_info u ON v.user_id = u.user_id " +
+                        "   LEFT OUTER JOIN training_ticket trt ON trt.ticket_id=v.ticket_id " +
+                        "   LEFT JOIN ticket_type tit ON tit.ticket_type_id=trt.ticket_type_id " +
+                        "WHERE v.training_id=$1 " +
+                        "ORDER BY u.last_name, u.first_name, u.nick_name");
 
         selectByUser = client.preparedQuery(
                 "SELECT * " +
                         "FROM training_visit v " +
                         "         LEFT OUTER JOIN training_ticket tti ON v.ticket_id = tti.ticket_id " +
-                        "         LEFT OUTER JOIN ticket_type tit ON tit.ticket_type_id = tti.ticket_type_id " +
-                        "         LEFT OUTER JOIN (SELECT ticket_id, COUNT(*) training_visit_count FROM training_visit GROUP BY ticket_id) vc ON tti.ticket_id=vc.ticket_id, " +
+                        "         LEFT OUTER JOIN ticket_type tit ON tit.ticket_type_id = tti.ticket_type_id, " +
                         "     LATERAL ( " +
                         "         SELECT * " +
                         "         FROM training t, " +
@@ -60,7 +59,6 @@ public class DbCrudVisit {
         selectByTicket = client.preparedQuery(
                 "SELECT * " +
                         "FROM training_visit v, " +
-                        "   (SELECT COUNT(*) training_visit_count FROM training_visit WHERE ticket_id=$1) tvc, " +
                         "     LATERAL ( " +
                         "         SELECT * " +
                         "         FROM training t, " +
@@ -69,7 +67,7 @@ public class DbCrudVisit {
                         "         WHERE v.training_id = t.training_id) t " +
                         "WHERE v.ticket_id=$1 " +
                         "ORDER BY t.training_time");
-        updateMark = client.preparedQuery("SELECT * FROM mark_visit($1, $2, $3, $4::mark_type_enum, $5::mark_type_enum, $6, $7::mark_type_enum, $8::mark_type_enum, $9)");
+        updateMark = client.preparedQuery("SELECT * FROM mark_visit($1, $2, $3, $4, $5::mark_type_enum, $6::mark_type_enum, $7, $8::mark_type_enum, $9::mark_type_enum, $10)");
         updateComment = client.preparedQuery("UPDATE training_visit SET visit_comment=$4 WHERE training_id=$1 AND user_id=$2 AND ticket_user_id=$3");
         delete = client.preparedQuery("SELECT * FROM delete_visit($1, $2)");
     }
@@ -122,16 +120,23 @@ public class DbCrudVisit {
 //        log.debug("updateMarkSchedule Visit: {}, Training: {} ", entityVisit, entityVisit.training, );
         return updateMark.execute(Tuple.from(new Object[]{
                         entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(),
-                        markSelf, markMaster, markSchedule,
-                        entityVisit.markSelf, entityVisit.markMaster}))
+                        markSchedule, markSelf, markMaster,
+                        entityVisit.markSchedule, entityVisit.markSelf, entityVisit.markMaster,
+                        entityVisit.comment
+                }))
                 .onFailure().transform(e -> new RuntimeException("Error update", e))
-                .onItem().transform(r -> new DbCrudTicket.EntityTicket().loadFromDb(r.iterator().next()));
+                .onItem().transform(this::loadTicketIfPresent);
     }
 
     public Uni<DbCrudTicket.EntityTicket> delete(DbCrudVisit.EntityVisit entityVisit) {
         return delete.execute(Tuple.of(entityVisit.trainingId, entityVisit.user.getUserId()))
                 .onFailure().transform(e -> new RuntimeException("Error delete", e))
-                .onItem().transform(r -> new DbCrudTicket.EntityTicket().loadFromDb(r.iterator().next()));
+                .onItem().transform(this::loadTicketIfPresent);
+    }
+
+    private DbCrudTicket.EntityTicket loadTicketIfPresent(RowSet<Row> rowSet) {
+        Row row = rowSet.iterator().next();
+        return row.getInteger("ticket_id") != null ? new DbCrudTicket.EntityTicket().loadFromDb(row) : null;
     }
 
     public static class EntityVisit {

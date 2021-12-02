@@ -15,16 +15,18 @@ part 'crud_training.g.dart';
 
 class CrudTrainingBloc extends BlocBaseList<CrudEntityTraining> {
 
-  CrudTrainingBloc({List<CrudEntityTraining> state = const [], required BlocProvider provider, String? name}): super(provider: provider, state: state, name: name);
+  CrudTrainingBloc({List<CrudEntityTraining> state = const [], required BlocProvider provider, String? name, bool master = false}): super(provider: provider, state: state, name: name);
 
   void loadTrainings(DateTime from, DateTime to) async {
-    state = (await backend.requestJson('GET', '/api/userTraining/byDateInterval', params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
-        .map((item) => CrudEntityTraining.fromJson(item)).toList();
+    state = await cache('user_${dateFormat.format(from)}_${dateFormat.format(to)}', () async =>
+        (await backend.requestJson('GET', '/api/userTraining/byDateInterval', params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
+            .map((item) => CrudEntityTraining.fromJson(item)).toList());
   }
 
   void loadMasterTrainings(DateTime from, DateTime to) async {
-    state = (await backend.requestJson('GET', '/api/masterTraining/byDateInterval', params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
-        .map((item) => CrudEntityTraining.fromJson(item)..trainer = session.user).toList();
+    state = await cache('trainer_${dateFormat.format(from)}_${dateFormat.format(to)}', () async =>
+        (await backend.requestJson('GET', '/api/masterTraining/byDateInterval', params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
+            .map((item) => CrudEntityTraining.fromJson(item)..trainer = session.user).toList());
   }
 }
 
@@ -83,14 +85,13 @@ class CrudEntityTraining implements Comparable<CrudEntityTraining> {
   int id;
   @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime time;
-  CrudEntityUser trainer;
+  CrudEntityUser? trainer;
   CrudEntityTrainingType trainingType;
   String? comment;
   // Added
   List<CrudEntityVisit>? visits;
 
-  CrudEntityTraining({required this.id, required this.time, required this.trainer,
-      required this.trainingType, this.comment});
+  CrudEntityTraining({required this.id, required this.time, this.trainer, required this.trainingType, this.comment});
 
   factory CrudEntityTraining.fromJson(Map<String, dynamic> json) => _$CrudEntityTrainingFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityTrainingToJson(this);
@@ -112,6 +113,11 @@ class CrudEntityTraining implements Comparable<CrudEntityTraining> {
     result = compare(result, trainingType, other.trainingType);
     result = compare(result, trainer, other.trainer);
     return compareId(result, id, other.id);
+  }
+
+  @override
+  String toString() {
+    return 'CrudEntityTraining{id: $id, time: $time}';
   }
 }
 

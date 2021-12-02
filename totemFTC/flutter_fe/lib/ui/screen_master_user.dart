@@ -97,7 +97,7 @@ class ScreenMasterUserState extends BlocProvider<ScreenMasterUser> {
     var training = await UiSelectorTrainingDialog(title: 'Отметить тренировку', dateRange: DateTimeRange(
         start: now.subtract(Duration(days: ScreenMasterUser.backlogDays)),
         end: now),
-        trainingFilter: (training) => training.trainer == session.user
+      trainingFilter: (training) => training.trainer == session.user,
     ).selectTraining(context);
     log.finer("Select training dialog result: $training");
     if (training != null) {

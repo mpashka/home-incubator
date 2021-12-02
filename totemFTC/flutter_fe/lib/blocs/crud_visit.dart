@@ -3,16 +3,12 @@ import 'dart:core';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
-import 'package:flutter_fe/blocs/crud_api.dart';
-import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:json_annotation/json_annotation.dart';
-import 'package:logging/logging.dart';
 
+import '../misc/utils.dart';
 import 'crud_ticket.dart';
 import 'crud_training.dart';
 import 'crud_user.dart';
-import '../misc/utils.dart';
-import 'session.dart';
 
 part 'crud_visit.g.dart';
 
@@ -42,7 +38,10 @@ class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
 
   Future<void> markMaster(CrudEntityVisit visit, CrudEntityVisitMark mark) async {
     log.finer('Mark master $visit -> $mark');
+    var savedVisits = visit.training?.visits;
+    visit.training?.visits = null;
     await backend.request('PUT', '/api/visit/markMaster/${describeEnum(mark)}', body: visit);
+    visit.training?.visits = savedVisits;
     visit.markMaster = mark;
     _addAndUpdate(visit, (v) => v.markMaster = mark);
   }

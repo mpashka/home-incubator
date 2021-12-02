@@ -32,7 +32,8 @@ abstract class UiSelectorUserStateBase<TWidget extends StatefulWidget> extends B
   @override
   void initState() {
     super.initState();
-    FilteredUsersBloc userBloc = FilteredUsersBloc(provider: this);
+    FilteredUsersBloc userBloc = FilteredUsersBloc(provider: this)
+      ..loadUsers();
     searchTextController = TextEditingController();
     searchTextController.addListener(() => userBloc.filter(searchTextController.text));
   }
@@ -50,13 +51,14 @@ abstract class UiSelectorUserStateBase<TWidget extends StatefulWidget> extends B
           onTap: () => searchTextController.text = '',
         ),
       ],),
-      Flexible(
-        child: BlocProvider.streamBuilder<List<CrudEntityUser>, FilteredUsersBloc>(builder: (ctx, users) => ListView(children: [
+      Expanded(child:
+        BlocProvider.streamBuilder<List<CrudEntityUser>, FilteredUsersBloc>(builder: (ctx, users) => ListView(children: [
           for (var user in users) GestureDetector(
             child: UiUser(user),
             onTap: () => userSelector(user),
           )
-        ],),),),
+        ],),),
+      ),
     ];
   }
 }
@@ -65,18 +67,18 @@ class UiSelectorUserDialogState extends UiSelectorUserStateBase<UiSelectorUserDi
 
   @override
   Widget build(BuildContext context) {
-    return SimpleDialog(
-        title: Text(widget.title),
-        elevation: 5,
-        children: [
-          ...buildContent((user) => Navigator.pop(context, user)),
-          Row(children: [
-            SimpleDialogOption(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ],)
-        ]);
+    return Dialog(
+      elevation: 5,
+      child: Column(children: [
+        Text(widget.title),
+        ...buildContent((user) => Navigator.pop(context, user)),
+        Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+          ElevatedButton(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ],)
+      ],),);
   }
 }
 

@@ -165,10 +165,12 @@ public class DbCrudTicket {
             this.cost = row.getInteger("ticket_cost");
             this.visits = row.getInteger("ticket_visits");
             this.days = row.getInteger("ticket_days");
-            Object[] trainingTypesObjs = row.getArrayOfJsons("ticket_training_types_obj");
-            this.trainingTypes = trainingTypesObjs == null ? null : Arrays.stream(trainingTypesObjs)
-                    .map(tt -> new DbCrudTraining.EntityTrainingType().loadFromDb((JsonObject) tt))
-                    .toArray(DbCrudTraining.EntityTrainingType[]::new);
+            if (row.getColumnIndex("ticket_training_types_obj") >= 0) {
+                Object[] trainingTypesObjs = row.getArrayOfJsons("ticket_training_types_obj");
+                this.trainingTypes = Arrays.stream(trainingTypesObjs)
+                        .map(tt -> new DbCrudTraining.EntityTrainingType().loadFromDb((JsonObject) tt))
+                        .toArray(DbCrudTraining.EntityTrainingType[]::new);
+            }
             return this;
         }
 

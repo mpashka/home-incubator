@@ -87,6 +87,8 @@ DateTime? dateTimeFromJson_(String? date) => date != null ? dateTimeFormat.parse
 String? dateTimeToJson_(DateTime? date) => date != null ? dateTimeFormat.format(date) : null;
 DateTime dateFromJson(String date) => dateFormat.parse(date);
 String dateToJson(DateTime date) => dateFormat.format(date);
+DateTime? dateFromJson_(String? date) => date != null ? dateFormat.parse(date) : null;
+String? dateToJson_(DateTime? date) => date != null ? dateFormat.format(date) : null;
 
 // @JsonKey(name: 'registration_date_millis')
 // @JsonKey(defaultValue: false)

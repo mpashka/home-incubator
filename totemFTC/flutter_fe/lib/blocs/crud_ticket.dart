@@ -26,13 +26,13 @@ class CrudTicketBloc extends BlocBaseList<CrudEntityTicket> {
 @JsonSerializable(explicitToJson: true)
 class CrudEntityTicketType {
   int id;
-  List<CrudEntityTrainingType> trainingTypes;
+  List<CrudEntityTrainingType>? trainingTypes;
   String name;
   int cost;
   int visits;
   int days;
 
-  CrudEntityTicketType({required this.id, required this.trainingTypes, required this.name, required this.cost,
+  CrudEntityTicketType({required this.id, this.trainingTypes, required this.name, required this.cost,
     required this.visits, required this.days});
   factory CrudEntityTicketType.fromJson(Map<String, dynamic> json) => _$CrudEntityTicketTypeFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityTicketTypeToJson(this);
@@ -43,11 +43,11 @@ class CrudEntityTicket {
   int id;
   CrudEntityTicketType ticketType;
   CrudEntityUser? user;
-  @JsonKey(fromJson: dateFromJson, toJson: dateToJson)
+  @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime buy;
-  @JsonKey(fromJson: dateTimeFromJson_, toJson: dateTimeToJson_)
+  @JsonKey(fromJson: dateFromJson_, toJson: dateTimeToJson_)
   DateTime? start;
-  @JsonKey(fromJson: dateTimeFromJson_, toJson: dateTimeToJson_)
+  @JsonKey(fromJson: dateFromJson_, toJson: dateTimeToJson_)
   DateTime? end;
   int visited;
   // added

@@ -4,6 +4,7 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
 import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
+import 'blocs/crud_training.dart';
 import 'blocs/crud_user.dart';
 import 'blocs/session.dart';
 import 'ui/screen_home.dart';
@@ -82,7 +83,8 @@ class MyApp extends StatelessWidget {
             case ScreenSchedule.routeName: return MaterialPageRoute(builder: (context) => ScreenSchedule());
             case ScreenSchedule.routeNameMaster: return MaterialPageRoute(builder: (context) => ScreenSchedule(forTrainer: true,));
             // case '/purchases': return MaterialPageRoute(builder: (context) => ScreenPurchases());
-            case ScreenMasterTrainings.routeName: return MaterialPageRoute(builder: (context) => ScreenMasterTrainings());
+            case ScreenMasterTrainings.routeName:
+              return MaterialPageRoute(builder: (context) => ScreenMasterTrainings(initialTraining: settings.arguments as CrudEntityTraining?));
             case ScreenSelectorUser.routeName: return MaterialPageRoute(builder: (context) => ScreenSelectorUser());
             case ScreenMasterUser.routeName:
               final user = settings.arguments as CrudEntityUser;

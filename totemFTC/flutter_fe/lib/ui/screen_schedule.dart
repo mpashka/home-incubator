@@ -27,17 +27,15 @@ class ScreenSchedule extends StatefulWidget {
 class ScreenScheduleState extends BlocProvider<ScreenSchedule> {
 
   static final DateTime now = DateTime.now();
-  static const back = Duration(days: 7);
-  static const forward = Duration(days: 7);
   late final Session _session;
 
   @override
   void initState() {
     super.initState();
     _session = Injector().get<Session>();
-    var crudTrainingBloc = CrudTrainingBloc(provider: this);
+    var crudTrainingBloc = CrudTrainingBloc(provider: this, master: widget.forTrainer);
     if (widget.forTrainer) {
-      crudTrainingBloc.loadMasterTrainings(now.subtract(back), now.add(forward));
+      crudTrainingBloc.loadMasterTrainings(now.subtract(backMaster), now.add(forwardMaster));
     } else {
       crudTrainingBloc.loadTrainings(now.subtract(back), now.add(forward));
     }
@@ -51,29 +49,32 @@ class ScreenScheduleState extends BlocProvider<ScreenSchedule> {
         DaySchedule currentDay = DaySchedule(DateTime(0));
         List<DaySchedule> result = [];
         bool nowAdded = false;
+        void addNow(DateTime date) {
+          if (!nowAdded && date.isAfter(now)) {
+            currentDay.schedule.add(now);
+            nowAdded = true;
+          }
+        }
         for (var training in trainings) {
           if (widget.forTrainer && training.trainer != _session.user) continue;
           DateTime newDate = training.time.dayDate();
+          addNow(newDate);
           if (newDate.isAfter(currentDay.date)) {
             currentDay = DaySchedule(newDate);
             result.add(currentDay);
           }
-          if (!nowAdded && training.time.isAfter(now)) {
-            currentDay.schedule.add(now);
-            nowAdded = true;
-          }
+          addNow(training.time);
           currentDay.schedule.add(training);
         }
+        addNow(DateTime(3000));
 
         return CustomScrollView(slivers: [
-          for (var day in result) SliverStickyHeader.builder(
-            builder: (context, state) => Card(
+          for (var day in result) SliverStickyHeader(
+            header: Card(
               elevation: 8.0,
               color: theme.colorScheme.secondary,
-              child: ListTile(
-                title: Text(localDateFormat.format(day.date),),
-                subtitle: state.isPinned ? null : Text(fullDateFormat.format(day.date)),
-              ),),
+              child: ListTile(title: Text(localDateFormat.format(day.date),),),
+            ),
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate((context, i) {
                 var item = day.schedule[i];
