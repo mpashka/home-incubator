@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
 import 'package:flutter_fe/blocs/crud_ticket.dart';
@@ -39,48 +41,61 @@ class ScreenMasterTrainingsState extends BlocProvider<ScreenMasterTrainings> {
     super.initState();
     CrudTrainingBloc(provider: this)
         .loadMasterTrainings(now.subtract(intervalBefore), now.add(intervalAfter));
-    visitsBloc = TrainingVisitsBloc(provider: this);
     selectedTrainingBloc = SelectedTrainingBloc(provider: this);
+    visitsBloc = TrainingVisitsBloc(selectedTrainingBloc, provider: this);
   }
 
 
   @override
   Widget build(BuildContext context) {
-    return UiScreen(body: Column(children: [
-          WheelListSelector<CrudEntityTraining, CrudTrainingBloc>(
-            childBuilder: (context, index, training) => UiTraining(training),
-            transformedChildBuilder: (context, index, item) => item == now
-                ? const Text('Сейчас')
-                : Text(localDateTimeFormat.format(item)),
-            onSelectedItemChanged: (ctx, i, training) {
-              visitsBloc.selectTraining(training);
-              selectedTrainingBloc.state = training;
-            },
-            onSelectedTransformedItemChanged: (ctx, i, item) {
-              selectedTrainingBloc.state = null;
-            },
-            selectedItem: widget.initialTraining ?? now,
-            dataTransformer: addDates,
+    final theme = Theme.of(context);
+    return UiScreen(
+      body: Column(children: [
+        WheelListSelector<CrudEntityTraining, CrudTrainingBloc>(
+          // childBuilder: (context, index, training) => UiTraining(training),
+          childBuilder: (context, index, training) => Center(child: Text('${training.trainingType.trainingName} ${timeFormat.format(training.time)}'),),
+          transformedChildBuilder: (context, index, item) => Center(child: Container(
+            child: Text(item == now ? 'Сейчас': localDateFormat.format(item)),
+            padding: const EdgeInsets.only(left: 8, right: 8,),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.all(Radius.circular(20.0)),
+              color: theme.colorScheme.background.withAlpha(80),
+            ),),
           ),
-          UiDivider(visitsBloc.selectedTraining == null
-              ? 'Выберите тренировку'
-              : 'Посещения ${visitsBloc.selectedTraining!.trainingType.trainingName} ${localDateTimeFormat.format(visitsBloc.selectedTraining!.time)}'),
-          BlocProvider.streamBuilder<List<CrudEntityVisit>, TrainingVisitsBloc>(builder: (ctx, visits) {
-            if (visits.isEmpty) return Text('Никого не было');
-            return Expanded(
-              child: ListView(children: [
+          onSelectedItemChanged: (ctx, i, training) {
+            selectedTrainingBloc.state = training;
+          },
+          onSelectedTransformedItemChanged: (ctx, i, item) {
+            selectedTrainingBloc.state = null;
+          },
+          selectedItem: widget.initialTraining ?? now,
+          dataTransformer: addDates,
+        ),
+        Expanded(child: BlocProvider.streamBuilder<CrudEntityTraining?, SelectedTrainingBloc>(builder: (ctx, training) => Column(children: [
+          UiDivider(training == null
+            ? null
+            : 'Посещения ${training.trainingType.trainingName} ${localDateTimeFormat.format(training.time)}'),
+          Expanded(child: BlocProvider.streamBuilder<List<CrudEntityVisit>, TrainingVisitsBloc>(builder: (ctx, visits) {
+            if (training == null) {
+              return Text('Выберите тренировку');
+            } else if (visits.isEmpty) {
+              return Text('Никого не было');
+            } else {
+              return ListView(children: [
                 for (var visit in visits) UiVisit(visit, forTrainer: true,),
-              ],),);
-          }),
-        ]),
-        floatingActionButton: BlocProvider.streamBuilder<CrudEntityTraining?, SelectedTrainingBloc>(builder: (ctx, selectedTraining) {
-          return FloatingActionButton(
-            onPressed: selectedTraining == null ? null : () => addVisit(context, visitsBloc, selectedTraining),
-            tooltip: 'Add',
-            child: Icon(Icons.add),
-          );
-        }),
-      );
+              ],);
+            }
+          }),),
+        ],),),),
+      ],),
+      floatingActionButton: BlocProvider.streamBuilder<CrudEntityTraining?, SelectedTrainingBloc>(builder: (ctx, selectedTraining) {
+        return FloatingActionButton(
+          onPressed: selectedTraining == null ? null : () => addVisit(context, visitsBloc, selectedTraining),
+          tooltip: 'Add',
+          child: Icon(Icons.add),
+        );
+      }),
+    );
   }
 
   void addVisit(BuildContext context, TrainingVisitsBloc visitsBloc, CrudEntityTraining training) async {
@@ -102,11 +117,12 @@ class ScreenMasterTrainingsState extends BlocProvider<ScreenMasterTrainings> {
     bool nowAdded = false;
     for (var training in trainings) {
       DateTime newDate = training.time.dayDate();
+      if (newDate.isAfter(prevDate)) {
+        result.add(newDate);
+      }
       if (!nowAdded && training.time.isAfter(now)) {
         result.add(now);
         nowAdded = true;
-      } else if (newDate.isAfter(prevDate)) {
-        result.add(newDate);
       }
       prevDate = newDate;
       result.add(training);
@@ -115,13 +131,28 @@ class ScreenMasterTrainingsState extends BlocProvider<ScreenMasterTrainings> {
   }
 }
 
+class SelectedTrainingBloc extends BlocBaseState<CrudEntityTraining?> {
+  SelectedTrainingBloc({required BlocProvider provider, String? name}): super(state: null, provider: provider, name: name);
+}
+
 class TrainingVisitsBloc extends CrudVisitBloc {
-  CrudEntityTraining? selectedTraining;
+  late final StreamSubscription<CrudEntityTraining?> selectedTrainingSubscription;
 
+  TrainingVisitsBloc(SelectedTrainingBloc selectedTrainingBloc, {required BlocProvider provider, String? name}): super(provider: provider, name: name) {
+    selectedTrainingSubscription = selectedTrainingBloc.stateOut.listen((selectedTraining) => onSelectTraining);
+  }
 
-  TrainingVisitsBloc({required BlocProvider provider, String? name}): super(provider: provider, name: name);
+  @override
+  void dispose() {
+    selectedTrainingSubscription.cancel();
+    super.dispose();
+  }
 
-  Future<void> selectTraining(CrudEntityTraining training) async {
+  Future<void> onSelectTraining(CrudEntityTraining? training) async {
+    if (training == null) {
+      state = [];
+      return;
+    }
     training.visits ??= (await backend.requestJson('GET', '/api/visit/byTraining/${training.id}') as List)
         .map((item) {
       var crudEntityVisit = CrudEntityVisit.fromJson(item);
@@ -129,10 +160,5 @@ class TrainingVisitsBloc extends CrudVisitBloc {
       return crudEntityVisit;
     }).toList();
     state = training.visits!;
-    selectedTraining = training;
   }
-}
-
-class SelectedTrainingBloc extends BlocBaseState<CrudEntityTraining?> {
-  SelectedTrainingBloc({required BlocProvider provider, String? name}): super(state: null, provider: provider, name: name);
 }
