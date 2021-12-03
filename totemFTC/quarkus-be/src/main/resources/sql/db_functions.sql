@@ -79,7 +79,8 @@ $$ LANGUAGE plpgsql;
 
 
 -- Add or modify visit, find appropriate ticket record and return it
-CREATE OR REPLACE FUNCTION mark_visit(p_training_id INTEGER, p_user_id INTEGER,
+CREATE OR REPLACE FUNCTION mark_visit(p_training_id INTEGER,
+                                      p_user_id INTEGER,
                                       -- Is used to find appropriate ticket if current visit doesn't have correct one
                                       p_ticket_user_id INTEGER DEFAULT NULL,
                                       -- This is used to update presented ticket. Usually only one of those must be specified for instance update
@@ -97,6 +98,7 @@ DECLARE
     v_ticket_cursor REFCURSOR;
     v_visit training_visit%ROWTYPE;
     v_ticket ticket_and_type;
+    v_ticket_found BOOLEAN;
     v_training training%ROWTYPE;
     v_diff_visits INTEGER;
 BEGIN
@@ -113,18 +115,17 @@ BEGIN
 
     RAISE DEBUG 'mark_visit(). visit found: %', FOUND;
     IF FOUND THEN
-        v_diff_visits = mark_visit_calc_count(COALESCE(p_mark_self, v_visit.visit_mark_self), COALESCE(p_mark_master, v_visit.visit_mark_master))
+        v_diff_visits := mark_visit_calc_count(COALESCE(p_mark_self, v_visit.visit_mark_self), COALESCE(p_mark_master, v_visit.visit_mark_master))
             - mark_visit_calc_count(v_visit.visit_mark_self, v_visit.visit_mark_master);
         p_ticket_user_id := COALESCE(p_ticket_user_id, v_visit.ticket_user_id, p_user_id);
-        v_ticket_cursor = mark_visit_find_ticket(v_visit.ticket_id, p_ticket_user_id, v_diff_visits, v_training.training_type);
-        FETCH NEXT FROM v_ticket_cursor INTO v_ticket;
-        RAISE DEBUG 'mark_visit(). ticket by visit found: %', FOUND;
-        IF NOT FOUND THEN
-            v_ticket_cursor = mark_visit_find_ticket(NULL, p_ticket_user_id, v_diff_visits, v_training.training_type);
-            FETCH NEXT FROM v_ticket_cursor INTO v_ticket;
-            RAISE DEBUG 'mark_visit(). ticket found: %', FOUND;
+        CALL mark_visit_find_ticket(v_visit.ticket_id, p_ticket_user_id, v_diff_visits, v_training.training_type, v_ticket, v_ticket_cursor, v_ticket_found);
+        RAISE DEBUG 'mark_visit(). ticket found: %', v_ticket_found;
+        IF NOT v_ticket_found THEN
+            CLOSE v_ticket_cursor;
+            CALL mark_visit_find_ticket(NULL, p_ticket_user_id, v_diff_visits, v_training.training_type, v_ticket, v_ticket_cursor, v_ticket_found);
         END IF;
-        CALL mark_visit_update_ticket(FOUND, v_diff_visits, v_ticket, v_ticket_cursor, v_training);
+        RAISE DEBUG 'mark_visit(). general ticket found: %', v_ticket_found;
+        CALL mark_visit_update_ticket(v_ticket_found, v_diff_visits, v_ticket, v_ticket_cursor, v_training);
         IF v_visit.ticket_id != v_ticket.ticket_id THEN
             UPDATE training_visit SET ticket_id=v_ticket.ticket_id WHERE CURRENT OF v_visit_cursor;
         END IF;
@@ -146,12 +147,10 @@ BEGIN
         p_mark_self := COALESCE(p_mark_self, p_default_mark_self, 'unmark'::mark_type_enum);
         p_mark_master := COALESCE(p_mark_master, p_default_mark_master, 'unmark'::mark_type_enum);
         v_diff_visits := mark_visit_calc_count(p_mark_self, p_mark_master);
-        v_ticket_cursor := mark_visit_find_ticket(NULL, p_ticket_user_id, v_diff_visits, v_training.training_type);
-        FETCH NEXT FROM v_ticket_cursor INTO v_ticket;
-        RAISE DEBUG 'mark_visit(). select ticket. Found: %', FOUND;
-        IF FOUND THEN
+        CALL mark_visit_find_ticket(NULL, p_ticket_user_id, v_diff_visits, v_training.training_type, v_ticket, v_ticket_cursor, v_ticket_found);
+        IF v_ticket_found THEN
             IF v_diff_visits IN (0,1) THEN
-                CALL mark_visit_update_ticket(true, v_diff_visits, v_ticket, v_ticket_cursor, v_training);
+                CALL mark_visit_update_ticket(v_ticket_found, v_diff_visits, v_ticket, v_ticket_cursor, v_training);
             ELSE
                 RAISE EXCEPTION 'Internal error. visits [%] NOT IN (0,1)', v_diff_visits USING HINT='Check mark_visit SQL function';
             END IF;
@@ -170,6 +169,7 @@ $$ LANGUAGE plpgsql;
 
 
 -- Delete visit and update ticket if necessary
+-- todo fetch training_types_obj
 CREATE OR REPLACE FUNCTION delete_visit(p_training_id INTEGER, p_user_id INTEGER, OUT p_ticket ticket_and_type) AS $$
 DECLARE
     v_visit training_visit%ROWTYPE;
@@ -245,8 +245,10 @@ END
 $i$ LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION mark_visit_find_ticket(p_ticket_id INTEGER, p_ticket_user_id INTEGER, p_visits_delta INTEGER,
-                                                  p_training_type VARCHAR(10), OUT p_ticket_cursor REFCURSOR) AS $i$
+CREATE OR REPLACE PROCEDURE mark_visit_find_ticket(p_ticket_id INTEGER, p_ticket_user_id INTEGER, p_visits_delta INTEGER,
+                                                  p_training_type VARCHAR(10), INOUT p_ticket ticket_and_type, INOUT p_ticket_cursor REFCURSOR,
+                                                  INOUT p_found BOOLEAN
+                                                  ) AS $i$
 DECLARE
     v_where VARCHAR;
     v_order_visit VARCHAR;
@@ -277,20 +279,24 @@ BEGIN
     OPEN p_ticket_cursor NO SCROLL FOR EXECUTE
         format(
                 'SELECT trt.ticket_id, trt.ticket_type_id, trt.user_id, trt.ticket_buy, trt.ticket_start, trt.ticket_end, trt.training_visits,
-                    tity.ticket_training_types, tity.ticket_name, tity.ticket_cost, tity.ticket_visits, tity.ticket_days,
-                    trto.ticket_training_types_obj
+                    tity.ticket_training_types, tity.ticket_name, tity.ticket_cost, tity.ticket_visits, tity.ticket_days
                  FROM training_ticket trt
-                          JOIN ticket_type tity USING (ticket_type_id),
-                    LATERAL (
-                        SELECT array_agg(to_jsonb(trty.*)) AS ticket_training_types_obj
-                        FROM training_type trty
-                        WHERE trty.training_type=ANY(tity.ticket_training_types)
-                    ) trto
+                          JOIN ticket_type tity USING (ticket_type_id)
                  WHERE %s
                  ORDER BY trt.training_visits %s, trt.ticket_buy %s
-                 LIMIT 1'
-                     --FOR UPDATE'
+                 LIMIT 1
+                     FOR UPDATE'
             , v_where, v_order_visit, v_order_date)
         USING p_ticket_id, p_ticket_user_id, p_training_type;
+    FETCH NEXT FROM p_ticket_cursor INTO p_ticket;
+    p_found := FOUND;
+    RAISE DEBUG 'mark_visit_find_ticket(). select ticket. Found: %', p_found;
+
+    IF p_found THEN
+        SELECT array_agg(to_jsonb(training_type.*))
+        INTO STRICT p_ticket.ticket_training_types_obj
+        FROM training_type
+        WHERE training_type=ANY(p_ticket.ticket_training_types);
+    END IF;
 END
 $i$ LANGUAGE plpgsql;

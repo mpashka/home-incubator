@@ -1,0 +1,74 @@
+# https://quarkus.io/guides/all-config
+# https://quarkus.io/guides/config-reference
+# https://quarkus.io/guides/config-yaml
+
+app:
+  url:
+    frontend: http://localhost:8081
+    backend: http://localhost:8080
+
+quarkus:
+
+  # https://quarkus.io/guides/scheduler
+  scheduler:
+    cron-type: QUARTZ
+    enabled: true
+    metrics:
+      enabled: true
+
+  # https://quarkus.io/guides/container-image
+  container-image:
+    builder: docker
+    group: mpashka
+    name: totemftc-be
+
+  http:
+    port: 8080
+    proxy:
+      proxy-address-forwarding: true
+    cors:
+      ~: true
+      origins: '*'
+    insecure-requests: ENABLED
+    http2: true
+
+#quarkus.http.auth.proactive=false
+
+# quarkus.jackson.fail-on-unknown-properties=true
+# quarkus.jackson.write-dates-as-timestamps=true
+# quarkus.resteasy.gzip.enabled=true
+# quarkus.resteasy.gzip.max-input=10M
+
+  # https://quarkus.io/guides/logging
+  # Number 6 priority
+  log:
+    level: ALL
+    category:
+      "io.quarkus":
+        level: INFO
+      "org.mpashka":
+        level: INFO
+
+# https://quarkus.io/guides/getting-started-testing
+
+# Number 5 priority
+#%test.quarkus.log.level=INFO
+#%test.quarkus.log.category."io.quarkus".level=INFO
+#%test.quarkus.log.category."org".level=ALL
+#%test.quarkus.log.category."org.jboss".level=ALL
+#%test.quarkus.log.category."org.testcontainers".level=ALL
+#%test.quarkus.log.category."org.mpashka".level=WARN
+
+#"%test":
+#  quarkus:
+#    log:
+#      min-level: ALL
+#      level: INFO
+#      category:
+#        "io.quarkus":
+#          level: INFO
+#        "org.jboss":
+#          level: DEBUG
+#        "org.mpashka":
+#          level: ERROR
+# Number 3

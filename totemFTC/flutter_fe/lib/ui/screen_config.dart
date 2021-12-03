@@ -5,8 +5,10 @@ import 'package:flutter/painting.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
 import 'package:flutter_fe/blocs/crud_user.dart';
 import 'package:flutter_fe/blocs/session.dart';
+import 'package:flutter_fe/misc/initializer.dart';
 import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:flutter_simple_dependency_injection/injector.dart';
 
 import 'screen_base.dart';
 import 'widgets/ui_divider.dart';
@@ -20,6 +22,7 @@ class ScreenConfig extends StatefulWidget {
 
 class ScreenConfigState extends BlocProvider<ScreenConfig> {
 
+  late final Session session;
   late final CrudUserBloc crudUserBloc;
   late final TextEditingController firstNameController;
   late final TextEditingController lastNameController;
@@ -32,6 +35,7 @@ class ScreenConfigState extends BlocProvider<ScreenConfig> {
   @override
   void initState() {
     super.initState();
+    session = Injector().get<Session>();
     crudUserBloc = CrudUserBloc(provider: this);
     final user = crudUserBloc.state;
     for (var provider in loginProviders) {
@@ -78,9 +82,10 @@ class ScreenConfigState extends BlocProvider<ScreenConfig> {
         Container(
             padding: EdgeInsets.only(left: 3, right: 3),
             alignment: Alignment.centerRight,
+            // todo add logout indicator
             child: ElevatedButton(
               child: Text('Выход'),
-              onPressed: () => {},
+              onPressed: () => logout(context),
             )
         ),
       ],);
@@ -192,5 +197,19 @@ class ScreenConfigState extends BlocProvider<ScreenConfig> {
       ));
     }
     return result;
+  }
+
+  void logout(BuildContext context) async {
+    bool? logout = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(
+      title: Text('Выйти'),
+      elevation: 8,
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context, true), child: Text('Да')),
+        TextButton(onPressed: () => Navigator.pop(context, false), child: Text('Нет')),
+      ],
+    ));
+    if (logout == true) {
+      session.logout(context);
+    }
   }
 }

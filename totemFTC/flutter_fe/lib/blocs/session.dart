@@ -80,9 +80,11 @@ class Session {
     }
   }
 
-  Future<void> logout() async {
+  Future<void> logout(BuildContext context) async {
     await _backend.request('GET', '/api/user');
     _configuration.sessionId = '';
+    _user = emptyUser;
+    Navigator.pushReplacementNamed(context, '/');
   }
 
   bool isLoggedIn() {

@@ -8,6 +8,7 @@ import io.vertx.mutiny.sqlclient.PreparedQuery;
 import io.vertx.mutiny.sqlclient.Row;
 import io.vertx.mutiny.sqlclient.RowIterator;
 import io.vertx.mutiny.sqlclient.RowSet;
+import io.vertx.mutiny.sqlclient.SqlResult;
 import io.vertx.mutiny.sqlclient.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,11 +16,12 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.stream.StreamSupport;
 
 import static org.mpashka.totemftc.api.Utils.firstNonBlank;
-import static org.mpashka.totemftc.api.Utils.isBlank;
 import static org.mpashka.totemftc.api.Utils.notBlank;
 
 /**
@@ -48,6 +50,11 @@ public class DbUser {
     private PreparedQuery<RowSet<Row>> updateMainImage;
     private PreparedQuery<RowSet<Row>> deleteUser;
     private PreparedQuery<RowSet<Row>> deleteUserSocialNetwork;
+    private PreparedQuery<RowSet<Row>> createSession;
+    private PreparedQuery<RowSet<Row>> selectSession;
+    private PreparedQuery<RowSet<Row>> updateSession;
+    private PreparedQuery<RowSet<Row>> deleteSession;
+    private PreparedQuery<RowSet<Row>> cleanupSessions;
 
     @PostConstruct
     void init() {
@@ -100,6 +107,12 @@ public class DbUser {
                 "DELETE FROM user_info WHERE user_id=$1"
                 );
         deleteUserSocialNetwork = client.preparedQuery("DELETE FROM user_social_network WHERE user_id=$1 and network_name=$2");
+
+        createSession = client.preparedQuery("INSERT INTO user_session (session_id, user_id, last_update) VALUES ($1, $2, $3)");
+        selectSession = client.preparedQuery("SELECT * FROM user_session WHERE session_id=$1");
+        updateSession = client.preparedQuery("UPDATE user_session SET last_update=$2 WHERE session_id=$1");
+        deleteSession = client.preparedQuery("DELETE FROM user_session WHERE session_id=$1");
+        cleanupSessions = client.preparedQuery("DELETE FROM user_session WHERE last_update < $1");
     }
 
     public Uni<UserSearchResult> findById(AuthProvider.UserInfo userInfo) {
@@ -264,6 +277,45 @@ public class DbUser {
             log.debug("User not found by {}", type);
             return null;
         }
+    }
+
+    public Uni<WebSessionService.Session> getSession(String sessionId) {
+        return selectSession.execute(Tuple.of(sessionId))
+                .onFailure().transform(e -> new RuntimeException("Error getSession", e))
+                .onItem().transform(r -> {
+                    RowIterator<Row> iterator = r.iterator();
+                    if (!iterator.hasNext()) {
+                        return null;
+                    }
+                    Row row = iterator.next();
+                    return new WebSessionService.Session(row.getString("session_id"),
+                            row.getInteger("user_id"), row.getOffsetDateTime("last_update"));
+                });
+    }
+
+    public Uni<Integer> createSession(WebSessionService.Session session) {
+        return createSession.execute(Tuple.of(session.getSessionId(), session.getUserId(), session.getLastUpdate()))
+                .onFailure().transform(e -> new RuntimeException("Error createSession", e))
+                .onItem().transform(SqlResult::rowCount);
+    }
+
+    public Uni<Integer> updateSession(WebSessionService.Session session) {
+        return updateSession.execute(Tuple.of(session.getSessionId(), session.getLastUpdate()))
+                .onFailure().transform(e -> new RuntimeException("Error updateSession", e))
+                .onItem().transform(SqlResult::rowCount);
+    }
+
+    /** @return number of removed sessions */
+    public Uni<Integer> deleteSession(WebSessionService.Session session) {
+        return deleteSession.execute(Tuple.of(session.getSessionId()))
+                .onFailure().transform(e -> new RuntimeException("Error deleteSessions", e))
+                .onItem().transform(SqlResult::rowCount);
+    }
+
+    public Uni<Integer> cleanupSessions(OffsetDateTime lastUpdate) {
+        return cleanupSessions.execute(Tuple.of(lastUpdate))
+                .onFailure().transform(e -> new RuntimeException("Error deleteSessions", e))
+                .onItem().transform(SqlResult::rowCount);
     }
 
     public enum UserSearchType {

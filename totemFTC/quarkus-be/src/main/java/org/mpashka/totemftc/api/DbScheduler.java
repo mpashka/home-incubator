@@ -15,6 +15,7 @@ import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -28,11 +29,13 @@ import java.util.stream.StreamSupport;
 /**
  * Load schedule from 'training_schedule', check if there is no
  * schedule in 'training' and copy appropriate lines from 'training_schedule' to 'training'
+ *
+ * http://www.quartz-scheduler.org/documentation/quartz-2.3.0/tutorials/crontrigger.html
  */
 @ApplicationScoped
-public class DbSchedulePropagate {
+public class DbScheduler {
 
-    private static final Logger log = LoggerFactory.getLogger(DbSchedulePropagate.class);
+    private static final Logger log = LoggerFactory.getLogger(DbScheduler.class);
 
     @Inject
     PgPool client;
@@ -41,16 +44,24 @@ public class DbSchedulePropagate {
     private PreparedQuery<RowSet<Row>> selectTraining;
     private PreparedQuery<RowSet<Row>> insertTraining;
 
+    @Inject
+    WebSessionService webSessionService;
+
     @PostConstruct
-    private void init() {
+    void init() {
         selectSchedule = client.preparedQuery("SELECT * from training_schedule t");
         selectTraining = client.preparedQuery("SELECT * from training t WHERE training_time>$1 and training_time<$2");
         insertTraining = client.preparedQuery("INSERT INTO training (training_schedule_id, training_time, trainer_id, training_type) VALUES ($1, $2, $3, $4) RETURNING training_time, training_type");
     }
 
     @Scheduled(cron="0 30 0 * * ?")
-    public void cronJob(ScheduledExecution execution) {
+    public void cronSchedulePropagate(ScheduledExecution execution) {
         schedulePropagate().await().atMost(Duration.of(10, ChronoUnit.MINUTES));
+    }
+
+    @Scheduled(cron="0 0 1 * * ?")
+    public void cronCleanupSessions(ScheduledExecution execution) {
+        webSessionService.cleanupSessions().await().atMost(Duration.of(10, ChronoUnit.MINUTES));
     }
 
     /**
@@ -130,6 +141,9 @@ public class DbSchedulePropagate {
         }
     }
 
+    /**
+     * Simplified {@link DbCrudTraining.Entity} used just to propagate schedule
+     */
     private static class EntityTraining {
         private int id;
         private Integer scheduleId;
@@ -148,6 +162,4 @@ public class DbSchedulePropagate {
             return this;
         }
     }
-
-
 }

@@ -117,7 +117,7 @@ public class DbCrudVisit {
     }
 
     public Uni<DbCrudTicket.EntityTicket> updateMark(EntityVisit entityVisit, Boolean markSchedule, EntityVisitMark markSelf, EntityVisitMark markMaster) {
-//        log.debug("updateMarkSchedule Visit: {}, Training: {} ", entityVisit, entityVisit.training, );
+//        log.debug("updateMarkSchedule Visit: {}, Training: {} ", entityVisit, entityVisit.training);
         return updateMark.execute(Tuple.from(new Object[]{
                         entityVisit.trainingId, entityVisit.user.getUserId(), entityVisit.user.getUserId(),
                         markSchedule, markSelf, markMaster,

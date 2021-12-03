@@ -88,7 +88,8 @@ class CrudEntityTraining implements Comparable<CrudEntityTraining> {
   CrudEntityUser? trainer;
   CrudEntityTrainingType trainingType;
   String? comment;
-  // Added
+  /// Used for caching values
+  @JsonKey(ignore: true)
   List<CrudEntityVisit>? visits;
 
   CrudEntityTraining({required this.id, required this.time, this.trainer, required this.trainingType, this.comment});

@@ -6,9 +6,6 @@ import io.vertx.mutiny.sqlclient.Row;
 import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.SortedMap;
@@ -18,7 +15,7 @@ import java.util.TreeMap;
 public class WebResourceUtils {
 
     @Inject
-    DbSchedulePropagate dbSchedulePropagate;
+    DbScheduler dbScheduler;
 
     /**
      * Used to propagate/apply schedule for dev env (while scheduler doesn't work) and show some results
@@ -26,7 +23,7 @@ public class WebResourceUtils {
     @GET
     @Path("schedulePropagate")
     public Uni<String> schedulePropagate() {
-        return dbSchedulePropagate.schedulePropagate()
+        return dbScheduler.schedulePropagate()
                 .onItem().transform(res -> {
                     if (res == null) {
                         return "Nothing updated\n";

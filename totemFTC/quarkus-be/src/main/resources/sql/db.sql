@@ -44,7 +44,11 @@ CREATE TABLE IF NOT EXISTS user_social_network (
     display_name VARCHAR(60) NULL,
     PRIMARY KEY (network_name,id));
 
-
+CREATE TABLE IF NOT EXISTS user_session (
+    session_id VARCHAR(20) NOT NULL PRIMARY KEY, -- See Utils.SESSION_ID_LENGTH
+    user_id INTEGER NOT NULL REFERENCES user_info (user_id),
+    last_update TIMESTAMP WITH TIME ZONE NOT NULL
+);
 
 --
 CREATE TABLE IF NOT EXISTS training_type (

@@ -1,0 +1,14 @@
+# Not used despite https://quarkus.io/guides/config-yaml#profiles
+quarkus:
+  log:
+    min-level: ALL
+    level: ALL
+    category:
+      "io.quarkus":
+        level: ALL
+      "org.jboss":
+        level: ALL
+      "org.testcontainers":
+        level: ALL
+      "org.mpashka":
+        level: WARN

@@ -2,25 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:flutter_fe/ui/screen_config.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
-import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 
 import 'blocs/crud_training.dart';
 import 'blocs/crud_user.dart';
 import 'blocs/session.dart';
-import 'ui/screen_home.dart';
-import 'ui/screen_schedule.dart';
-import 'ui/screen_selector_user.dart';
-import 'ui/screen_trainings.dart';
-import 'ui/screen_init.dart';
-import 'ui/screen_master_user.dart';
-import 'ui/screen_master_trainings.dart';
-import 'ui/screen_purchases.dart';
-import 'ui/screen_tickets.dart';
-import 'ui/screen_login.dart';
 import 'misc/container.dart';
 import 'misc/initializer.dart';
 import 'ui/screen_about.dart';
-import 'ui/widgets/ui_selector_user.dart';
+import 'ui/screen_home.dart';
+import 'ui/screen_init.dart';
+import 'ui/screen_login.dart';
+import 'ui/screen_master_trainings.dart';
+import 'ui/screen_master_user.dart';
+import 'ui/screen_master_user_select.dart';
+import 'ui/screen_schedule.dart';
+import 'ui/screen_tickets.dart';
+import 'ui/screen_trainings.dart';
 
 void main() {
   var injector = Injector();
@@ -85,7 +82,7 @@ class MyApp extends StatelessWidget {
             // case '/purchases': return MaterialPageRoute(builder: (context) => ScreenPurchases());
             case ScreenMasterTrainings.routeName:
               return MaterialPageRoute(builder: (context) => ScreenMasterTrainings(initialTraining: settings.arguments as CrudEntityTraining?));
-            case ScreenSelectorUser.routeName: return MaterialPageRoute(builder: (context) => ScreenSelectorUser());
+            case ScreenMasterUserSelect.routeName: return MaterialPageRoute(builder: (context) => ScreenMasterUserSelect());
             case ScreenMasterUser.routeName:
               final user = settings.arguments as CrudEntityUser;
               return MaterialPageRoute(builder: (context) => ScreenMasterUser(user));

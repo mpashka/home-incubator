@@ -28,13 +28,13 @@ public class WebResourceVisit {
     DbCrudVisit dbVisit;
 
     @Inject
-    WebSessionService.RequestParameters requestParameters;
+    WebSessionService webSessionService;
 
     @GET
     @Path("byUser")
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<DbCrudVisit.EntityVisit[]> listByCurrentUser(@QueryParam("from") LocalDateTime from) {
-        return dbVisit.getByUser(requestParameters.getSession().getUserId(), from);
+        return dbVisit.getByUser(webSessionService.getUserId(), from);
     }
 
     @GET

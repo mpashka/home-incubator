@@ -45,11 +45,13 @@ public class WebResourceLogin {
     }
 
     /**
+     * @deprecated Now client is responsible for sending request to oidc and providing response callback
      * @return redirect to oidc provider login page
      */
     @GET
     @Path("init/{providerName}")
     @Produces(MediaType.TEXT_HTML)
+    @Deprecated
     public Response initLogin(@RestPath String providerName) {
         log.debug("Init login {}.", providerName);
         AuthProvider provider = authProviders.get(providerName);
@@ -58,7 +60,7 @@ public class WebResourceLogin {
         }
         return Response.status(Response.Status.FOUND)
                 .location(URI.create(provider.getAuthorizationEndpoint()
-                        .replace("<nonce>", Utils.generateRandomString(15))
+                        .replace("<nonce>", Utils.generateRandomString(15, Utils.RANDOM_CHARS))
                 ))
                 .build();
     }
@@ -118,31 +120,18 @@ public class WebResourceLogin {
                 .onItem().transformToUni(u -> authProvider.readUserInfo(loginState))
 //                .onFailure().transform(e -> new RuntimeException("Error parsing user info", e))
                 .onItem().invoke(loginState::setAuthUserInfo)
-                .onItem().transformToUni(u -> {
-                    switch (action) {
-                        case login: return userIdLogin(loginState);
-                        case link: return userIdLink(linkSession, loginState);
-                        default: throw new InternalException("Unknown action " + action);
-                    }
+                .onItem().transformToUni(u -> switch (action) {
+                    case login -> userIdLogin(loginState);
+                    case link -> userIdLink(linkSession, loginState);
                 })
                 .onItem().invoke(userId -> loginState.userId = userId)
                 .onItem().transformToUni(u -> saveImage(loginState))
-                .onItem().transform(imageId -> {
-                    WebSessionService.Session newSession;
-                    switch (action) {
-                        case login:
-                            newSession = webSessionService.createSession();
-                            newSession.setUserId(loginState.userId);
-                            break;
-
-                        case link:
-                            newSession = linkSession;
-                            break;
-                        default: throw new InternalException("Unknown action " + action);
-                    }
-
-                    return new LoginResult(newSession.getSessionId(), loginState.newUser ? "newUser" : "existing");
-                });
+                .onItem().transformToUni(imageId -> switch (action) {
+                    case login -> webSessionService.createSession(loginState.userId);
+                    case link -> Uni.createFrom().item(linkSession);
+                })
+                .onItem().invoke(session -> loginState.session = session)
+                .onItem().transform(u -> new LoginResult(loginState.session.getSessionId(), loginState.newUser ? "newUser" : "existing"));
     }
 
     /**
@@ -216,9 +205,9 @@ public class WebResourceLogin {
     @GET
     @Path("logout")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response logout() {
-        webSessionService.closeSession();
-        return Response.ok().build();
+    public Uni<Response> logout() {
+        return webSessionService.closeSession()
+                .onItem().transform(u -> Response.ok().build());
     }
 
     /**
@@ -251,6 +240,7 @@ public class WebResourceLogin {
     static class LoginState {
         private String token;
         private AuthProvider.UserInfo authUserInfo;
+        private WebSessionService.Session session;
         private int userId;
         /** true if this is new user, and we are adding him into db */
         private boolean newUser;

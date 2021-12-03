@@ -1,37 +1,41 @@
 package org.mpashka.totemftc.api;
 
-import io.quarkus.vertx.http.runtime.security.HttpAuthenticationMechanism;
-import org.jboss.resteasy.reactive.server.ServerRequestFilter;
+import io.quarkus.security.Authenticated;
+import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.context.RequestScoped;
 import javax.inject.Inject;
-import javax.inject.Singleton;
-import javax.ws.rs.container.ContainerRequestContext;
-import javax.ws.rs.container.ContainerRequestFilter;
-import javax.ws.rs.core.HttpHeaders;
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+/**
+ * todo check user access rights
+ */
 @ApplicationScoped
 public class WebSessionService {
 
     private static final Logger log = LoggerFactory.getLogger(WebSessionService.class);
 
-    private static final String USER_ID_ATTR = "login:userId";
-
-//    Executor executor = Infrastructure.getDefaultWorkerPool();
+    private static final int SESSION_TIMEOUT_DAYS = 60;
+    private static final int SESSION_ID_LENGTH = 20;
+    private static final int SESSION_UPDATE_HOURS = 24;
 
     private ConcurrentMap<String, Session> sessions = new ConcurrentHashMap<>();
 
     @Inject
     WebSessionService.RequestParameters requestParameters;
+
+    @Inject
+    DbUser dbUser;
 
     @RequestScoped
     RequestParameters requestParameters() {
@@ -39,32 +43,78 @@ public class WebSessionService {
     }
 
     public Session getSession() {
-        return requestParameters.session;
+        return requestParameters.getSession();
     }
 
-    public void closeSession() {
-        if (requestParameters.session != null) {
-            sessions.remove(requestParameters.session.sessionId);
+    public void setSession(Session session) {
+        requestParameters.setSession(session);
+    }
+
+    @Authenticated
+    public Uni<Void> closeSession() {
+        Session session = requestParameters.getSession();
+        if (session != null) {
+            sessions.remove(session.getSessionId());
             requestParameters.setSession(null);
+            return dbUser.deleteSession(session)
+                    .replaceWithVoid();
+        } else {
+            return Uni.createFrom().voidItem();
         }
+    }
+
+    public Uni<Session> fetchSession(String sessionId) {
+        Session session = sessions.get(sessionId);
+        if (session != null) {
+            if (session.getUserId() != null) {
+                if (session.getLastUpdate().isBefore(OffsetDateTime.now().minus(SESSION_UPDATE_HOURS, ChronoUnit.HOURS))) {
+                    session.update();
+                    log.debug("Session last update is too old. Updating...");
+                    return dbUser.updateSession(session)
+                            .onItem().transform(u -> session);
+                }
+                return Uni.createFrom().item(session);
+            } else {
+                log.warn("Broken session {}. User is null.", sessionId);
+                return dbUser.deleteSession(session)
+                        .replaceWith((Session) null);
+            }
+        }
+        return dbUser.getSession(sessionId)
+                .onItem().transformToUni(s -> {
+                    if (s == null) {
+                        return Uni.createFrom().nullItem();
+                    }
+                    Session prevSession = sessions.putIfAbsent(s.getSessionId(), s);
+                    if (prevSession != null) {
+                        return Uni.createFrom().item(prevSession);
+                    }
+                    s.update();
+                    return dbUser.updateSession(s)
+                            .onItem().transform(u -> s);
+                });
     }
 
     public Session getSession(String sessionId) {
         return sessions.get(sessionId);
     }
 
-//    public Uni<Session>
-
-    public Session removeSession(String sessionId) {
-        return sessions.remove(sessionId);
-    }
-
-    public Session createSession() {
-        String sessionId = Utils.generateRandomString(20);
-        Session session = new Session(sessionId);
+    public Uni<Session> createSession(int userId) {
+        String sessionId = Utils.generateRandomString(SESSION_ID_LENGTH, Utils.HTTP_VALUE_RANDOM_CHARS);
+        Session session = new Session(sessionId, userId, OffsetDateTime.now());
         requestParameters.setSession(session);
         sessions.put(sessionId, session);
-        return session;
+        return dbUser.createSession(session)
+                .onItem().transform(u -> session);
+    }
+
+    public Uni<Void> cleanupSessions() {
+        log.info("Cleanup old sessions");
+        OffsetDateTime minTime = OffsetDateTime.now().minus(SESSION_TIMEOUT_DAYS, ChronoUnit.DAYS);
+        sessions.values().removeIf(session -> session.getLastUpdate().isBefore(minTime));
+        return dbUser.cleanupSessions(minTime)
+                .onItem().invoke(i -> log.info("Cleaned up {} old sessions from db", i))
+                .replaceWithVoid();
     }
 
     public Integer getUserId() {
@@ -72,30 +122,47 @@ public class WebSessionService {
     }
 
     /**
-     * Used to ass
+     * Used to associate session with request
+     * @see WebSessionService#requestParameters
      */
-    public static class RequestParameters {
+    static class RequestParameters {
         private Session session;
 
         public Session getSession() {
             return session;
         }
 
-        public void setSession(Session session) {
+        void setSession(Session session) {
             this.session = session;
         }
     }
 
     public static class Session {
         private String sessionId;
+        private int userId;
+        private OffsetDateTime lastUpdate;
         private Map<String, Object> parameters = new HashMap<>();
 
-        public Session(String sessionId) {
+        public Session(String sessionId, int userId, OffsetDateTime lastUpdate) {
             this.sessionId = sessionId;
+            this.userId = userId;
+            this.lastUpdate = lastUpdate;
         }
 
         public String getSessionId() {
             return sessionId;
+        }
+
+        public Integer getUserId() {
+            return userId;
+        }
+
+        public OffsetDateTime getLastUpdate() {
+            return lastUpdate;
+        }
+
+        public void update() {
+            this.lastUpdate = OffsetDateTime.now();
         }
 
         public <T> T getParameter(String name) {
@@ -110,44 +177,14 @@ public class WebSessionService {
             parameters.put(name, value);
         }
 
-        public Integer getUserId() {
-            return getParameter(USER_ID_ATTR);
-        }
-
-        public void setUserId(int userId) {
-            setParameter(USER_ID_ATTR, userId);
-        }
-    }
-
-    /**
-     * Set session to request parameter.
-     * Is needed since {@link HttpAuthenticationMechanism} doesn't have access to request context
-     */
-    @Singleton
-    public static class MySecurityFilter implements ContainerRequestFilter {
-
-        private static final String AUTH_PREFIX = "bearer ";
-
-        @Inject
-        WebSessionService.RequestParameters requestParameters;
-
-        @Inject
-        WebSessionService webSessionService;
-
-        @ServerRequestFilter(preMatching = true)
-        public void filter(ContainerRequestContext requestContext) {
-            String auth = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
-            log.debug("Auth[{}]: {}", requestContext.getUriInfo().getRequestUri(), auth);
-            if (auth == null || !auth.toLowerCase().startsWith(AUTH_PREFIX)) {
-                return;
-            }
-            String sessionId = auth.substring(AUTH_PREFIX.length()).trim();
-            WebSessionService.Session session = webSessionService.getSession(sessionId);
-            log.debug("Session: {}", session);
-            if (session == null) {
-                return;
-            }
-            requestParameters.setSession(session);
+        @Override
+        public String toString() {
+            return "Session{" +
+                    "id='" + sessionId + '\'' +
+                    ", user='" + userId + '\'' +
+                    ", lastUpdate=" + lastUpdate +
+                    ", " + parameters +
+                    '}';
         }
     }
 }

@@ -227,5 +227,17 @@ public class DbCrudTicket {
             this.visited = row.getInteger("training_visits");
             return this;
         }
+
+        public LocalDate getStart() {
+            return start;
+        }
+
+        public LocalDate getEnd() {
+            return end;
+        }
+
+        public int getVisited() {
+            return visited;
+        }
     }
 }

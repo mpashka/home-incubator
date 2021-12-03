@@ -12,9 +12,8 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
+import 'screen_master_user_select.dart';
 import 'screen_schedule.dart';
-import 'screen_selector_user.dart';
-import 'widgets/ui_selector_user.dart';
 
 class MyDrawer extends StatelessWidget {
   static final Logger log = Logger('MyDrawer');
@@ -77,7 +76,7 @@ class MyDrawer extends StatelessWidget {
           ),
           if (trainer) ListTile(
             title: Text('Мои ученики'),
-            onTap: () => Navigator.pushNamed(context, ScreenSelectorUser.routeName,),
+            onTap: () => Navigator.pushNamed(context, ScreenMasterUserSelect.routeName,),
           ),
           if (trainer) ListTile(
             title: Text('Мое расписание'),

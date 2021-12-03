@@ -16,14 +16,19 @@ public class Utils {
     public static final DateTimeFormatter JSON_DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
 
 
-    private static final char[] RANDOM_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
+    public static final char[] RANDOM_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".toCharArray();
+    /**
+     * https://developers.cloudflare.com/rules/transform/request-header-modification/reference/header-format
+     * https://stackoverflow.com/questions/47687379/what-characters-are-allowed-in-http-header-values
+     */
+    public static final char[] HTTP_VALUE_RANDOM_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_:;.,\\/\"'?!(){}[]@<>=-+*#$&`|~^%".toCharArray();
     private static final Random random = new Random();
     private static final char[] HEX_ARRAY_UPPERCASE = "0123456789ABCDEF".toCharArray();
     private static final char[] HEX_ARRAY_LOWERCASE = "0123456789abcdef".toCharArray();
 
-    public static String generateRandomString(int length) {
-        return random.ints(length, 0, RANDOM_CHARS.length)
-                .collect(() -> new StringBuilder(length), (s, i) -> s.append(RANDOM_CHARS[i]), StringBuilder::append)
+    public static String generateRandomString(int length, char[] randomChars) {
+        return random.ints(length, 0, randomChars.length)
+                .collect(() -> new StringBuilder(length), (s, i) -> s.append(randomChars[i]), StringBuilder::append)
                 .toString();
     }
 

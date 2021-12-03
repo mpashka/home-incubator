@@ -37,11 +37,8 @@ class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
   }
 
   Future<void> markMaster(CrudEntityVisit visit, CrudEntityVisitMark mark) async {
-    log.finer('Mark master $visit -> $mark');
-    var savedVisits = visit.training?.visits;
-    visit.training?.visits = null;
+    log.finer('Mark master $visit -> $mark (${visit.user?.firstName})');
     await backend.request('PUT', '/api/visit/markMaster/${describeEnum(mark)}', body: visit);
-    visit.training?.visits = savedVisits;
     visit.markMaster = mark;
     _addAndUpdate(visit, (v) => v.markMaster = mark);
   }
@@ -51,7 +48,9 @@ class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
     var indexOf = state.indexOf(visit);
     if (indexOf >= 0) {
       apply(state[indexOf]);
+      log.finest('Visit was found. Updating $indexOf -> ${state[indexOf].user?.firstName}');
     } else {
+      log.finest('Visit was not found. Adding ${visit.user?.firstName}');
       state.add(visit);
       state.sort();
     }

@@ -28,7 +28,7 @@ public class WebResourceTicket {
     DbCrudTicket dbTicket;
 
     @Inject
-    WebSessionService.RequestParameters requestParameters;
+    WebSessionService webSessionService;
 
     @GET
     @Path("ticketTypes/list")
@@ -41,7 +41,7 @@ public class WebResourceTicket {
     @Path("tickets/byUser")
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<DbCrudTicket.EntityTicket[]> listTicketsByUser() {
-        return dbTicket.getTicketsByUser(requestParameters.getSession().getUserId());
+        return dbTicket.getTicketsByUser(webSessionService.getUserId());
     }
 
     @GET

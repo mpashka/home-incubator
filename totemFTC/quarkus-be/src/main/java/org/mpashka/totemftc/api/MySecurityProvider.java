@@ -21,6 +21,8 @@ import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.HttpHeaders;
 import java.security.Permission;
 import java.security.Principal;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
@@ -36,6 +38,8 @@ import java.util.Set;
 public class MySecurityProvider implements HttpAuthenticationMechanism {
 
     private static final Logger log = LoggerFactory.getLogger(MySecurityProvider.class);
+
+    private static final String AUTH_PREFIX = "bearer ";
 
     private static final String USER = "user";
     private static final Principal PRINCIPAL = () -> USER;
@@ -93,21 +97,14 @@ public class MySecurityProvider implements HttpAuthenticationMechanism {
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext context, IdentityProviderManager identityProviderManager) {
         String auth = context.request().getHeader(HttpHeaders.AUTHORIZATION);
-        log.debug("Auth[{}]: {}", context.request().uri(), auth);
-        if (auth == null || !auth.startsWith("Bearer ")) {
+        String sessionId = MySecurityProvider.extractSessionId(auth);
+        log.debug("Auth[{}]: {}, sessionId: {}", context.request().uri(), auth, sessionId);
+        if (sessionId == null) {
             return Uni.createFrom().optional(Optional.empty());
         }
-        WebSessionService.Session session = webSessionService.getSession(auth.substring(7));
-        log.debug("Session: {}", session);
-        if (session == null) {
-            return Uni.createFrom().optional(Optional.empty());
-        }
-        Integer userId = session.getUserId();
-        log.debug("UserId: {}", userId);
-        if (userId == null) {
-            return Uni.createFrom().optional(Optional.empty());
-        }
-        return Uni.createFrom().item(SECURE);
+        return webSessionService.fetchSession(sessionId)
+                .onItem().invoke(session -> log.debug("Session: {}", session))
+                .onItem().transform(session -> session != null ? SECURE : null);
     }
 
     @Override
@@ -127,5 +124,41 @@ public class MySecurityProvider implements HttpAuthenticationMechanism {
     public HttpCredentialTransport getCredentialTransport() {
         log.info("::getCredentialTransport");
         return new HttpCredentialTransport(HttpCredentialTransport.Type.AUTHORIZATION, "token");
+    }
+
+    private static String extractSessionId(String authHeader) {
+        if (authHeader == null || !authHeader.toLowerCase().startsWith(MySecurityProvider.AUTH_PREFIX)) {
+            return null;
+        }
+        String sessionId = authHeader.substring(MySecurityProvider.AUTH_PREFIX.length()).trim();
+        return sessionId;
+    }
+
+
+    /**
+     * Set session to request parameter.
+     * Is needed since {@link HttpAuthenticationMechanism} doesn't have access to request context
+     */
+    @Singleton
+    public static class MySecurityFilter implements ContainerRequestFilter {
+
+        @Inject
+        WebSessionService webSessionService;
+
+        @ServerRequestFilter(preMatching = true)
+        public void filter(ContainerRequestContext requestContext) {
+            String auth = requestContext.getHeaderString(HttpHeaders.AUTHORIZATION);
+            String sessionId = MySecurityProvider.extractSessionId(auth);
+            log.debug("Auth[{}]: {}, sessionId: {}", requestContext.getUriInfo().getRequestUri(), auth, sessionId);
+            if (sessionId == null) {
+                return;
+            }
+            WebSessionService.Session session = webSessionService.getSession(sessionId);
+            log.debug("    session: {}", session);
+            if (session == null) {
+                return;
+            }
+            webSessionService.setSession(session);
+        }
     }
 }

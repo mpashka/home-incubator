@@ -80,11 +80,12 @@ class ScreenMasterTrainingsState extends BlocProvider<ScreenMasterTrainings> {
         ],),),),
       ],),
       floatingActionButton: BlocProvider.streamBuilder<List<CrudEntityVisit>, TrainingVisitsBloc>(blocName: 'CrudVisitBloc', builder: (ctx, visits) {
+        final enabled = visitsBloc.selectedTraining != null && visitsBloc.selectedTraining!.time.isBefore(now);
         return FloatingActionButton(
-          onPressed: visitsBloc.selectedTraining == null ? null : () => addVisit(context, visitsBloc, visitsBloc.selectedTraining!),
+          onPressed: enabled ? () => addVisit(context, visitsBloc, visitsBloc.selectedTraining!) : null,
           tooltip: 'Add',
           child: Icon(Icons.add),
-          backgroundColor: visitsBloc.selectedTraining == null ? Colors.grey : theme.colorScheme.secondary,
+          backgroundColor: enabled ? theme.colorScheme.secondary : Colors.grey,
         );
       }),
     );

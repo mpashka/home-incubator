@@ -45,9 +45,9 @@ class CrudEntityTicket {
   CrudEntityUser? user;
   @JsonKey(fromJson: dateTimeFromJson, toJson: dateTimeToJson)
   DateTime buy;
-  @JsonKey(fromJson: dateFromJson_, toJson: dateTimeToJson_)
+  @JsonKey(fromJson: dateFromJson_, toJson: dateToJson_)
   DateTime? start;
-  @JsonKey(fromJson: dateFromJson_, toJson: dateTimeToJson_)
+  @JsonKey(fromJson: dateFromJson_, toJson: dateToJson_)
   DateTime? end;
   int visited;
   // added
