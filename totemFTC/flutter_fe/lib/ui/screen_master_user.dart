@@ -18,7 +18,6 @@ import 'widgets/ui_visit.dart';
 class ScreenMasterUser extends StatefulWidget {
 
   static const routeName = '/master_user';
-  static const backlogDays = 14;
   final CrudEntityUser _user;
 
   const ScreenMasterUser(this._user);
@@ -29,14 +28,22 @@ class ScreenMasterUser extends StatefulWidget {
 
 class ScreenMasterUserState extends BlocProvider<ScreenMasterUser> {
 
+  static const backlogDays = 14;
+  final DateTime now = DateTime.now();
+  late final DateTime start = now.subtract(const Duration(days: backlogDays));
+
   late final SelectedUserBloc selectedUserBloc;
+  late final SelectedTicketBloc selectedTicketBloc;
   late final UserVisitsBloc visitsBloc;
   @override
   void initState() {
     super.initState();
     selectedUserBloc = SelectedUserBloc(user: widget._user, provider: this);
-    UserTicketsBloc(selectedUserBloc, provider: this).loadUserTickets();
-    visitsBloc = UserVisitsBloc(selectedUserBloc, provider: this)
+    var ticketsBloc = UserTicketsBloc(selectedUserBloc, provider: this)..loadUserTickets();
+    selectedTicketBloc = SelectedTicketBloc(provider: this);
+    combine3<CrudEntityUser, CrudEntityTicket?, List<CrudEntityTicket>>('AllTicketsBloc', selectedUserBloc, selectedTicketBloc, ticketsBloc, listen2: true, listen3: true);
+
+    visitsBloc = UserVisitsBloc(start, selectedUserBloc, selectedTicketBloc, provider: this, name: 'CrudVisitBloc')
       ..loadUserVisits();
   }
 
@@ -54,7 +61,10 @@ class ScreenMasterUserState extends BlocProvider<ScreenMasterUser> {
         )
       ],),
       UiDivider('Абонементы'),
-      BlocProvider.streamBuilder<List<CrudEntityTicket>, UserTicketsBloc>(builder: (ctx, tickets) {
+      BlocProvider.streamBuilder<Combined3<CrudEntityUser, CrudEntityTicket?, List<CrudEntityTicket>>, BlocBaseState<Combined3<CrudEntityUser, CrudEntityTicket?, List<CrudEntityTicket>>>>(blocName: 'AllTicketsBloc', builder: (ctx, combined) {
+        var user = combined.state1;
+        var selectedTicket = combined.state2;
+        var tickets = combined.state3;
         if (tickets.isEmpty) {
           return Text('Нет абонементов');
         } else {
@@ -65,15 +75,17 @@ class ScreenMasterUserState extends BlocProvider<ScreenMasterUser> {
                   leading: Radio<CrudEntityTicket?>(
                     onChanged: null,
                     value: ticket,
-                    groupValue: visitsBloc.selectedTicket,
+                    groupValue: selectedTicket,
                   ),),
-                onTap: () => visitsBloc.selectedTicket = ticket != visitsBloc.selectedTicket ? ticket : null,
+                onTap: () => selectedTicketBloc.state = ticket != selectedTicket ? ticket : null,
               ),
+            if (selectedTicket == null) UiDivider('Посещения ${user.displayName} с ${localDateFormat.format(start)}')
+            else UiDivider("Все посещения по абонементу '${selectedTicket.ticketType.name}'"),
           ],);
         }
       }),
-      UiDivider('Посещения'),
-      Flexible(child: BlocProvider.streamBuilder<List<CrudEntityVisit>, UserVisitsBloc>(builder: (ctx, visits) {
+      Flexible(child: BlocProvider.streamBuilder<List<CrudEntityVisit>, UserVisitsBloc>(blocName: 'CrudVisitBloc', builder: (ctx, visits) {
+        log.fine('Visits: ${visits.length}');
         if (visits.isEmpty) {
           return Text('Нет посещений');
         } else {
@@ -93,9 +105,8 @@ class ScreenMasterUserState extends BlocProvider<ScreenMasterUser> {
 
   Future<void> _onAddTraining(BuildContext context, SelectedUserBloc selectedUserBloc, UserVisitsBloc visitsBloc) async {
     Session session = Injector().get<Session>();
-    DateTime now = DateTime.now();
     var training = await UiSelectorTrainingDialog(title: 'Отметить тренировку', dateRange: DateTimeRange(
-        start: now.subtract(Duration(days: ScreenMasterUser.backlogDays)),
+        start: start,
         end: now),
       trainingFilter: (training) => training.trainer == session.user,
     ).selectTraining(context);
@@ -119,36 +130,68 @@ class UserTicketsBloc extends BlocBaseList<CrudEntityTicket> {
   SelectedUserBloc selectedUserBloc;
 
   UserTicketsBloc(this.selectedUserBloc, {required BlocProvider provider, String? name}): super(provider: provider, name: name) {
-    selectedUserBloc.stateOut.forEach((user) => loadUserTickets);
+    // selectedUserBloc.stateOut.forEach((user) => loadUserTickets);
+    addDisposableSubscription(selectedUserBloc.stateOut.listen((u) => loadUserTickets, onError: (e,s) => log.warning('loadUserTickets(u).Error', e, s), onDone: () => log.fine('loadUserTickets(u).Done'), cancelOnError: false));
   }
 
   void loadUserTickets() async {
-    state = [];
-    state = (await backend.requestJson('GET', '/api/tickets/byUser/${selectedUserBloc.state.userId}') as List)
-        .map((item) => CrudEntityTicket.fromJson(item)..user = selectedUserBloc.state).toList();
+    var user = selectedUserBloc.state;
+
+    if (user.tickets == null) {
+      state = [];
+      user.tickets = (await backend.requestJson(
+              'GET', '/api/tickets/byUser/${user.userId}') as List)
+          .map((item) => CrudEntityTicket.fromJson(item)..user = user)
+          .toList();
+    }
+    state = user.tickets!;
   }
 }
 
-class UserVisitsBloc extends CrudVisitBloc {
-  SelectedUserBloc selectedUserBloc;
-  CrudEntityTicket? _selectedTicket;
+class SelectedTicketBloc extends BlocBaseState<CrudEntityTicket?> {
+  SelectedTicketBloc({required BlocProvider provider, String? name}): super(state: null, provider: provider, name: name);
+}
 
-  UserVisitsBloc(this.selectedUserBloc, {required BlocProvider provider, String? name}): super(provider: provider, name: name) {
-    selectedUserBloc.stateOut.forEach((user) => loadUserVisits);
+class UserVisitsBloc extends CrudVisitBloc {
+  DateTime start;
+  SelectedUserBloc selectedUserBloc;
+  SelectedTicketBloc selectedTicketBloc;
+
+  UserVisitsBloc(this.start, this.selectedUserBloc, this.selectedTicketBloc, {required BlocProvider provider, String? name}): super(provider: provider, name: name) {
+    addDisposableSubscription(selectedUserBloc.stateOut.listen((u) => loadUserVisits, onError: (e,s) => log.warning('loadUserVisits(u).Error', e, s), onDone: () => log.fine('loadUserVisits(u).Done'), cancelOnError: false));
+    // selectedTicketBloc.stateOut.forEach((user) => loadUserVisits);
+    addDisposableSubscription(selectedTicketBloc.stateOut.listen((t) => loadUserVisits(), onError: (e,s) => log.warning('loadUserVisits(t).Error', e, s), onDone: () => log.fine('loadUserVisits(t).Done'), cancelOnError: false));
   }
 
   void loadUserVisits() async {
-    state = [];
-    state = (await backend.requestJson('GET', _selectedTicket == null
-        ? '/api/visit/byUser/${selectedUserBloc.state.userId}'
-        : '/api/visit/byTicket/${_selectedTicket!.id}',
-        params: {'from': dateTimeFormat.format(DateTime.now().subtract(const Duration(days: ScreenMasterUser.backlogDays)))}) as List)
-        .map((item) => CrudEntityVisit.fromJson(item)..user = selectedUserBloc.state).toList();
-  }
+    log.finest('loadUserVisits()...');
+    var user = selectedUserBloc.state;
+    var ticket = selectedTicketBloc.state;
+    var params = {'from': dateTimeFormat.format(start)};
 
-  CrudEntityTicket? get selectedTicket => _selectedTicket;
-  set selectedTicket(CrudEntityTicket? selectedTicket) {
-    _selectedTicket = selectedTicket;
-    loadUserVisits();
+    if (ticket == null) {
+      log.finest('loadUserVisits(). No ticket. Loading user visits');
+      if (user.visits == null) {
+        state = [];
+        user.visits = (await backend.requestJson(
+                    'GET', '/api/visit/byUser/${user.userId}', params: params) as List)
+            .map((v) => CrudEntityVisit.fromJson(v)..user = user)
+            .toList();
+      }
+      state = user.visits!;
+    } else {
+      log.finest('loadUserVisits(). Loading ticket visits');
+      if (ticket.visits == null) {
+        state = [];
+        ticket.visits = (await backend.requestJson(
+            'GET', '/api/visit/byTicket/${ticket.id}', params: params) as List)
+            .map((v) =>
+        CrudEntityVisit.fromJson(v)
+          ..user = user
+          ..ticket = ticket).toList();
+      }
+      state = ticket.visits!;
+    }
+    log.fine('Visits: ${state.length}');
   }
 }

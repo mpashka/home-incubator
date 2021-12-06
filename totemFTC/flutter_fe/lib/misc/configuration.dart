@@ -7,21 +7,20 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 /*
-https://stackoverflow.com/questions/53811932/flutter-multiline-for-text
-https://flutter.dev/docs/development/ui/assets-and-images
-https://flutter.dev/docs/deployment/android (release)
-
 https://stackoverflow.com/questions/44250184/setting-environment-variables-in-flutter
  */
 class Configuration {
+
   Logger log = Logger('Configuration');
+
+  static const sessionIdParam = 'sessionId';
 
   var _doc;
   late SharedPreferences _prefs;
 
   /// Note: configuration is not proper place for sessionId. But. Just to avoid
   /// circular dependency between crud_api and session
-  String sessionId = '';
+  String _sessionId = '';
 
   Future<List> load() {
     try {
@@ -29,11 +28,21 @@ class Configuration {
       return Future.wait([
         SharedPreferences.getInstance().then((value) => _prefs = value),
         rootBundle.loadString('assets/config/config-dev.yaml').then((value) => _doc = loadYaml(value)),
-      ]);
+      ]).then((value) {
+        _sessionId = _prefs.getString(sessionIdParam) ?? '';
+        return value;
+      } ,onError: (e,s) => log.severe('Configuration load error', e, s));
     } catch (e) {
       log.warning('Error loading asset', e);
       rethrow;
     }
+  }
+
+  String get sessionId => _sessionId;
+
+  set sessionId(String sessionId) {
+    _prefs.setString(sessionIdParam, sessionId);
+    _sessionId = sessionId;
   }
 
   bool isWeb() {

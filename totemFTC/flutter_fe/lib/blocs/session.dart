@@ -81,7 +81,7 @@ class Session {
   }
 
   Future<void> logout(BuildContext context) async {
-    await _backend.request('GET', '/api/user');
+    await _backend.request('GET', '/api/login/logout');
     _configuration.sessionId = '';
     _user = emptyUser;
     Navigator.pushReplacementNamed(context, '/');

@@ -31,6 +31,7 @@ class ScreenMasterTrainings extends StatefulWidget {
 class ScreenMasterTrainingsState extends BlocProvider<ScreenMasterTrainings> {
   static final now = DateTime.now();
 
+  late final SelectedTrainingBloc selectedTrainingBloc;
   late final TrainingVisitsBloc visitsBloc;
 
   @override
@@ -39,8 +40,10 @@ class ScreenMasterTrainingsState extends BlocProvider<ScreenMasterTrainings> {
     var t = CrudTrainingBloc(provider: this, master: true)
       ..loadMasterTrainings(now.subtract(backMaster), now.add(forwardMaster));
     log.finest('Master trainings: ${t.state.length}');
-    visitsBloc = TrainingVisitsBloc(provider: this, name: 'CrudVisitBloc')
-      ..selectTraining(widget.initialTraining);
+    selectedTrainingBloc = SelectedTrainingBloc(state: widget.initialTraining, provider: this);
+    visitsBloc = TrainingVisitsBloc(selectedTrainingBloc, provider: this, name: 'CrudVisitBloc')
+      ..loadTrainingVisits();
+    combine2<CrudEntityTraining?, List<CrudEntityVisit>>('AllTrainingsBloc', selectedTrainingBloc, visitsBloc);
   }
 
 
@@ -60,29 +63,29 @@ class ScreenMasterTrainingsState extends BlocProvider<ScreenMasterTrainings> {
               color: theme.colorScheme.background.withAlpha(80),
             ),),
           ),
-          onSelectedItemChanged: (ctx, i, training) {
-            visitsBloc.selectTraining(training);
-          },
-          onSelectedTransformedItemChanged: (ctx, i, item) {
-            visitsBloc.selectTraining(null);
-          },
+          onSelectedItemChanged: (ctx, i, training) => selectedTrainingBloc.state = training,
+          onSelectedTransformedItemChanged: (ctx, i, item) => selectedTrainingBloc.state = null,
           selectedItem: widget.initialTraining ?? now,
           dataTransformer: addDates,
         ),
-        Expanded(child: BlocProvider.streamBuilder<List<CrudEntityVisit>, TrainingVisitsBloc>(blocName: 'CrudVisitBloc', builder: (ctx, visits) => Column(children: [
-          UiDivider(visitsBloc.selectedTraining == null ? null
-              : 'Посещения ${visitsBloc.selectedTraining?.trainingType.trainingName} ${localDateTimeFormat.format(visitsBloc.selectedTraining!.time)}'),
-          if (visitsBloc.selectedTraining == null) Text('Выберите тренировку')
-          else if (visits.isEmpty) Text('Никого не было')
-          else Expanded(child: ListView(children: [
-            for (var visit in visits) UiVisit(visit, forTrainer: true,),
-          ],),)
-        ],),),),
+        Expanded(child: BlocProvider.streamBuilder<Combined2<CrudEntityTraining?, List<CrudEntityVisit>>, BlocBaseState<Combined2<CrudEntityTraining?, List<CrudEntityVisit>>>>(blocName: 'AllTrainingsBloc', builder: (ctx, combined) {
+          CrudEntityTraining? selectedTraining = combined.state1;
+          List<CrudEntityVisit> visits = combined.state2;
+          return Column(children: [
+            UiDivider(selectedTraining == null ? null
+                : 'Посещения ${selectedTraining.trainingType.trainingName} ${localDateTimeFormat.format(selectedTraining.time)}'),
+            if (selectedTraining == null) Text('Выберите тренировку')
+            else if (visits.isEmpty) Text('Никого не было')
+            else Expanded(child: ListView(children: [
+                for (var visit in visits) UiVisit(visit, forTrainer: true,),
+              ],),)
+          ],);
+        }),),
       ],),
-      floatingActionButton: BlocProvider.streamBuilder<List<CrudEntityVisit>, TrainingVisitsBloc>(blocName: 'CrudVisitBloc', builder: (ctx, visits) {
-        final enabled = visitsBloc.selectedTraining != null && visitsBloc.selectedTraining!.time.isBefore(now);
+      floatingActionButton: BlocProvider.streamBuilder<CrudEntityTraining?, SelectedTrainingBloc>(blocName: 'CrudVisitBloc', builder: (ctx, selectedTraining) {
+        final enabled = selectedTraining != null && selectedTraining.time.isBefore(now);
         return FloatingActionButton(
-          onPressed: enabled ? () => addVisit(context, visitsBloc, visitsBloc.selectedTraining!) : null,
+          onPressed: enabled ? () => addVisit(context, visitsBloc, selectedTraining!) : null,
           tooltip: 'Add',
           child: Icon(Icons.add),
           backgroundColor: enabled ? theme.colorScheme.secondary : Colors.grey,
@@ -129,20 +132,31 @@ class ScreenMasterTrainingsState extends BlocProvider<ScreenMasterTrainings> {
   }
 }
 
+class SelectedTrainingBloc extends BlocBaseState<CrudEntityTraining?> {
+  SelectedTrainingBloc({CrudEntityTraining? state, required BlocProvider provider, String? name}): super(state: state, provider: provider, name: name);
+}
+
 class TrainingVisitsBloc extends CrudVisitBloc {
-  CrudEntityTraining? selectedTraining;
+  SelectedTrainingBloc selectedTrainingBloc;
 
-  TrainingVisitsBloc({required BlocProvider provider, String? name}): super(provider: provider, name: name);
+  TrainingVisitsBloc(this.selectedTrainingBloc, {required BlocProvider provider, String? name}): super(provider: provider, name: name) {
+    addDisposableSubscription(selectedTrainingBloc.stateOut.listen((u) => loadTrainingVisits, onError: (e,s) => log.warning('loadTrainingVisits().Error', e, s), onDone: () => log.fine('loadTrainingVisits().Done'), cancelOnError: false));
+  }
 
-  Future<void> selectTraining(CrudEntityTraining? training) async {
+  Future<void> loadTrainingVisits() async {
+    CrudEntityTraining? training = selectedTrainingBloc.state;
     if (training == null) {
       state = [];
-      selectedTraining = training;
       return;
     }
-    training.visits ??= (await backend.requestJson('GET', '/api/visit/byTraining/${training.id}') as List)
-        .map((item) => CrudEntityVisit.fromJson(item)..training = training).toList();
-    selectedTraining = training;
+    if (training.visits == null) {
+      state = [];
+      training.visits = (await backend.requestJson(
+          'GET', '/api/visit/byTraining/${training.id}') as List)
+          .map((item) =>
+      CrudEntityVisit.fromJson(item)
+        ..training = training).toList();
+    }
     state = training.visits!;
   }
 }

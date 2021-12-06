@@ -40,11 +40,15 @@ class CrudApi {
       if (auth) {
         request.headers['Authorization'] = 'Bearer ${_configuration.sessionId}';
       }
-    // Accept: application/json
+      // Accept: application/json
       var responseStream = await _httpClient.send(request);
       log.fine('Received streamed response: ${responseStream.statusCode}');
       http.Response response = await http.Response.fromStream(responseStream);
-      if (response.statusCode != 200 && response.statusCode != 204) {
+      if (response.statusCode == 403) {
+        // Forbidden. Clear session
+        _configuration.sessionId = '';
+        throw ApiException('Access denied', 'Please relogin');
+      } if (response.statusCode != 200 && response.statusCode != 204) {
         log.info('Backend error $method $apiUri ${response.statusCode}');
         log.finer(response.body);
         throw ApiException('Server error ${response.statusCode}', response.body);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_fe/misc/utils.dart';
 import 'package:intl/intl.dart';
 
 import '../../blocs/crud_ticket.dart';
@@ -6,7 +7,6 @@ import '../../blocs/crud_ticket.dart';
 @immutable
 class UiTicket extends StatelessWidget {
 
-  static final formatDateTime = DateFormat('yyyy-MM-dd HH:mm');
   static final formatDate = DateFormat('yyyy-MM-dd');
 
   final CrudEntityTicket _ticket;
@@ -32,7 +32,7 @@ class UiTicket extends StatelessWidget {
         child: ListTile(
           leading: leading,
           title: Text(_ticket.ticketType.name),
-          subtitle: Text('Покупка ${formatDateTime.format(_ticket.buy)} $dates'),
+          subtitle: Text('Покупка ${dateTimeFormat.format(_ticket.buy)} $dates'),
           trailing: Text('${_ticket.visited} из ${_ticket.ticketType.visits}', textScaleFactor: 2,),
         ),
     );

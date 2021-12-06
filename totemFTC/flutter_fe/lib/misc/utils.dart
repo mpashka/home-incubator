@@ -13,7 +13,7 @@ String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
 final dateFormat = DateFormat('yyyy-MM-dd');
 final dateTimeFormat = DateFormat('yyyy-MM-dd HH:mm');
 final localDateFormat = DateFormat('EEE, dd MMMM');
-final localDateTimeFormat = DateFormat('EEE,dd HH:mm');
+final localDateTimeFormat = DateFormat('EEE, dd MMM HH:mm');
 final timeFormat = DateFormat('HH:mm');
 final fullDateFormat = DateFormat('yyyy MMMM dd, EEEE');
 

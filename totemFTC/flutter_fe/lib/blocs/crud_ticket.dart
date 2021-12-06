@@ -50,7 +50,9 @@ class CrudEntityTicket {
   @JsonKey(fromJson: dateFromJson_, toJson: dateToJson_)
   DateTime? end;
   int visited;
+
   // added
+  @JsonKey(ignore: true)
   List<CrudEntityVisit>? visits;
 
   CrudEntityTicket({required this.id, required this.ticketType, required this.user, required this.buy, this.start, this.end, required this.visited});

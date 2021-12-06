@@ -47,7 +47,7 @@ abstract class BlocProvider<TWidget extends StatefulWidget> extends State<TWidge
       throw Exception('Internal error. Bloc <$name> not found}');
     }
     if (bloc is! T) {
-      throw Exception('Internal error. Bloc <$name> is not of type $name');
+      throw Exception('Internal error. Bloc <$name> is not of type ${typeOf<T>()} but ${bloc.runtimeType}');
     }
     return bloc;
   }
@@ -56,6 +56,7 @@ abstract class BlocProvider<TWidget extends StatefulWidget> extends State<TWidge
   // Static helpers
   //
 
+  // todo remove B, make name required, put bloc names into static constants
   static Widget streamBuilder<T, B extends BlocBaseState<T>>({required Widget Function(BuildContext context, T data) builder, String? blocName}) {
     return Builder(builder: (ctx) {
       var bloc = of(ctx).getBloc<B>(blocName);
@@ -80,6 +81,51 @@ abstract class BlocProvider<TWidget extends StatefulWidget> extends State<TWidge
   static T getProviderBloc<T extends BlocBase>(BuildContext context, {String? name}) {
     return of(context).getBloc<T>(name);
   }
+
+  BlocBaseState<Combined2<T1, T2>> combine2<T1, T2>(String name, b1d, b2d, {bool listen1=false, bool listen2=false}) {
+    BlocBaseState<T1> b1 = b1d;
+    BlocBaseState<T2> b2 = b2d;
+    var bloc = BlocBaseState(state: Combined2(b1.state, b2.state), provider: this, name: name);
+    if (listen1) {
+      StreamSubscription<T1> subscription1 = b1.stateOut.listen((v1) {
+        bloc.state = Combined2(v1, b2.state);
+      });
+      bloc.addDisposable(() => subscription1.cancel());
+    }
+    if (listen2) {
+      StreamSubscription<T2> subscription2 = b2.stateOut.listen((v2) {
+        bloc.state = Combined2(b1.state, v2);
+      });
+      bloc.addDisposable(() => subscription2.cancel());
+    }
+    return bloc;
+  }
+  
+  BlocBaseState<Combined3<T1, T2, T3>> combine3<T1, T2, T3>(String name, b1d, b2d, b3d, {bool listen1=false, bool listen2=false, bool listen3 = false}) {
+    BlocBaseState<T1> b1 = b1d;
+    BlocBaseState<T2> b2 = b2d;
+    BlocBaseState<T3> b3 = b3d;
+    var bloc = BlocBaseState(state: Combined3(b1.state, b2.state, b3.state), provider: this, name: name);
+    if (listen1) {
+      StreamSubscription<T1> subscription1 = b1.stateOut.listen((v1) {
+        bloc.state = Combined3(v1, b2.state, b3.state);
+      });
+      bloc.addDisposable(() => subscription1.cancel());
+    }
+    if (listen2) {
+      StreamSubscription<T2> subscription2 = b2.stateOut.listen((v2) {
+        bloc.state = Combined3(b1.state, v2, b3.state);
+      });
+      bloc.addDisposable(() => subscription2.cancel());
+    }
+    if (listen3) {
+      StreamSubscription<T3> subscription3 = b3.stateOut.listen((v3) {
+        bloc.state = Combined3(b1.state, b2.state, v3);
+      });
+      bloc.addDisposable(() => subscription3.cancel());
+    }
+    return bloc;
+  }
 }
 
 abstract class BlocBase {
@@ -101,6 +147,7 @@ class BlocBaseState<T> extends BlocBase {
   final StreamController<T> _streamController = StreamController<T>();
   late final Sink<T> stateIn;
   late final Stream<T> _stateOut;
+  late final List<void Function()> _disposables = [];
   T _state;
 
   BlocBaseState({required T state, required BlocProvider provider, String? name}): _state = state, super(provider: provider, name: name) {
@@ -118,6 +165,15 @@ class BlocBaseState<T> extends BlocBase {
   void dispose() {
     stateIn.close();
     _streamController.close();
+    _disposables.forEach((d) => d());
+  }
+
+  void addDisposable(void Function() dispose) {
+    _disposables.add(dispose);
+  }
+
+  void addDisposableSubscription(StreamSubscription subscription) {
+    addDisposable(() => subscription.cancel());
   }
 
   Stream<T> get stateOut {
@@ -128,9 +184,13 @@ class BlocBaseState<T> extends BlocBase {
   T get state => _state;
 
   set state(T state) {
-    _state = state;
-    stateIn.add(state);
-    log.fine('Update state: $state');
+    if (_state != state) {
+      _state = state;
+      stateIn.add(state);
+      log.fine('Update state: $state');
+    } else {
+      log.fine('State remains the same: $_state');
+    }
   }
 }
 
@@ -155,3 +215,18 @@ abstract class BlocBaseList<T> extends BlocBaseState<List<T>> {
 }
 
 typedef LoadFunction<T> = Future<List<T>> Function();
+
+class Combined2<T1, T2> {
+  T1 state1;
+  T2 state2;
+
+  Combined2(this.state1, this.state2);
+}
+
+class Combined3<T1, T2, T3> {
+  T1 state1;
+  T2 state2;
+  T3 state3;
+
+  Combined3(this.state1, this.state2, this.state3);
+}

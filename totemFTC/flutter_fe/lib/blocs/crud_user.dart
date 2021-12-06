@@ -5,6 +5,8 @@ import 'package:json_annotation/json_annotation.dart';
 
 import '../misc/utils.dart';
 import 'bloc_provider.dart';
+import 'crud_ticket.dart';
+import 'crud_visit.dart';
 import 'session.dart';
 
 part 'crud_user.g.dart';
@@ -54,6 +56,11 @@ class CrudEntityUser implements Comparable<CrudEntityUser> {
   List<CrudEntityUserPhone>? phones;
   List<CrudEntityUserEmail>? emails;
   List<CrudEntityUserImage>? images;
+
+  @JsonKey(ignore: true)
+  List<CrudEntityTicket>? tickets;
+  @JsonKey(ignore: true)
+  List<CrudEntityVisit>? visits;
 
   CrudEntityUser({
       required this.userId,

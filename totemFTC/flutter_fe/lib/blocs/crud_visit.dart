@@ -44,19 +44,17 @@ class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
   }
 
   void _addAndUpdate(CrudEntityVisit visit, void Function(CrudEntityVisit visit) apply) {
-    List<CrudEntityVisit> state = this.state;
     var indexOf = state.indexOf(visit);
     if (indexOf >= 0) {
+      log.finest('Visit was found. Updating [$indexOf] -> ${state[indexOf].user?.displayName}');
       apply(state[indexOf]);
-      log.finest('Visit was found. Updating $indexOf -> ${state[indexOf].user?.firstName}');
     } else {
-      log.finest('Visit was not found. Adding ${visit.user?.firstName}');
+      log.finest('Visit was not found. Add new ${visit.user?.firstName}');
       state.add(visit);
       state.sort();
     }
-    this.state = state;
+    stateIn.add(state);
   }
-
 }
 
 @JsonSerializable(explicitToJson: true)
