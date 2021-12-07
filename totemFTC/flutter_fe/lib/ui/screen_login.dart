@@ -75,7 +75,7 @@ class ScreenLoginState extends BlocProvider<ScreenLogin> {
         Column(children: [
           // Text('Login'),
           Image.asset(
-            'images/logo.png',
+            'assets/images/logo.png',
             fit: BoxFit.contain,
           ),
           Column(children: loginButtonColumns),

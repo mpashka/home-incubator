@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/crud_api.dart';
 import 'package:flutter_fe/blocs/session.dart';
+import 'package:flutter_fe/misc/utils.dart';
 import 'package:logging/logging.dart';
 import 'package:yaml/yaml.dart';
 import 'dart:async' show Future;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 
 /*
 https://stackoverflow.com/questions/44250184/setting-environment-variables-in-flutter
@@ -17,7 +18,7 @@ class Configuration {
 
   static const sessionIdParam = 'sessionId';
 
-  var _doc;
+  late final dynamic _doc;
   late SharedPreferences _prefs;
 
   /// Note: configuration is not proper place for sessionId. But. Just to avoid
@@ -29,7 +30,7 @@ class Configuration {
       WidgetsFlutterBinding.ensureInitialized();
       return Future.wait([
         SharedPreferences.getInstance().then((value) => _prefs = value),
-        rootBundle.loadString('assets/config/config-dev.yaml').then((value) => _doc = loadYaml(value)),
+        rootBundle.loadString('assets/config/config.yaml').then((value) => _doc = loadYaml(value)),
       ]).then((value) {
         _sessionId = _prefs.getString(sessionIdParam) ?? '';
         return value;
@@ -47,70 +48,83 @@ class Configuration {
     _sessionId = sessionId;
   }
 
-  bool isWeb() {
-    return kIsWeb;
-  }
+  bool get isWeb  => kIsWeb;
+  String get nativeStr => kIsWeb ? "web" : "native";
+  String get prodStr => kReleaseMode ? "prod" : "dev";
 
-  /// Client id used to select appropriate configuration on
-  /// backend
+  /// Client id used to select appropriate configuration on backend
   String clientId() {
-    return 'flutter-${isWeb() ? "web" : "native"}-${_doc['config']}';
+    return 'flutter-$nativeStr-$prodStr';
   }
 
   String backendUrl() {
-    return _doc['backendUrl'];
+    return doc(['backendUrl']);
   }
 
-  /// OIDC provider client id
+  /// OIDC provider config - client id + warning
   ConfigurationLoginProvider loginProviderConfig(LoginProvider loginProvider) {
-    final config = _doc['oidc']['providers'][loginProvider.name];
+    var name = loginProvider.name;
+    final config = _doc['oidc']['providers'][name];
     // if (config == null) throw ApiException('Internal error', 'Login provider ${loginProvider.name} config not found');
-    if (config == null) return ConfigurationLoginProvider(clientId: '', error: 'Provider ${loginProvider.name} config not found');
-    return ConfigurationLoginProvider(clientId: config['clientId'] ?? '',
-      error: loginProviderErrorText(config['error'], loginProvider),
-      warning: loginProviderErrorText(config['warning'], loginProvider),
+    if (config == null) return ConfigurationLoginProvider(clientId: '', error: 'Provider ${name} config not found');
+    return ConfigurationLoginProvider(clientId: (doc(['oidc', 'providers', name, 'clientId']) ?? '').toString(),
+      error: loginProviderErrorText(doc(['oidc', 'providers', name, 'error']), loginProvider),
+      warning: loginProviderErrorText(doc(['oidc', 'providers', name, 'warning']), loginProvider),
     );
   }
 
   String? loginProviderErrorText(String? key, LoginProvider loginProvider) {
     if (key == null) return null;
-    final text = _doc['oidc']['warnings'][key];
+    final text = doc(['oidc', 'warnings', key]);
     return text.replaceAll('\${provider}', loginProvider.name);
   }
 
-  String loginProviderClientId(String provider) {
-    return _doc['oidc']['providers'][provider]['clientId'];
-  }
-
   String loginRedirectUrl() {
-    return _doc['oidc'][kIsWeb ? 'redirectUrlWeb' : 'redirectUrl'];
+    return doc(['oidc', 'redirectUrl']);
   }
 
   String devTelegram() {
-    return _doc['contacts']['dev']['telegram'];
+    return doc(['contacts', 'dev', 'telegram']);
   }
 
   String devPhone() {
-    return _doc['contacts']['dev']['phone'];
+    return doc(['contacts', 'dev', 'phone']);
   }
 
   String masterTelegram() {
-    return _doc['contacts']['master']['telegram'];
+    return doc(['contacts', 'master', 'telegram']);
   }
 
   String masterPhone() {
-    return _doc['contacts']['master']['phone'];
+    return doc(['contacts', 'master', 'phone']);
   }
 
   String masterPhoneUi() {
-    return _doc['contacts']['master']['phoneUi'];
+    return doc(['contacts', 'master', 'phoneUi']);
   }
 
   String masterEmail() {
-    return _doc['contacts']['master']['email'];
+    return doc(['contacts', 'master', 'email']);
   }
 
-  dynamic get doc => _doc;
+  dynamic doc(List<String> path) {
+    return docPlain(['_${prodStr}_$nativeStr' ,...path])
+        ?? docPlain(['_$prodStr' ,...path])
+        ?? docPlain(['_$nativeStr' ,...path])
+        ?? docPlain(path);
+  }
+
+  dynamic docPlain(List<String> path) {
+    var part = _doc;
+    for (var p in path) {
+      part = part[p];
+      if (part == null) return null;
+    }
+    return part;
+  }
+
+
+
 }
 
 class ConfigurationLoginProvider {

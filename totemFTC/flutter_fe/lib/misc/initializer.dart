@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:developer' as developer;
-import 'dart:io';
 
 import 'package:flutter_fe/blocs/session.dart';
-import 'package:logging/logging.dart';
-import 'package:flutter_web_plugins/flutter_web_plugins.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
+import 'package:logging/logging.dart';
 
 import '../misc/configuration.dart';
+import 'init_helper.dart' if (dart.library.js) 'init_helper_js.dart' as init_helper;
 
 
 class Initializer {
@@ -17,6 +16,7 @@ class Initializer {
   Session _session;
   final completer = Completer<void>();
   late final Future<void> future = completer.future;
+  bool isInitialized = false;
 
   Initializer(Injector injector):
         _configuration = injector.get<Configuration>(),
@@ -38,10 +38,8 @@ class Initializer {
     });
     log.info('Logger configured. Application initializing...');
 
-    if (_configuration.isWeb()) {
-      setUrlStrategy(PathUrlStrategy()); //  HashUrlStrategy
-    }
-
+    init_helper.initPlatformSpecific();
+    
     try {
       await _configuration.load();
       // todo configure logging
@@ -51,14 +49,11 @@ class Initializer {
         await _session.loadUser();
       }
       completer.complete();
+      isInitialized = true;
     } catch (e, s) {
       log.severe('Error loading configuration', e, s);
       _configuration.sessionId = '';
       completer.completeError(e, s);
     }
-  }
-
-  bool isInitialized() {
-    return completer.isCompleted;
   }
 }

@@ -2,7 +2,7 @@
 import 'dart:js' as js;
 import 'package:logging/logging.dart';
 
-final Logger log = Logger('login_helper');
+final Logger log = Logger('login_helper_js');
 
 void showLoginWindow(String url, void Function(String loginParams) onLoginCallback) {
   JsLoginWindow(onLoginCallback).showLoginWindow(url);

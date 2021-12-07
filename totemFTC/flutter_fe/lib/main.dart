@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
       onGenerateRoute: (settings) {
         log.info('New route received: $settings');
 
-        if (!initializer.isInitialized()) {
+        if (!initializer.isInitialized) {
           log.finer('Not initialized. Show ScreenInit');
           return MaterialPageRoute(builder: (context) => ScreenInit());
         }
@@ -91,12 +91,6 @@ class MyApp extends StatelessWidget {
         }
       },
     );
-  }
-
-  showInitScreen(Initializer initializer) {
-    var s = initializer.isInitialized() ? '/login' : '/init';
-    log.finer('Start from screen: $s');
-    return s;
   }
 }
 
