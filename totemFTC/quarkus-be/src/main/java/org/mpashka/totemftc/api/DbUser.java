@@ -67,11 +67,13 @@ public class DbUser {
                 "   LEFT OUTER JOIN (SELECT user_id, array_agg(row_to_json(sn.*)) AS social_networks FROM user_social_network sn GROUP BY user_id) sn ON u.user_id = sn.user_id " +
                 "   LEFT OUTER JOIN (SELECT user_id, array_agg(row_to_json(e.*)) AS emails FROM user_email e GROUP BY user_id) e ON u.user_id = e.user_id " +
                 "   LEFT OUTER JOIN (SELECT user_id, array_agg(row_to_json(p.*)) AS phones FROM user_phone p GROUP BY user_id) p ON u.user_id = p.user_id " +
-                "   LEFT OUTER JOIN (SELECT user_id, array_agg(json_build_object('image_id', i.image_id, 'content_type', i.content_type)) AS images FROM user_image i GROUP BY user_id) i ON u.user_id = i.user_id";
-        selectUsers = client.preparedQuery(selectUserSql);
+                "   LEFT OUTER JOIN (SELECT user_id, array_agg(json_build_object('image_id', i.image_id, 'content_type', i.content_type)) AS images FROM user_image i GROUP BY user_id) i ON u.user_id = i.user_id ";
+        selectUsers = client.preparedQuery(selectUserSql +
+                "ORDER BY u.last_name, u.first_name, u.nick_name, u.user_id ");
         selectTrainers = client.preparedQuery(selectUserSql +
-                " WHERE cardinality(u.user_training_types) > 0" +
-                "   AND u.user_type IN ('trainer', 'admin') ");
+                "WHERE cardinality(u.user_training_types) > 0 " +
+                "   AND u.user_type IN ('trainer', 'admin') " +
+                "ORDER BY u.last_name, u.first_name, u.nick_name, u.user_id ");
         selectUser = client.preparedQuery("SELECT * " +
                 " FROM user_info u, " +
                 "   (SELECT array_agg(row_to_json(sn.*)) AS social_networks FROM user_social_network sn WHERE user_id = $1) sn, " +

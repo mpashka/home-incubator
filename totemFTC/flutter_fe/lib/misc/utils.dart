@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:developer' as developer;
 
 import 'package:flutter/material.dart';
+import 'package:flutter_fe/blocs/crud_training.dart';
 import 'package:intl/intl.dart';
 
 const _chars = 'AaBbCcDdEeFfGgHhIiJjKkLlMmNnOoPpQqRrSsTtUuVvWwXxYyZz1234567890';
@@ -12,7 +13,7 @@ String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
 
 final dateFormat = DateFormat('yyyy-MM-dd');
 final dateTimeFormat = DateFormat('yyyy-MM-dd HH:mm');
-final localDateFormat = DateFormat('EEE, dd MMMM');
+final localDateFormat = DateFormat('EEE, dd MMM');
 final localDateTimeFormat = DateFormat('EEE, dd MMM HH:mm');
 final timeFormat = DateFormat('HH:mm');
 final fullDateFormat = DateFormat('yyyy MMMM dd, EEEE');
@@ -29,6 +30,30 @@ int compareId(int result, int aId, int bId) {
   if (result != 0) return result;
   if (aId == bId) return 0;
   return aId > bId ? 1 : -1;
+}
+
+List addDates(List<CrudEntityTraining> trainings, DateTime now) {
+  List result = [];
+  bool nowAdded = false;
+  void addNow(DateTime date) {
+    if (!nowAdded && date.isAfter(now)) {
+      result.add(now);
+      nowAdded = true;
+    }
+  }
+  DateTime prevDate = DateTime(0);
+  for (var training in trainings) {
+    DateTime newDate = training.time.dayDate();
+    addNow(newDate);
+    if (newDate.isAfter(prevDate)) {
+      result.add(newDate);
+    }
+    addNow(training.time);
+    prevDate = newDate;
+    result.add(training);
+  }
+  addNow(DateTime(3000));  // No futurama support
+  return result;
 }
 
 extension DateTimeFactory on DateTime {

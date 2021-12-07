@@ -82,7 +82,7 @@ abstract class BlocProvider<TWidget extends StatefulWidget> extends State<TWidge
     return of(context).getBloc<T>(name);
   }
 
-  BlocBaseState<Combined2<T1, T2>> combine2<T1, T2>(String name, b1d, b2d, {bool listen1=false, bool listen2=false}) {
+  BlocBaseState<Combined2<T1, T2>> combine2<T1, T2>(String name, b1d, b2d, {bool listen1=true, bool listen2=true}) {
     BlocBaseState<T1> b1 = b1d;
     BlocBaseState<T2> b2 = b2d;
     var bloc = BlocBaseState(state: Combined2(b1.state, b2.state), provider: this, name: name);
@@ -101,7 +101,7 @@ abstract class BlocProvider<TWidget extends StatefulWidget> extends State<TWidge
     return bloc;
   }
   
-  BlocBaseState<Combined3<T1, T2, T3>> combine3<T1, T2, T3>(String name, b1d, b2d, b3d, {bool listen1=false, bool listen2=false, bool listen3 = false}) {
+  BlocBaseState<Combined3<T1, T2, T3>> combine3<T1, T2, T3>(String name, b1d, b2d, b3d, {bool listen1=true, bool listen2=true, bool listen3=true}) {
     BlocBaseState<T1> b1 = b1d;
     BlocBaseState<T2> b2 = b2d;
     BlocBaseState<T3> b3 = b3d;
@@ -190,6 +190,16 @@ class BlocBaseState<T> extends BlocBase {
       log.fine('Update state: $state');
     } else {
       log.fine('State remains the same: $_state');
+    }
+  }
+
+  void listen(void Function(T event)? onData) {
+    if (onData != null) {
+      StreamSubscription<T> subscription = stateOut.listen(
+          onData, onError: (e, s) => log.warning('listen().Error', e, s),
+          onDone: () => log.fine('listen().Done'),
+          cancelOnError: false);
+      _disposables.add(() => subscription.cancel());
     }
   }
 }

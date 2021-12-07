@@ -205,10 +205,14 @@ class UiCalendarState extends State<UiCalendar> {
         selectionRadius = BorderRadius.only(topLeft: selectionRadiusConst, topRight: column == widgetColumns-1 ? selectionRadiusConst : Radius.zero);
       } else if (widgetIndex == _selectionIndexEnd) {
         selectionRadius = BorderRadius.only(bottomRight: selectionRadiusConst);
+      } else if (column == 0 && firstLine && lastLine) {
+        selectionRadius = BorderRadius.only(topLeft: selectionRadiusConst, bottomLeft: selectionRadiusConst);
       } else if (column == 0 && firstLine) {
         selectionRadius = BorderRadius.only(topLeft: selectionRadiusConst);
       } else if (column == 0 && lastLine) {
         selectionRadius = BorderRadius.only(bottomLeft: selectionRadiusConst);
+      } else if (column == widgetColumns-1 && firstLine && lastLine) {
+        selectionRadius = BorderRadius.only(topRight: selectionRadiusConst, bottomRight: selectionRadiusConst);
       } else if (column == widgetColumns-1 && firstLine) {
         selectionRadius = BorderRadius.only(topRight: selectionRadiusConst);
       } else if (column == widgetColumns-1 && lastLine) {
@@ -227,15 +231,6 @@ class UiCalendarState extends State<UiCalendar> {
         ),
         width: width,
         height: height,
-      ),
-      GestureDetector(child: Container(
-        alignment: Alignment.center,
-        child: text != null ? Text(text/*, textAlign: TextAlign.center,*/) : null,
-        constraints: BoxConstraints(minHeight: height,),
-        decoration: column % 2 == 0 || noDecoration ? null : BoxDecoration(color: Colors.grey.shade500.withAlpha(50)),
-      ),
-        behavior: HitTestBehavior.opaque,
-        onTap: onTap,
       ),
       if (training) Positioned(bottom: 0, left: max(0, width / 2 - (text == null ? 0 : text.length * charWidth / 2 + charWidth)),
         child: Icon(Icons.circle, size: 7),
@@ -261,6 +256,15 @@ class UiCalendarState extends State<UiCalendar> {
             height: height+1,
             width: lineWidth,
           )),
+      GestureDetector(child: Container(
+        alignment: Alignment.center,
+        child: text != null ? Text(text/*, textAlign: TextAlign.center,*/) : null,
+        constraints: BoxConstraints(minHeight: height,),
+        decoration: column % 2 == 0 || noDecoration ? null : BoxDecoration(color: Colors.grey.shade500.withAlpha(50)),
+      ),
+        behavior: HitTestBehavior.opaque,
+        onTap: onTap,
+      ),
     ],));
   }
 

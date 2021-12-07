@@ -31,7 +31,7 @@ public class WebResourceVisit {
     WebSessionService webSessionService;
 
     @GET
-    @Path("byUser")
+    @Path("byCurrentUser")
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<DbCrudVisit.EntityVisit[]> listByCurrentUser(@QueryParam("from") LocalDateTime from) {
         return dbVisit.getByUser(webSessionService.getUserId(), from);

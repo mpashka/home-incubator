@@ -18,26 +18,30 @@ class CrudTrainingBloc extends BlocBaseList<CrudEntityTraining> {
   CrudTrainingBloc({List<CrudEntityTraining> state = const [], required BlocProvider provider, String? name, bool master = false}): super(provider: provider, state: state, name: name);
 
   void loadTrainings(DateTime from, DateTime to) async {
-    state = await cache('user_${dateFormat.format(from)}_${dateFormat.format(to)}', () async =>
+    state = await cache('user_${dateTimeFormat.format(from)}_${dateTimeFormat.format(to)}', () async =>
         (await backend.requestJson('GET', '/api/userTraining/byDateInterval', params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
             .map((item) => CrudEntityTraining.fromJson(item)).toList());
   }
 
   void loadMasterTrainings(DateTime from, DateTime to) async {
-    state = await cache('trainer_${dateFormat.format(from)}_${dateFormat.format(to)}', () async =>
+    state = await cache('trainer_${dateTimeFormat.format(from)}_${dateTimeFormat.format(to)}', () async =>
         (await backend.requestJson('GET', '/api/masterTraining/byDateInterval', params: {'from': dateTimeFormat.format(from), 'to': dateTimeFormat.format(to)}) as List)
             .map((item) => CrudEntityTraining.fromJson(item)..trainer = session.user).toList());
   }
 }
 
+class SelectedTrainingBloc extends BlocBaseState<CrudEntityTraining?> {
+  SelectedTrainingBloc({CrudEntityTraining? state, required BlocProvider provider, String? name}): super(state: state, provider: provider, name: name);
+}
+
 // class CrudTrainingTypeBloc extends BlocBaseList<CrudEntityTrainingType> {}
 
 class CrudTrainingTypeFilteredBloc extends BlocBaseList<CrudEntityTrainingType> {
-  final CrudTrainingBloc _crudTrainingBloc;
+  final CrudTrainingBloc visibleTrainingBloc;
+  final SelectedTrainingBloc selectedTrainingBloc;
   List<CrudEntityTraining> _allTrainings = [];
-  CrudEntityTraining? selectedTraining;
 
-  CrudTrainingTypeFilteredBloc(this._crudTrainingBloc, {List<CrudEntityTrainingType> state = const [], required BlocProvider provider, String? name}): super(provider: provider, state: state, name: name);
+  CrudTrainingTypeFilteredBloc({required this.visibleTrainingBloc, required this.selectedTrainingBloc, List<CrudEntityTrainingType> state = const [], required BlocProvider provider, String? name}): super(provider: provider, state: state, name: name);
 
   Future<void> loadTrainings({List<CrudEntityTrainingType>? types, DateTimeRange? dateRange, DateFilterInfo? dateFilter, TrainingFilter? trainingFilter}) async {
     if (dateRange == null && dateFilter == null) {
@@ -46,7 +50,7 @@ class CrudTrainingTypeFilteredBloc extends BlocBaseList<CrudEntityTrainingType> 
     dateRange ??= dateFilter?.range;
 
     Iterable<CrudEntityTraining> loaded = (await backend.requestJson('GET', '/api/userTraining/byDateInterval', params: {
-      'from': dateTimeFormat.format(dateRange!.start), 'to': dateTimeFormat.format(dateRange.end)}) as List)
+      'from': dateTimeFormat.format(dateRange!.start), 'to': dateTimeFormat.format(dateRange!.end)}) as List)
         .map((item) => CrudEntityTraining.fromJson(item));
     if (dateFilter != null) {
       loaded = loaded.where((t) => dateFilter.filter(t.time));
@@ -75,8 +79,9 @@ class CrudTrainingTypeFilteredBloc extends BlocBaseList<CrudEntityTrainingType> 
         trainings.add(training);
       }
     });
-    _crudTrainingBloc.state = trainings;
-    selectedTraining = trainings.isNotEmpty ? trainings[0] : null;
+    visibleTrainingBloc.state = trainings;
+    selectedTrainingBloc.state = null;
+    // selectedTrainingBloc.state = trainings.isNotEmpty ? trainings[0] : null;
   }
 }
 

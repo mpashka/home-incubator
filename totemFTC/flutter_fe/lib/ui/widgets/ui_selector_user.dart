@@ -1,14 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
-import 'package:flutter_fe/blocs/crud_training.dart';
 import 'package:flutter_fe/blocs/crud_user.dart';
-import 'package:flutter_fe/misc/utils.dart';
-import 'package:flutter_fe/ui/screen_base.dart';
-import 'package:intl/intl.dart';
 
-import '../screen_master_user.dart';
 import 'ui_user.dart';
-import 'wheel_list_selector.dart';
 
 
 class UiSelectorUserDialog extends StatefulWidget {

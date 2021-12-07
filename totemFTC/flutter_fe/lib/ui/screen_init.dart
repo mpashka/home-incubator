@@ -27,6 +27,14 @@ class ScreenInitState extends State<ScreenInit> {
     initializer.future.then((value) {
       log.finer('Init completed. Redirect to login');
       Navigator.pushReplacementNamed(context, '/login');
+    }, onError: (e) {
+      showDialog(context: context, builder: (context) => SimpleDialog(
+        title: Text("Application initialization error"),
+        children: [
+          Text(e.toString()),
+          SimpleDialogOption(child: Text('Ok')),
+        ],
+      )).whenComplete(() => Navigator.pushReplacementNamed(context, '/init'));
     });
   }
 
@@ -41,8 +49,8 @@ class ScreenInitState extends State<ScreenInit> {
     return Scaffold(
         appBar: AppBar(title: const Text('Totem FC'),),
         body: Column(children: const [
-          CircularProgressIndicator(),
-          Text('Application initializing')
+          Text('Please wait. Application initializing...'),
+          Center(child: CircularProgressIndicator()),
         ])
     );
   }

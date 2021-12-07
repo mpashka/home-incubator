@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_fe/blocs/crud_api.dart';
+import 'package:flutter_fe/blocs/session.dart';
 import 'package:logging/logging.dart';
 import 'package:yaml/yaml.dart';
 import 'dart:async' show Future;
@@ -60,6 +62,22 @@ class Configuration {
   }
 
   /// OIDC provider client id
+  ConfigurationLoginProvider loginProviderConfig(LoginProvider loginProvider) {
+    final config = _doc['oidc']['providers'][loginProvider.name];
+    // if (config == null) throw ApiException('Internal error', 'Login provider ${loginProvider.name} config not found');
+    if (config == null) return ConfigurationLoginProvider(clientId: '', error: 'Provider ${loginProvider.name} config not found');
+    return ConfigurationLoginProvider(clientId: config['clientId'] ?? '',
+      error: loginProviderErrorText(config['error'], loginProvider),
+      warning: loginProviderErrorText(config['warning'], loginProvider),
+    );
+  }
+
+  String? loginProviderErrorText(String? key, LoginProvider loginProvider) {
+    if (key == null) return null;
+    final text = _doc['oidc']['warnings'][key];
+    return text.replaceAll('\${provider}', loginProvider.name);
+  }
+
   String loginProviderClientId(String provider) {
     return _doc['oidc']['providers'][provider]['clientId'];
   }
@@ -93,4 +111,12 @@ class Configuration {
   }
 
   dynamic get doc => _doc;
+}
+
+class ConfigurationLoginProvider {
+  String clientId;
+  String? error;
+  String? warning;
+
+  ConfigurationLoginProvider({required this.clientId, this.error, this.warning});
 }

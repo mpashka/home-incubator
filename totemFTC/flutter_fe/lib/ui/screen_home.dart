@@ -13,7 +13,7 @@ import 'package:logging/logging.dart';
 import '../blocs/crud_ticket.dart';
 import 'drawer.dart';
 import 'screen_base.dart';
-import 'widgets/wheel_list_selector.dart';
+import 'widgets/ui_wheel_list_selector.dart';
 import 'widgets/ui_visit.dart';
 import 'widgets/ui_divider.dart';
 import 'widgets/ui_ticket.dart';
@@ -33,9 +33,10 @@ class ScreenHomeState extends BlocProvider<ScreenHome> {
   @override
   void initState() {
     super.initState();
-    CrudTicketBloc(provider: this).loadTickets();
-    visitBloc = CrudVisitBloc(provider: this)
-      ..loadVisits(DateTime.now().subtract(const Duration(days: 14)), 10);
+    var ticketBloc = CrudTicketBloc(provider: this)
+      ..loadTickets();
+    visitBloc = CrudVisitBloc(start: DateTime.now().subtract(const Duration(days: 14)), ticketBloc: ticketBloc, provider: this)
+      ..loadCurrentUserVisits();
   }
 
   @override
@@ -106,8 +107,8 @@ class ScreenHomeState extends BlocProvider<ScreenHome> {
   Future<void> _onAddTraining(BuildContext context, bool past) async {
     DateTime now = DateTime.now();
     var result = await UiSelectorTrainingDialog(title: 'Выберите тренировку', dateRange: DateTimeRange(
-        start: now.subtract(Duration(days: past ? 4 : 0)),
-        end: now.add(Duration(days: past ? 4 : 0)))
+        start: now.subtract(Duration(days: past ? 7 : 0)),
+        end: now.add(Duration(days: past ? 0 : 7)))
     ).selectTraining(context);
     log.finer("Dialog result: $result");
     if (result != null) {

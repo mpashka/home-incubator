@@ -10,12 +10,6 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 import '../misc/configuration.dart';
 
 
-/**
-    todo async initialization must be handled properly - e.g. show splash screen
-    https://flutter.dev/docs/development/ui/advanced/splash-screen
-    Also https://stefangaller.at/app-development/flutter/initialization-splash/ - FutureBuilder
-
- */
 class Initializer {
   Logger log = Logger('Initializer');
 
@@ -32,7 +26,7 @@ class Initializer {
     Logger.root.level = Level.ALL;
     Logger.root.onRecord.listen((record) {
       developer.log(record.message, time: record.time, sequenceNumber: record.sequenceNumber, level: record.level.value,
-          name: record.loggerName, zone: record.zone, error: record.error, stackTrace: record.stackTrace);
+          name: '${record.time} ${record.loggerName}', zone: record.zone, error: record.error, stackTrace: record.stackTrace);
       if (record.error != null) {
         developer.log('Error: ${record.error}', time: record.time, sequenceNumber: record.sequenceNumber, level: record.level.value,
           name: record.loggerName, zone: record.zone);

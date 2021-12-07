@@ -3,6 +3,8 @@ import 'dart:core';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
+import 'package:flutter_fe/ui/screen_master_trainings.dart';
+import 'package:flutter_fe/ui/screen_master_user.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import '../misc/utils.dart';
@@ -14,36 +16,93 @@ part 'crud_visit.g.dart';
 
 // todo in mark*** methods we must take care about returning ticket
 class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
+  final DateTime? start;
+  final SelectedUserBloc? selectedUserBloc;
+  final SelectedTicketBloc? selectedTicketBloc;
+  final SelectedTrainingBloc? selectedTrainingBloc;
+  final CrudTicketBloc? ticketBloc;
+  late final Map<String, dynamic> params;
 
-  CrudVisitBloc({List<CrudEntityVisit> state = const [], required BlocProvider provider, String? name}): super(state: state, provider: provider, name: name);
+  CrudVisitBloc({this.start, this.selectedUserBloc, this.selectedTicketBloc, this.selectedTrainingBloc, this.ticketBloc,
+      List<CrudEntityVisit> state = const [], required BlocProvider provider, String? name}): super(state: state, provider: provider, name: name)
+  {
+    selectedUserBloc?.listen((u) => loadUserVisits());
+    selectedTicketBloc?.listen((t) => loadUserVisits());
+    selectedTrainingBloc?.listen((t) => loadUserVisits());
+    params = {'from': dateTimeFormat.format(start ?? DateTime(0))};
+  }
 
+  // todo rename loadSelectedVisits
+  void loadUserVisits() async {
+    log.finest('loadUserVisits()...');
+    var user = selectedUserBloc?.state ?? session.user;
+    var ticket = selectedTicketBloc?.state;
+    var training = selectedTrainingBloc?.state;
 
-  Future<void> loadVisits(DateTime from, int rows) async {
-    state = (await backend.requestJson('GET', '/api/visit/byUser', params: {'from': dateTimeFormat.format(from), 'rows': rows}) as List)
-        .map((item) => CrudEntityVisit.fromJson(item)..user = session.user).toList();
+    if (ticket != null) {
+      log.finest('loadUserVisits(). Loading ticket visits');
+      if (ticket.visits == null) {
+        state = [];
+        ticket.visits = (await backend.requestJson('GET', '/api/visit/byTicket/${ticket.id}', params: params) as List)
+            .map((v) => CrudEntityVisit.fromJson(v)
+              ..user = user
+              ..ticket = ticket)
+            .toList();
+      }
+      state = ticket.visits!;
+    } else if (training != null) {
+      if (training.visits == null) {
+        state = [];
+        training.visits = (await backend.requestJson('GET', '/api/visit/byTraining/${training.id}') as List)
+            .map((item) => CrudEntityVisit.fromJson(item)..training = training)
+            .toList();
+      }
+      state = training.visits!;
+    } else {
+      log.finest('loadUserVisits(). No ticket. Loading user visits');
+      if (user.visits == null) {
+        state = [];
+        user.visits = (await backend.requestJson('GET', '/api/visit/byUser/${user.userId}', params: params) as List)
+            .map((v) => CrudEntityVisit.fromJson(v)..user = user)
+            .toList();
+      }
+      state = user.visits!;
+    }
+    log.fine('Visits: ${state.length}');
+  }
+
+  Future<void> loadCurrentUserVisits() async {
+    var user = session.user;
+    if (user.visits == null) {
+      state = [];
+      user.visits = (await backend.requestJson('GET', '/api/visit/byCurrentUser', params: params) as List)
+          .map((item) => CrudEntityVisit.fromJson(item)..user = session.user)
+          .toList();
+    }
+    state = user.visits!;
   }
 
   Future<void> markSchedule(CrudEntityVisit visit, bool mark) async {
-    await backend.request('PUT', '/api/visit/markSchedule/$mark', body: visit);
+    var ticketJson = (await backend.requestJson('PUT', '/api/visit/markSchedule/$mark', body: visit));
     visit.markSchedule = mark;
-    _addAndUpdate(visit, (v) => v.markSchedule = mark);
+    _addAndUpdate(visit, ticketJson, (v) => v.markSchedule = mark);
   }
 
   Future<void> markSelf(CrudEntityVisit visit, CrudEntityVisitMark mark) async {
     log.finer('Mark self $visit -> $mark');
-    await backend.request('PUT', '/api/visit/markSelf/${describeEnum(mark)}', body: visit);
+    var ticketJson = (await backend.requestJson('PUT', '/api/visit/markSelf/${describeEnum(mark)}', body: visit));
     visit.markSelf = mark;
-    _addAndUpdate(visit, (v) => v.markSelf = mark);
+    _addAndUpdate(visit, ticketJson, (v) => v.markSelf = mark);
   }
 
   Future<void> markMaster(CrudEntityVisit visit, CrudEntityVisitMark mark) async {
     log.finer('Mark master $visit -> $mark (${visit.user?.firstName})');
-    await backend.request('PUT', '/api/visit/markMaster/${describeEnum(mark)}', body: visit);
+    var ticketJson = (await backend.requestJson('PUT', '/api/visit/markMaster/${describeEnum(mark)}', body: visit));
     visit.markMaster = mark;
-    _addAndUpdate(visit, (v) => v.markMaster = mark);
+    _addAndUpdate(visit, ticketJson, (v) => v.markMaster = mark);
   }
 
-  void _addAndUpdate(CrudEntityVisit visit, void Function(CrudEntityVisit visit) apply) {
+  void _addAndUpdate(CrudEntityVisit visit, ticketJson, void Function(CrudEntityVisit visit) apply) {
     var indexOf = state.indexOf(visit);
     if (indexOf >= 0) {
       log.finest('Visit was found. Updating [$indexOf] -> ${state[indexOf].user?.displayName}');
@@ -54,7 +113,17 @@ class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
       state.sort();
     }
     stateIn.add(state);
+    if (ticketJson != null && ticketBloc != null) {
+      var ticket = CrudEntityTicket.fromJson(ticketJson)
+        // todo [!] this is not correct. User here is buyer, not visitor.
+        ..user = visit.user;
+      ticketBloc!.updateTicket(ticket);
+    }
   }
+}
+
+class SelectedVisitBloc extends BlocBaseState<CrudEntityVisit?> {
+  SelectedVisitBloc({CrudEntityVisit? state, required BlocProvider provider, String? name}) : super(state: state, provider: provider, name: name);
 }
 
 @JsonSerializable(explicitToJson: true)
@@ -66,9 +135,10 @@ class CrudEntityTicketType {
   int visits;
   int days;
 
-  CrudEntityTicketType({required this.id, required this.trainingTypes, required this.name, required this.cost,
-    required this.visits, required this.days});
+  CrudEntityTicketType({required this.id, required this.trainingTypes, required this.name, required this.cost, required this.visits, required this.days});
+
   factory CrudEntityTicketType.fromJson(Map<String, dynamic> json) => _$CrudEntityTicketTypeFromJson(json);
+
   Map<String, dynamic> toJson() => _$CrudEntityTicketTypeToJson(this);
 }
 
@@ -80,6 +150,7 @@ class CrudEntityVisit implements Comparable<CrudEntityVisit> {
   CrudEntityVisitMark markSelf;
   CrudEntityVisitMark markMaster;
   int trainingId;
+
   /// Training is null if we fetch visits for specific training
   CrudEntityTraining? training;
   CrudEntityTicket? ticket;
@@ -110,11 +181,7 @@ class CrudEntityVisit implements Comparable<CrudEntityVisit> {
 
   @override
   bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is CrudEntityVisit &&
-          runtimeType == other.runtimeType &&
-          user == other.user &&
-          trainingId == other.trainingId;
+      identical(this, other) || other is CrudEntityVisit && runtimeType == other.runtimeType && user == other.user && trainingId == other.trainingId;
 
   @override
   int get hashCode => user.hashCode ^ trainingId.hashCode;
@@ -127,6 +194,4 @@ class CrudEntityVisit implements Comparable<CrudEntityVisit> {
   }
 }
 
-enum CrudEntityVisitMark {
-  on, off, unmark
-}
+enum CrudEntityVisitMark { on, off, unmark }

@@ -64,7 +64,12 @@ class CrudApi {
 
   Future<dynamic> requestJson(String method, String apiUri, {Map<String, dynamic>? params, Object? body, bool auth=true}) async {
     try {
-      var decoded = jsonDecode(utf8.decode((await request(method, apiUri, body: body, params: params, auth: auth)).bodyBytes));
+      var responseBytes = (await request(method, apiUri, body: body, params: params, auth: auth)).bodyBytes;
+      if (responseBytes.isEmpty) {
+        log.fine('Response is empty');
+        return null;
+      }
+      var decoded = jsonDecode(utf8.decode(responseBytes));
       log.fine('Response decoded $decoded');
       return decoded;
     } on ApiException {
@@ -83,6 +88,11 @@ class ApiException implements Exception {
   final String message;
 
   const ApiException(this.title, this.message);
+
+  @override
+  String toString() {
+    return '$title\n$message';
+  }
 }
 
 DateTime dateTimeFromJson(String date) => dateTimeFormat.parse(date);
@@ -93,12 +103,3 @@ DateTime dateFromJson(String date) => dateFormat.parse(date);
 String dateToJson(DateTime date) => dateFormat.format(date);
 DateTime? dateFromJson_(String? date) => date != null ? dateFormat.parse(date) : null;
 String? dateToJson_(DateTime? date) => date != null ? dateFormat.format(date) : null;
-
-// @JsonKey(name: 'registration_date_millis')
-// @JsonKey(defaultValue: false)
-// @JsonKey(required: true)
-// @JsonKey(ignore: true)
-
-// https://flutter.dev/docs/development/data-and-backend/json
-// flutter pub run build_runner build
-// flutter pub run build_runner watch

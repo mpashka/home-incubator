@@ -33,8 +33,8 @@ class ScreenTrainingsState extends BlocProvider<ScreenTrainings> {
     // _session = Injector().get<Session>();
     final now = DateTime.now();
     final DateTime firstDay = now.subtract(Duration(days: now.weekday - 1 + 7*(weeks-1)));
-    visitBloc = CrudVisitBloc(provider: this);
-    visitBloc.loadVisits(firstDay.monthDate(), 10);
+    visitBloc = CrudVisitBloc(start: firstDay.monthDate(), provider: this)
+      ..loadCurrentUserVisits();
     filteredVisitBloc = CrudVisitBlocFiltered(visitBloc, firstDay, provider: this);
   }
 

@@ -1,0 +1,18 @@
+https://stackoverflow.com/questions/53811932/flutter-multiline-for-text
+https://flutter.dev/docs/development/ui/assets-and-images
+https://flutter.dev/docs/deployment/android (release)
+
+
+// @JsonKey(name: 'registration_date_millis')
+// @JsonKey(defaultValue: false)
+// @JsonKey(required: true)
+// @JsonKey(ignore: true)
+
+// https://flutter.dev/docs/development/data-and-backend/json
+// flutter pub run build_runner build
+// flutter pub run build_runner watch
+
+
+    todo async initialization must be handled properly - e.g. show splash screen
+    https://flutter.dev/docs/development/ui/advanced/splash-screen
+    Also https://stefangaller.at/app-development/flutter/initialization-splash/ - FutureBuilder

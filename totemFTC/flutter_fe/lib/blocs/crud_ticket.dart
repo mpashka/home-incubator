@@ -7,6 +7,7 @@ import 'package:flutter_fe/blocs/crud_visit.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
+import 'package:flutter_fe/misc/utils.dart';
 
 import 'crud_training.dart';
 import 'crud_user.dart';
@@ -15,12 +16,46 @@ part 'crud_ticket.g.dart';
 
 class CrudTicketBloc extends BlocBaseList<CrudEntityTicket> {
 
-  CrudTicketBloc({List<CrudEntityTicket> state = const [], required BlocProvider provider, String? name}): super(provider: provider, state: state, name: name);
+  SelectedUserBloc? selectedUserBloc;
+
+  CrudTicketBloc({this.selectedUserBloc, List<CrudEntityTicket> state = const [], required BlocProvider provider, String? name}): super(provider: provider, state: state, name: name) {
+    selectedUserBloc?.listen((u) => loadUserTickets());
+  }
 
   Future<void> loadTickets() async {
-    state = (await backend.requestJson('GET', '/api/tickets/byUser') as List)
+    state = (await backend.requestJson('GET', '/api/tickets/byCurrentUser') as List)
         .map((item) => CrudEntityTicket.fromJson(item)..user = session.user).toList();
   }
+
+  // todo -> loadSelectedTickets
+  Future<void> loadUserTickets() async {
+    var user = selectedUserBloc?.state ?? session.user;
+
+    if (user.tickets == null) {
+      state = [];
+      user.tickets = (await backend.requestJson(
+          'GET', '/api/tickets/byUser/${user.userId}') as List)
+          .map((item) => CrudEntityTicket.fromJson(item)..user = user)
+          .toList();
+    }
+    state = user.tickets!;
+  }
+
+  void updateTicket(CrudEntityTicket ticket) {
+    var indexOf = state.indexOf(ticket);
+    if (indexOf >= 0) {
+      log.finest('Ticket was found. Updating ticket[$indexOf] -> ${ticket.displayName}');
+      ticket.visits = state[indexOf].visits;
+      state[indexOf] = ticket;
+      stateIn.add(state);
+    } else {
+      log.warning('Ticket was not found. Probably internal error. ${ticket.displayName}');
+    }
+  }
+}
+
+class SelectedTicketBloc extends BlocBaseState<CrudEntityTicket?> {
+  SelectedTicketBloc({required BlocProvider provider, String? name}): super(state: null, provider: provider, name: name);
 }
 
 @JsonSerializable(explicitToJson: true)
@@ -58,4 +93,14 @@ class CrudEntityTicket {
   CrudEntityTicket({required this.id, required this.ticketType, required this.user, required this.buy, this.start, this.end, required this.visited});
   factory CrudEntityTicket.fromJson(Map<String, dynamic> json) => _$CrudEntityTicketFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityTicketToJson(this);
+
+  String get displayName {
+    return '${ticketType.name} / ${localDateFormat.format(buy)}';
+  }
+
+  @override
+  bool operator ==(Object other) => identical(this, other) || other is CrudEntityTicket && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }

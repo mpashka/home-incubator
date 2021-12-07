@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/crud_api.dart';
 import 'package:flutter_fe/blocs/crud_user.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
@@ -43,7 +44,8 @@ class Session {
   Future<CrudEntityUser?> _login(LoginProvider provider, bool link, {SessionBloc? sessionBloc}) {
     final completer = Completer<CrudEntityUser?>();
     final redirectUrl = _configuration.loginRedirectUrl();
-    final clientId = _configuration.loginProviderClientId(provider.name);
+    final config = _configuration.loginProviderConfig(provider);
+    final clientId = config.clientId;
     // client_id=<client_id>&redirect_uri=<redirect_uri>&state=<state>&response_type=code&scope=<scope>&nonce=<nonce>
     final url = provider.url
         + (provider.url.contains('?') ? '&' : '?')
@@ -99,10 +101,16 @@ class Session {
 }
 
 const loginProviders = <LoginProvider>[
-  LoginProvider("facebook", "https://www.facebook.com/dialog/oauth", ["openid", "email", "public_profile", "user_gender", "user_link", "user_birthday", "user_location"], Icon(MdiIcons.facebook), true),
-  LoginProvider("google", "https://accounts.google.com/o/oauth2/v2/auth", ["openid", "email", "profile"], Icon(MdiIcons.google), true),
-  // ?force_confirm=yes
-  LoginProvider("yandex", "https://oauth.yandex.ru/authorize", ["login:birthday", "login:email", "login:info", "login:avatar"], Icon(MdiIcons.alphaYCircle), true),
+  LoginProvider("facebook", "https://www.facebook.com/dialog/oauth", ["openid", "email", "public_profile", "user_gender", "user_link", "user_birthday", "user_location"], Icon(MdiIcons.facebook)),
+  LoginProvider("google", "https://accounts.google.com/o/oauth2/v2/auth", ["openid", "email", "profile"], Icon(MdiIcons.google)),
+  LoginProvider("apple", "", [], Icon(MdiIcons.apple)),
+  LoginProvider("instagram", "https://api.instagram.com/oauth/authorize", ["openid", "user_profile"], Icon(MdiIcons.instagram)),
+  LoginProvider("twitter", "", [], Icon(MdiIcons.twitter)),
+  LoginProvider("github", "https://github.com/login/oauth/authorize", ["read:user", "user:email"], Icon(MdiIcons.github)),
+  LoginProvider("vk", "https://oauth.vk.com/authorize", ["email"], FaIcon(FontAwesomeIcons.vk)),
+  LoginProvider("mailru", "https://oauth.mail.ru/login", ["openid", "userinfo", "email", "profile", "offline_access"], Icon(Icons.alternate_email)),
+  LoginProvider("okru", "https://connect.ok.ru/oauth/authorize", ["VALUABLE_ACCESS;GET_EMAIL;LONG_ACCESS_TOKEN"], Icon(MdiIcons.odnoklassniki)),
+  LoginProvider("yandex", "https://oauth.yandex.ru/authorize?force_confirm=yes", ["login:birthday", "login:email", "login:info", "login:avatar"], Icon(FontAwesomeIcons.yandex)),
 ];
 
 class SessionBloc extends BlocBaseState<LoginStateInfo> {
@@ -138,10 +146,9 @@ class LoginProvider {
   final String name;
   final String url;
   final List<String> scopes;
-  final Icon icon;
-  final bool warning;
+  final Widget icon;
 
-  const LoginProvider(this.name, this.url, this.scopes, this.icon, this.warning);
+  const LoginProvider(this.name, this.url, this.scopes, this.icon);
 }
 
 class LoginStateInfo {

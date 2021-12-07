@@ -5,6 +5,7 @@ import 'package:flutter/painting.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
 import 'package:flutter_fe/blocs/crud_user.dart';
 import 'package:flutter_fe/blocs/session.dart';
+import 'package:flutter_fe/misc/configuration.dart';
 import 'package:flutter_fe/misc/initializer.dart';
 import 'package:logging/logging.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,6 +13,7 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 
 import 'screen_base.dart';
 import 'widgets/ui_divider.dart';
+import 'widgets/ui_login_warning.dart';
 
 class ScreenConfig extends StatefulWidget {
   static const routeName = '/config';
@@ -146,7 +148,9 @@ class ScreenConfigState extends BlocProvider<ScreenConfig> {
   List<Widget> _renderSocialNetworks() {
     final user = crudUserBloc.state;
     List<Widget> result = [];
+    final configuration = Injector().get<Configuration>();
     for (var provider in loginProviders) {
+      var loginProviderConfig = configuration.loginProviderConfig(provider);
       final blocName = 'sessionBloc_${provider.name}';
       final sessionBloc = getBloc<SessionBloc>(blocName);
       result.add(BlocProvider.streamBuilder<LoginStateInfo, SessionBloc>(
@@ -162,7 +166,11 @@ class ScreenConfigState extends BlocProvider<ScreenConfig> {
             GestureTapCallback? tapAction;
             switch (state.state) {
               case LoginState.none:
-                tapAction = () => crudUserBloc.link(provider, sessionBloc: sessionBloc);
+                tapAction = () async {
+                  if (await UiLoginWarning(provider, loginProviderConfig).checkLogin(context)) {
+                    crudUserBloc.link(provider, sessionBloc: sessionBloc);
+                  }
+                };
                 break;
               case LoginState.error:
                 uiWidgets.add(IconButton(

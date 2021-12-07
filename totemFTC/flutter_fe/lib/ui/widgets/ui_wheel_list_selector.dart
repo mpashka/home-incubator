@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
 import 'package:flutter_fe/misc/utils.dart';
 import 'package:logging/logging.dart';
 
-class WheelListSelector<E, B extends BlocBaseState<List<E>>> extends StatelessWidget {
+class UiWheelListSelector<E, B extends BlocBaseState<List<E>>> extends StatelessWidget {
   static const double itemHeight = 30;
 
   final Logger log;
@@ -15,7 +16,7 @@ class WheelListSelector<E, B extends BlocBaseState<List<E>>> extends StatelessWi
   final List Function(List<E>)? dataTransformer;
   final dynamic selectedItem;
 
-  WheelListSelector({Key? key, required this.childBuilder, this.onSelectedItemChanged, this.onSelectedTransformedItemChanged,
+  UiWheelListSelector({Key? key, required this.childBuilder, this.onSelectedItemChanged, this.onSelectedTransformedItemChanged,
     this.transformedChildBuilder, this.dataTransformer, this.selectedItem}) :
         log = Logger('WheelListSelector<${typeOf<E>()}, ${typeOf<B>()}>'),
         super(key: key);
@@ -31,7 +32,7 @@ class WheelListSelector<E, B extends BlocBaseState<List<E>>> extends StatelessWi
               log.fine('Items: ${data.length}. Selected item: $i - $selectedItem');
               // var controller = FixedExtentScrollController(initialItem: selectedItem == null ? 0 : (itemHeight * workingData.indexOf(selectedItem)).round());
               var controller = FixedExtentScrollController(initialItem: i);
-              var a = ListWheelScrollView.useDelegate(
+              var scrollView = ListWheelScrollView.useDelegate(
                   onSelectedItemChanged: (itemIndex) {
                     // log.finest("Item selected: $itemIndex");
                     HapticFeedback.selectionClick();
@@ -67,8 +68,16 @@ class WheelListSelector<E, B extends BlocBaseState<List<E>>> extends StatelessWi
                     },
                   )
               );
-              // controller.jumpTo(300);
-              return a;
+/*
+              if (i > 0) {
+                WidgetsBinding.instance!.addPostFrameCallback((duration) {
+                  log.fine('Post frame callback() - jump to $i');
+                  controller.jumpToItem(i);
+                  // controller.animateToItem(i, duration: Duration(milliseconds: 100), curve: Curves.bounceInOut);
+                });
+              }
+*/
+              return scrollView;
             })),
         IgnorePointer(child: Center(child: Container(
           // alignment: Alignment.center,

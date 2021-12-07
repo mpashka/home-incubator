@@ -34,16 +34,18 @@ class ScreenMasterUserState extends BlocProvider<ScreenMasterUser> {
 
   late final SelectedUserBloc selectedUserBloc;
   late final SelectedTicketBloc selectedTicketBloc;
-  late final UserVisitsBloc visitsBloc;
+  late final CrudVisitBloc visitsBloc;
+
   @override
   void initState() {
     super.initState();
     selectedUserBloc = SelectedUserBloc(user: widget._user, provider: this);
-    var ticketsBloc = UserTicketsBloc(selectedUserBloc, provider: this)..loadUserTickets();
+    var ticketBloc = CrudTicketBloc(selectedUserBloc: selectedUserBloc, provider: this)..loadUserTickets();
     selectedTicketBloc = SelectedTicketBloc(provider: this);
-    combine3<CrudEntityUser, CrudEntityTicket?, List<CrudEntityTicket>>('AllTicketsBloc', selectedUserBloc, selectedTicketBloc, ticketsBloc, listen2: true, listen3: true);
+    combine3<CrudEntityUser, CrudEntityTicket?, List<CrudEntityTicket>>('AllTicketsBloc', selectedUserBloc, selectedTicketBloc, ticketBloc);
 
-    visitsBloc = UserVisitsBloc(start, selectedUserBloc, selectedTicketBloc, provider: this, name: 'CrudVisitBloc')
+    visitsBloc = CrudVisitBloc(start: start, selectedUserBloc: selectedUserBloc, selectedTicketBloc: selectedTicketBloc, ticketBloc: ticketBloc,
+        provider: this, name: 'CrudVisitBloc')
       ..loadUserVisits();
   }
 
@@ -84,7 +86,7 @@ class ScreenMasterUserState extends BlocProvider<ScreenMasterUser> {
           ],);
         }
       }),
-      Flexible(child: BlocProvider.streamBuilder<List<CrudEntityVisit>, UserVisitsBloc>(blocName: 'CrudVisitBloc', builder: (ctx, visits) {
+      Flexible(child: BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(blocName: 'CrudVisitBloc', builder: (ctx, visits) {
         log.fine('Visits: ${visits.length}');
         if (visits.isEmpty) {
           return Text('Нет посещений');
@@ -96,14 +98,14 @@ class ScreenMasterUserState extends BlocProvider<ScreenMasterUser> {
       }),),
     ]),),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _onAddTraining(context, selectedUserBloc, visitsBloc),
+        onPressed: () => _onAddTraining(context, selectedUserBloc),
         tooltip: 'Add',
         child: Icon(Icons.add),
       ),
     );
   }
 
-  Future<void> _onAddTraining(BuildContext context, SelectedUserBloc selectedUserBloc, UserVisitsBloc visitsBloc) async {
+  Future<void> _onAddTraining(BuildContext context, SelectedUserBloc selectedUserBloc) async {
     Session session = Injector().get<Session>();
     var training = await UiSelectorTrainingDialog(title: 'Отметить тренировку', dateRange: DateTimeRange(
         start: start,
@@ -119,79 +121,5 @@ class ScreenMasterUserState extends BlocProvider<ScreenMasterUser> {
           markMaster: CrudEntityVisitMark.on);
       visitsBloc.markMaster(visit, CrudEntityVisitMark.on);
     }
-  }
-}
-
-class SelectedUserBloc extends BlocBaseState<CrudEntityUser> {
-  SelectedUserBloc({required CrudEntityUser user, required BlocProvider provider, String? name}): super(state: user, provider: provider, name: name);
-}
-
-class UserTicketsBloc extends BlocBaseList<CrudEntityTicket> {
-  SelectedUserBloc selectedUserBloc;
-
-  UserTicketsBloc(this.selectedUserBloc, {required BlocProvider provider, String? name}): super(provider: provider, name: name) {
-    // selectedUserBloc.stateOut.forEach((user) => loadUserTickets);
-    addDisposableSubscription(selectedUserBloc.stateOut.listen((u) => loadUserTickets, onError: (e,s) => log.warning('loadUserTickets(u).Error', e, s), onDone: () => log.fine('loadUserTickets(u).Done'), cancelOnError: false));
-  }
-
-  void loadUserTickets() async {
-    var user = selectedUserBloc.state;
-
-    if (user.tickets == null) {
-      state = [];
-      user.tickets = (await backend.requestJson(
-              'GET', '/api/tickets/byUser/${user.userId}') as List)
-          .map((item) => CrudEntityTicket.fromJson(item)..user = user)
-          .toList();
-    }
-    state = user.tickets!;
-  }
-}
-
-class SelectedTicketBloc extends BlocBaseState<CrudEntityTicket?> {
-  SelectedTicketBloc({required BlocProvider provider, String? name}): super(state: null, provider: provider, name: name);
-}
-
-class UserVisitsBloc extends CrudVisitBloc {
-  DateTime start;
-  SelectedUserBloc selectedUserBloc;
-  SelectedTicketBloc selectedTicketBloc;
-
-  UserVisitsBloc(this.start, this.selectedUserBloc, this.selectedTicketBloc, {required BlocProvider provider, String? name}): super(provider: provider, name: name) {
-    addDisposableSubscription(selectedUserBloc.stateOut.listen((u) => loadUserVisits, onError: (e,s) => log.warning('loadUserVisits(u).Error', e, s), onDone: () => log.fine('loadUserVisits(u).Done'), cancelOnError: false));
-    // selectedTicketBloc.stateOut.forEach((user) => loadUserVisits);
-    addDisposableSubscription(selectedTicketBloc.stateOut.listen((t) => loadUserVisits(), onError: (e,s) => log.warning('loadUserVisits(t).Error', e, s), onDone: () => log.fine('loadUserVisits(t).Done'), cancelOnError: false));
-  }
-
-  void loadUserVisits() async {
-    log.finest('loadUserVisits()...');
-    var user = selectedUserBloc.state;
-    var ticket = selectedTicketBloc.state;
-    var params = {'from': dateTimeFormat.format(start)};
-
-    if (ticket == null) {
-      log.finest('loadUserVisits(). No ticket. Loading user visits');
-      if (user.visits == null) {
-        state = [];
-        user.visits = (await backend.requestJson(
-                    'GET', '/api/visit/byUser/${user.userId}', params: params) as List)
-            .map((v) => CrudEntityVisit.fromJson(v)..user = user)
-            .toList();
-      }
-      state = user.visits!;
-    } else {
-      log.finest('loadUserVisits(). Loading ticket visits');
-      if (ticket.visits == null) {
-        state = [];
-        ticket.visits = (await backend.requestJson(
-            'GET', '/api/visit/byTicket/${ticket.id}', params: params) as List)
-            .map((v) =>
-        CrudEntityVisit.fromJson(v)
-          ..user = user
-          ..ticket = ticket).toList();
-      }
-      state = ticket.visits!;
-    }
-    log.fine('Visits: ${state.length}');
   }
 }

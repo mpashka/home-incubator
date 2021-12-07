@@ -38,7 +38,7 @@ public class WebResourceTicket {
     }
 
     @GET
-    @Path("tickets/byUser")
+    @Path("tickets/byCurrentUser")
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<DbCrudTicket.EntityTicket[]> listTicketsByUser() {
         return dbTicket.getTicketsByUser(webSessionService.getUserId());

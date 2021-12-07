@@ -86,7 +86,7 @@ class CrudVisitBlocFiltered extends BlocBaseState<FilteredVisits> {
   CrudVisitBlocFiltered(this._visitBloc, DateTime firstDay, {required BlocProvider provider, String? name}) :
         filter = DateFilterInfo((d) => true, DateTimeRange(start: DateTime.now().subtract(Duration(days: 7 * 6)), end: DateTime.now()), DateSelectionType.none),
         super(state: FilteredVisits([], [], {}), provider: provider, name: name) {
-    _visitBloc.stateOut.listen((e) => _updateVisits());
+    _visitBloc.listen((e) => _updateVisits());
   }
 
   void onFilterChange(DateFilterInfo filter) {
@@ -102,6 +102,6 @@ class CrudVisitBlocFiltered extends BlocBaseState<FilteredVisits> {
     trainingTypes.sort();
     Map<CrudEntityTrainingType, List<CrudEntityVisit>> visitsByType = HashMap();
     trainingTypesSet.forEach((tt) => visitsByType[tt] = allVisits.where((v) => v.training!.trainingType == tt).toList());
-    stateIn.add(FilteredVisits(allVisits, trainingTypes, visitsByType));
+    state = FilteredVisits(allVisits, trainingTypes, visitsByType);
   }
 }

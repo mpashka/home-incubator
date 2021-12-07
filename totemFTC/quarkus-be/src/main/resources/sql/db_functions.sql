@@ -83,6 +83,8 @@ CREATE OR REPLACE FUNCTION mark_visit(p_training_id INTEGER,
                                       p_user_id INTEGER,
                                       -- Is used to find appropriate ticket if current visit doesn't have correct one
                                       p_ticket_user_id INTEGER DEFAULT NULL,
+                                      -- todo [?] we can pass ticket_id here to allow mark training on specific ticket
+                                      -- p_ticket_id INTEGER DEFAULT NULL,
                                       -- This is used to update presented ticket. Usually only one of those must be specified for instance update
                                       p_mark_schedule BOOLEAN DEFAULT NULL,
                                       p_mark_self mark_type_enum DEFAULT NULL,

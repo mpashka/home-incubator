@@ -40,6 +40,10 @@ class CrudUserBloc extends BlocBaseState<CrudEntityUser> {
   }
 }
 
+class SelectedUserBloc extends BlocBaseState<CrudEntityUser> {
+  SelectedUserBloc({required CrudEntityUser user, required BlocProvider provider, String? name}): super(state: user, provider: provider, name: name);
+}
+
 CrudEntityUser emptyUser = CrudEntityUser(userId: -1, type: CrudEntityUserType.guest);
 
 @JsonSerializable(explicitToJson: true)
