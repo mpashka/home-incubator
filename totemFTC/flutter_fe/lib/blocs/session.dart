@@ -25,6 +25,7 @@ class Session {
 
   CrudEntityUser _user = emptyUser;
   CrudEntityUser get user => _user;
+  LoginSession? _loginSession;
 
   Session(Injector injector):
         _configuration = injector.get<Configuration>(),
@@ -56,14 +57,14 @@ class Session {
         + '&nonce=' + getRandomString(10)
         + '&redirect_uri=' + Uri.encodeComponent(redirectUrl);
     log.info('Launch login ${provider.name} $url');
-    login_helper.showLoginWindow(url, (loginParams) =>
-        onLoginCallback(loginParams, provider, link, sessionBloc: sessionBloc)
-            .then((value) => completer.complete(value))
-    );
+    _loginSession = login_helper.showLoginWindow(url, (loginParams) =>
+        _onLoginCallback(loginParams, provider, link, sessionBloc: sessionBloc)
+            .then((value) => completer.complete(value)));
     return completer.future;
   }
 
-  Future<CrudEntityUser?> onLoginCallback(String loginParams, LoginProvider provider, bool link, {SessionBloc? sessionBloc}) async {
+  Future<CrudEntityUser?> _onLoginCallback(String loginParams, LoginProvider provider, bool link, {SessionBloc? sessionBloc}) async {
+    _loginSession = null;
     if (loginParams.contains('error')) {
       sessionBloc?.state = LoginStateInfo(LoginState.error, loginParams);
       return null;
@@ -80,6 +81,18 @@ class Session {
     } catch (e) {
       sessionBloc?.state = LoginStateInfo(LoginState.error, 'Error $e');
     }
+  }
+
+  void onLoginCallback(String loginParams) {
+    if (_loginSession != null) {
+      _loginSession!.onLoginCallback(loginParams);
+    } else {
+      log.warning('Received login callback out of session');
+    }
+  }
+
+  void clearLoginCallback() {
+    _loginSession = null;
   }
 
   Future<void> logout(BuildContext context) async {
@@ -177,3 +190,10 @@ enum EntityLoginUserType {
  newUser, existing
 }
 
+typedef LoginCallbackFunction = void Function(String loginParams);
+
+class LoginSession {
+  LoginCallbackFunction onLoginCallback;
+
+  LoginSession(this.onLoginCallback);
+}

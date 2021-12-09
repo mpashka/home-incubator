@@ -8,6 +8,8 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
 
 import 'widgets/ui_login_warning.dart';
+import 'package:http/http.dart' as http;
+
 
 class ScreenLogin extends StatefulWidget {
   static const routeName = '/login';
@@ -73,7 +75,6 @@ class ScreenLoginState extends BlocProvider<ScreenLogin> {
       // drawer: MyDrawer(),
       body: Stack(children: [
         Column(children: [
-          // Text('Login'),
           Image.asset(
             'assets/images/logo.png',
             fit: BoxFit.contain,

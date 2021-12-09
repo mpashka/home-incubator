@@ -66,9 +66,9 @@ class ScreenConfigState extends BlocProvider<ScreenConfig> {
 
   @override
   Widget build(BuildContext context) {
+    _resetName(crudUserBloc.state);
     return UiScreen(body: BlocProvider.streamBuilder<CrudEntityUser, CrudUserBloc>(builder: (ctx, user) {
-      _resetName(user);
-      return Column(children: [
+      return SingleChildScrollView(child: Column(children: [
         ..._renderName(user),
         UiDivider('Фото'),
         Text('To be done'),
@@ -90,7 +90,7 @@ class ScreenConfigState extends BlocProvider<ScreenConfig> {
               onPressed: () => logout(context),
             )
         ),
-      ],);
+      ],),);
     },));
   }
 
@@ -156,6 +156,7 @@ class ScreenConfigState extends BlocProvider<ScreenConfig> {
       result.add(BlocProvider.streamBuilder<LoginStateInfo, SessionBloc>(
           blocName: blocName,
           builder: (ctx, state) {
+
             var networkIter = user.socialNetworks?.where((s) => s.networkName == provider.name).iterator;
             CrudEntityUserSocialNetwork? userNetwork = networkIter?.moveNext() == true ? networkIter?.current : null;
             final text = userNetwork?.displayName != null ? userNetwork!.displayName! : provider.name;

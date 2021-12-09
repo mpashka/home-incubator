@@ -8,9 +8,10 @@ import org.slf4j.LoggerFactory;
 import javax.enterprise.context.ApplicationScoped;
 
 /**
- * https://docs.github.com/en/developers/apps/building-oauth-apps/authorizing-oauth-apps
+ * https://github.com/settings/developers
  * https://github.com/settings/applications/1691748
  *
+ * https://docs.github.com/en/developers/apps/building-oauth-apps/authorizing-oauth-apps
  * https://docs.github.com/en/developers/apps/building-oauth-apps/scopes-for-oauth-apps
  */
 @ApplicationScoped

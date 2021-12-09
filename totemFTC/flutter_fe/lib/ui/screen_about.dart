@@ -22,7 +22,7 @@ class ScreenAbout extends StatelessWidget {
 
     return UiScreen(body: Column(children: [
       Text('Фитнес-студия функционального тренинга и кроссфита в старых Химках', textScaleFactor: 1.5,),
-      Image.asset('images/logo.png', fit: BoxFit.contain),
+      Image.asset('assets/images/logo.png', fit: BoxFit.contain),
       Row(children: [
         GestureDetector(child: Icon(Icons.public),
           onTap: () => launch('https://totemftc.ru/'),),

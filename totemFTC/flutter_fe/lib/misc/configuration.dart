@@ -8,6 +8,7 @@ import 'dart:async' show Future;
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
+import 'dart:io' show Platform;
 
 /*
 https://stackoverflow.com/questions/44250184/setting-environment-variables-in-flutter
@@ -49,7 +50,8 @@ class Configuration {
   }
 
   bool get isWeb  => kIsWeb;
-  String get nativeStr => kIsWeb ? "web" : "native";
+  bool get isMobile  => Platform.isAndroid || Platform.isIOS;
+  String get nativeStr => kIsWeb ? "web" : "mobile";
   String get prodStr => kReleaseMode ? "prod" : "dev";
 
   /// Client id used to select appropriate configuration on backend
@@ -58,7 +60,7 @@ class Configuration {
   }
 
   String backendUrl() {
-    return doc(['backendUrl']);
+    return _getDoc(['backendUrl']);
   }
 
   /// OIDC provider config - client id + warning
@@ -67,56 +69,60 @@ class Configuration {
     final config = _doc['oidc']['providers'][name];
     // if (config == null) throw ApiException('Internal error', 'Login provider ${loginProvider.name} config not found');
     if (config == null) return ConfigurationLoginProvider(clientId: '', error: 'Provider ${name} config not found');
-    return ConfigurationLoginProvider(clientId: (doc(['oidc', 'providers', name, 'clientId']) ?? '').toString(),
-      error: loginProviderErrorText(doc(['oidc', 'providers', name, 'error']), loginProvider),
-      warning: loginProviderErrorText(doc(['oidc', 'providers', name, 'warning']), loginProvider),
+    return ConfigurationLoginProvider(clientId: (_getDoc(['oidc', 'providers', name, 'clientId']) ?? '').toString(),
+      error: loginProviderErrorText(_getDoc(['oidc', 'providers', name, 'error']), loginProvider),
+      warning: loginProviderErrorText(_getDoc(['oidc', 'providers', name, 'warning']), loginProvider),
     );
   }
 
   String? loginProviderErrorText(String? key, LoginProvider loginProvider) {
     if (key == null) return null;
-    final text = doc(['oidc', 'warnings', key]);
+    final text = _getDoc(['oidc', 'warnings', key]);
     return text.replaceAll('\${provider}', loginProvider.name);
   }
 
   String loginRedirectUrl(LoginProvider provider) {
-    return (doc(['oidc', 'redirectUrl']) as String)
+    return (_getDoc(['oidc', 'redirectUrl']) as String)
         .replaceAll('\${backend_url}', backendUrl())
         .replaceAll('\${provider}', provider.name);
   }
 
+  String loginCallbackUrl() {
+    return (_getDoc(['oidc', 'callbackUrl']) as String);
+  }
+
   String devTelegram() {
-    return doc(['contacts', 'dev', 'telegram']);
+    return _getDoc(['contacts', 'dev', 'telegram']);
   }
 
   String devPhone() {
-    return doc(['contacts', 'dev', 'phone']);
+    return _getDoc(['contacts', 'dev', 'phone']);
   }
 
   String masterTelegram() {
-    return doc(['contacts', 'master', 'telegram']);
+    return _getDoc(['contacts', 'master', 'telegram']);
   }
 
   String masterPhone() {
-    return doc(['contacts', 'master', 'phone']);
+    return _getDoc(['contacts', 'master', 'phone']);
   }
 
   String masterPhoneUi() {
-    return doc(['contacts', 'master', 'phoneUi']);
+    return _getDoc(['contacts', 'master', 'phoneUi']);
   }
 
   String masterEmail() {
-    return doc(['contacts', 'master', 'email']);
+    return _getDoc(['contacts', 'master', 'email']);
   }
 
-  dynamic doc(List<String> path) {
-    return docPlain(['_${prodStr}_$nativeStr' ,...path])
-        ?? docPlain(['_$prodStr' ,...path])
-        ?? docPlain(['_$nativeStr' ,...path])
-        ?? docPlain(path);
+  dynamic _getDoc(List<String> path) {
+    return _docPlain(['_${prodStr}_$nativeStr' ,...path])
+        ?? _docPlain(['_$prodStr' ,...path])
+        ?? _docPlain(['_$nativeStr' ,...path])
+        ?? _docPlain(path);
   }
 
-  dynamic docPlain(List<String> path) {
+  dynamic _docPlain(List<String> path) {
     var part = _doc;
     for (var p in path) {
       part = part[p];

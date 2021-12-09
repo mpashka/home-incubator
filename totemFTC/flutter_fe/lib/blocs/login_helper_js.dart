@@ -2,18 +2,20 @@
 import 'dart:js' as js;
 import 'package:logging/logging.dart';
 
+import 'session.dart';
+
 final Logger log = Logger('login_helper_js');
 
-void showLoginWindow(String url, void Function(String loginParams) onLoginCallback) {
-  JsLoginWindow(onLoginCallback).showLoginWindow(url);
+LoginSession showLoginWindow(String url, LoginCallbackFunction onLoginCallback) {
+  return JsLoginWindow(onLoginCallback)
+    ..showLoginWindow(url);
 }
 
-class JsLoginWindow {
+class JsLoginWindow extends LoginSession {
 
   js.JsObject? popupWindow;
-  void Function(String loginParams) onLoginCallback;
 
-  JsLoginWindow(this.onLoginCallback);
+  JsLoginWindow(LoginCallbackFunction onLoginCallback): super(onLoginCallback);
 
   showLoginWindow(String url) {
     log.info('Web login $url');

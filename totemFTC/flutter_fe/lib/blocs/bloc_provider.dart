@@ -151,7 +151,7 @@ class BlocBaseState<T> extends BlocBase {
   T _state;
 
   BlocBaseState({required T state, required BlocProvider provider, String? name}): _state = state, super(provider: provider, name: name) {
-    log = Logger('${runtimeType.toString()}<${typeOf<T>()}>');
+    log = Logger('${runtimeType.toString()}<${typeOf<T>()}@$hashCode>');
     log.fine('Init');
     Injector injector = Injector();
     backend = injector.get<CrudApi>();

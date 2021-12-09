@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_fe/misc/configuration.dart';
 import 'package:flutter_fe/ui/screen_config.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
@@ -36,6 +37,7 @@ class MyApp extends StatelessWidget {
     final injector = Injector();
     var initializer = injector.get<Initializer>();
     var session = injector.get<Session>();
+    var configuration = injector.get<Configuration>();
 
     return MaterialApp(
       title: 'Totem FTC App',
@@ -62,15 +64,24 @@ class MyApp extends StatelessWidget {
           return MaterialPageRoute(builder: (context) => ScreenInit());
         }
 
+        var routeName = settings.name;
+        if (configuration.isMobile && routeName != null && routeName.startsWith(configuration.loginCallbackUrl())) {
+          var start = routeName.indexOf('?');
+          var loginParams = routeName.substring(start >= 0 ? start : 0).replaceAll('#', '&');
+          session.onLoginCallback(loginParams);
+          return null;
+        }
+        session.clearLoginCallback();
+
         if (!session.isLoggedIn()) {
           log.finer('Not logged in. Show ScreenLogin');
           return MaterialPageRoute(builder: (context) => ScreenLogin());
-        } else if (settings.name == ScreenLogin.routeName) {
+        } else if (routeName == ScreenLogin.routeName) {
           log.finer('Logged in. Show ScreenHome');
           return MaterialPageRoute(builder: (context) => ScreenHome());
         } else {
           log.finer('Normal screen show');
-          switch (settings.name) {
+          switch (routeName) {
             case ScreenHome.routeName: return MaterialPageRoute(builder: (context) => ScreenHome());
             case ScreenLogin.routeName: return MaterialPageRoute(builder: (context) => ScreenLogin());
             case ScreenInit.routeName: return MaterialPageRoute(builder: (context) => ScreenInit());

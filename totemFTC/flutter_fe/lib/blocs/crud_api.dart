@@ -31,6 +31,7 @@ class CrudApi {
           delimiter = '&';
         });
       }
+      // log.finest('Url: $uriStr, Params: $params');
       http.Request request = http.Request(method, Uri.parse(uriStr));
       request.encoding = utf8;
       if (body != null) {
@@ -57,7 +58,7 @@ class CrudApi {
       log.finer(response.body);
       return response;
     } catch (e,s) {
-      log.severe('Internal error $method $apiUri', e, s);
+      log.severe('Internal error ${_configuration.backendUrl()} $method $apiUri', e, s);
       throw ApiException('Internal error', e.toString());
     }
   }

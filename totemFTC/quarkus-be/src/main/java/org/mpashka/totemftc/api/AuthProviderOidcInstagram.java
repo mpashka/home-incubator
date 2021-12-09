@@ -11,6 +11,7 @@ import javax.enterprise.context.ApplicationScoped;
 /**
  * https://developers.facebook.com/docs/instagram-basic-display-api/
  * https://developers.facebook.com/docs/instagram-basic-display-api/getting-started
+ * @see AuthProviderOidcFacebook
  */
 @ApplicationScoped
 public class AuthProviderOidcInstagram extends AuthProviderOidc {
