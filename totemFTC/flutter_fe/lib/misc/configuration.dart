@@ -79,8 +79,10 @@ class Configuration {
     return text.replaceAll('\${provider}', loginProvider.name);
   }
 
-  String loginRedirectUrl() {
-    return doc(['oidc', 'redirectUrl']);
+  String loginRedirectUrl(LoginProvider provider) {
+    return (doc(['oidc', 'redirectUrl']) as String)
+        .replaceAll('\${backend_url}', backendUrl())
+        .replaceAll('\${provider}', provider.name);
   }
 
   String devTelegram() {

@@ -43,7 +43,7 @@ class Session {
 
   Future<CrudEntityUser?> _login(LoginProvider provider, bool link, {SessionBloc? sessionBloc}) {
     final completer = Completer<CrudEntityUser?>();
-    final redirectUrl = _configuration.loginRedirectUrl();
+    final redirectUrl = _configuration.loginRedirectUrl(provider);
     final config = _configuration.loginProviderConfig(provider);
     final clientId = config.clientId;
     // client_id=<client_id>&redirect_uri=<redirect_uri>&state=<state>&response_type=code&scope=<scope>&nonce=<nonce>

@@ -1,4 +1,4 @@
-package com.example.flutter_fe;
+package org.mpashka.totemftc;
 
 import io.flutter.embedding.android.FlutterActivity;
 

@@ -1,5 +1,7 @@
-[{
+[
+{
   "relation": ["delegate_permission/common.handle_all_urls"],
   "target" : { "namespace": "android_app", "package_name": "org.mpashka.totemftc",
                "sha256_cert_fingerprints": ["74:B2:37:0C:70:1B:F0:A2:EA:6E:D6:64:5F:AB:B7:13:DE:BE:62:55:AD:65:41:6F:52:F2:5B:AA:B5:DF:2A:F6"] }
-}]
+}
+]

@@ -81,7 +81,7 @@ module.exports = configure(function (ctx) {
         //
       },
 
-      distDir: ctx.modeName === 'spa' && ctx.prod ? 'target/classes/META-INF/resources' : `dist/${ctx.modeName}`,
+      // distDir: ctx.modeName === 'spa' && ctx.prod ? 'target/classes/META-INF/resources' : `dist/${ctx.modeName}`,
 
       env: {
         // Used to show login warning
