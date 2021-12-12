@@ -7,8 +7,10 @@
       <!--    <div class="text-h4 q-gutter-lg">Totem FTC</div>-->
       <q-card-section class="q-gutter-lg">
         <!--      v-if="socialNetwork.loginScreen" -->
-        <q-btn v-for="socialNetwork in socialNetworks" :key="socialNetwork.name" round @click.stop="openLoginWindow(socialNetwork.name, 'login')">
-          <q-icon :color="socialNetwork.iconColor" :name="socialNetwork.icon" />
+        <q-btn v-for="loginProvider in loginProviders" :key="loginProvider.name" round @click.stop="login(loginProvider)">
+          <q-icon :color="loginProvider.iconColor" :name="loginProvider.icon" />
+          <q-icon v-if="loginProvider.loginType === 'warningRegister'" name="fas fa-exclamation-triangle" color="warning" style="position: absolute; left: 10px; top: 10px; font-size: 9px; "/>
+          <q-icon v-else-if="loginProvider.loginType.startsWith('error')" name="fas fa-exclamation-circle" color="negative" style="position: absolute; left: 10px; top: 10px; font-size: 9px; "/>
         </q-btn>
       </q-card-section>
     </q-card>
@@ -16,10 +18,11 @@
 </template>
 
 <script lang="ts">
-import {computed, defineComponent} from 'vue';
-import { useStoreLogin } from 'src/store/store_login';
+import {defineComponent} from 'vue';
+import {LoginResult, useStoreLogin} from 'src/store/store_login';
 import { useRouter } from 'vue-router';
-import {windowObjectReference, openLoginWindow, LoginUserType, socialNetworks} from 'pages/login/login';
+import {LoginProvider, loginProviders, openLoginWindow} from 'pages/login/login';
+
 
 export default defineComponent({
   name: 'Login',
@@ -33,25 +36,24 @@ export default defineComponent({
     const storeLogin = useStoreLogin();
     const router = useRouter();
 
-    window.onLoginCompleted = async function (sessionId: string, user: LoginUserType) {
-      console.log(`Call parent from popup. SessionId: ${sessionId}. User type ${user}`);
-      windowObjectReference?.close();
+    const login = function (loginProvider: LoginProvider) {
+      void openLoginWindow(loginProvider, async callbackParameters => {
+        console.log(`Call login. Callback: ${callbackParameters}`);
+        const loginResult: LoginResult = await storeLogin.login(loginProvider, callbackParameters);
 
-      await storeLogin.authenticate(sessionId);
-
-      if (storeLogin.isAuthenticated) {
-        if (props.inProgress) {
-          router.back();
-        } else {
-          await router.replace({path: user === 'newUser' ? '/settings' : '/'});
+        if (storeLogin.isAuthenticated) {
+          if (props.inProgress) {
+            router.back();
+          } else {
+            await router.replace({path: loginResult.userType === 'newUser' ? '/settings' : '/'});
+          }
         }
-      }
-    };
+      });
+    }
 
     return {
-      windowObjectReference,
-      openLoginWindow,
-      socialNetworks: computed(() => socialNetworks.filter(s => s.loginScreen)),
+      login,
+      loginProviders,
     }
   }
 });

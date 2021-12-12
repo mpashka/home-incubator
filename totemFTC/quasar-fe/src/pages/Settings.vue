@@ -28,15 +28,16 @@
     <q-separator />
     <q-card-section>
       <div>
-        <q-item clickable v-ripple v-for="socialNetwork in uiSocialNetworks" :key="socialNetwork.name" @click="onClickSocialNetwork(socialNetwork)">
+        <q-item clickable v-ripple v-for="socialNetwork in uiSocialNetworks" :set="loginProvider = socialNetwork.loginProvider" :key="socialNetwork.loginProvider.name" @click="onClickSocialNetwork(socialNetwork)">
           <q-item-section avatar>
-            <q-icon :color="socialNetwork.iconColor" :name="socialNetwork.icon" />
-            <q-icon v-if="socialNetwork.customLoginUrl" name="fas fa-exclamation-triangle" color="yellow" style="position: absolute; left: 10px; top: 10px; font-size: 9px; "/>
+            <q-icon :color="loginProvider.iconColor" :name="loginProvider.icon"/>
+            <q-icon v-if="loginProvider.loginType === 'warningRegister'" name="fas fa-exclamation-triangle" color="warning" style="position: absolute; left: 10px; top: 10px; font-size: 9px; "/>
+            <q-icon v-else-if="loginProvider.loginType.startsWith('error')" name="fas fa-exclamation-circle" color="negative" style="position: absolute; left: 10px; top: 10px; font-size: 9px; "/>
           </q-item-section>
 
           <q-item-section>
             <q-item-label>{{socialNetwork.label}}</q-item-label>
-            <q-item-label caption>{{socialNetwork.site}}</q-item-label>
+            <q-item-label caption>{{loginType.site}}</q-item-label>
           </q-item-section>
 
           <q-item-section side v-if="socialNetwork.user" @click.stop="disconnectNetworkStart(socialNetwork)">
@@ -68,21 +69,19 @@
 import {EntityUserSocialNetwork, useStoreCrudUser} from 'src/store/store_crud_user';
 import {computed, defineComponent, ref} from 'vue';
 import {
-  LoginUserType,
-  SocialNetwork,
+  LoginProvider,
   openLoginWindow,
   openPopupWindow,
-  windowObjectReference,
-  socialNetworks,
+  loginProviders,
 } from 'pages/login/login';
+import {useStoreLogin} from 'src/store/store_login';
 
 /**
  * Used to display social network (SN) connections in UI
  * Contains meta info about SN and this user SN connection
- *
- * todo Use SocialNetwork as field instead of extension
  */
-interface UiSocialNetwork extends SocialNetwork {
+interface UiSocialNetwork {
+  loginProvider: LoginProvider,
   label: string,
   user?: EntityUserSocialNetwork,
 }
@@ -91,27 +90,17 @@ export default defineComponent({
   name: 'Settings',
   setup() {
     const storeUser = useStoreCrudUser();
+    const storeLogin = useStoreLogin();
 
     const disconnectingNetwork = ref<UiSocialNetwork | null>(null);
 
-    window.onLoginCompleted = async function (sessionId: string, user: LoginUserType) {
-      console.log(`Call parent from popup. SessionId: ${sessionId}. User type ${user}`);
-      windowObjectReference?.close();
-      await storeUser.loadUser();
-    };
-
     const uiSocialNetworks = computed<UiSocialNetwork[]>(() => {
-      const r:UiSocialNetwork[] = [];
-      socialNetworks.forEach(s => {
+      return loginProviders.map(loginProvider => {
         // console.log(`Social network ${s.name}`, 'User netw', storeUser.user.socialNetworks)
-        const userNetworkInfo = storeUser.user.socialNetworks.find((u: EntityUserSocialNetwork) => u.networkName === s.name);
-        if (userNetworkInfo) {
-          r.push({...s, user: userNetworkInfo, label: 'вход подключен'});
-        } else {
-          r.push({...s, label: 'настроить вход'});
-        }
+        const userNetworkInfo = storeUser.user.socialNetworks.find((u: EntityUserSocialNetwork) => u.networkName === loginProvider.name);
+        return {loginProvider: loginProvider, user: userNetworkInfo, label: userNetworkInfo ? 'вход подключен' : 'настроить вход'};
       });
-      return r;
+      // return r;
     });
 
     function disconnectNetworkStart(socialNetwork: UiSocialNetwork) {
@@ -120,16 +109,21 @@ export default defineComponent({
 
     async function disconnectNetworkCommit() {
       const network = disconnectingNetwork.value as UiSocialNetwork;
-      await storeUser.deleteSocialNetwork(network.name);
+      await storeUser.deleteSocialNetwork(network.loginProvider.name);
       disconnectingNetwork.value = null;
     }
 
+    // todo add wait indicator
     function onClickSocialNetwork(socialNetwork: UiSocialNetwork) {
       if (socialNetwork.user) {
-        const url = socialNetwork.user.link ? socialNetwork.user.link : socialNetwork.link;
-        openPopupWindow(url);
+        // Social network is already linked
+        const url = socialNetwork.user.link ? socialNetwork.user.link : `https://${socialNetwork.loginProvider.site}`;
+        openPopupWindow(url, 'userLink');
       } else {
-        openLoginWindow(socialNetwork.name, 'link');
+        void openLoginWindow(socialNetwork.loginProvider, async callbackParameters => {
+          console.log(`Link login provider ${socialNetwork.loginProvider.name} with parameters ${callbackParameters}`);
+          await storeLogin.link(socialNetwork.loginProvider, callbackParameters);
+        });
       }
     }
 

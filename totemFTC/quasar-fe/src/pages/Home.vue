@@ -14,9 +14,14 @@
           </a>.
         </p>
 
-        <p>Исходный код на
-          <a href="https://github.com/mpashka/home-incubator/tree/totemFTC_pinia/totemFTC" target="_blank">GitHub</a>
-        </p>
+        <p>Пожелания и найденные ошибки направляйте:</p>
+        <ul>
+          <li><a href="https://github.com/mpashka/home-incubator/tree/totemFTC_pinia/totemFTC" target="_blank">Исходный код</a></li>
+          <li><a href="https://github.com/mpashka/home-incubator/issues" target="_blank">Ошибки и предложения</a></li>
+          <li><a href="https://trello.com/b/dQ9YlBoq/todo" target="_blank">Планы</a></li>
+          <li>Чатик в тележеньке с обсуждением - TBD</li>
+        </ul>
+
 
         <p>Исполнено с использованием</p>
         <ul>
@@ -28,11 +33,6 @@
           <li><a href="https://www.docker.com/">Docker</a> контейнеры</li>
           <li><a href="https://www.postgresql.org/">PostgreSQL</a> база данных</li>
           <li><a href="https://flutter.dev/">Flutter</a> native app framework (iOS Android)</li>
-        </ul>
-
-        <p>Разработчики</p>
-        <ul>
-          <li><a href="https://telegram.me/M_pashka" target="_blank">Паша</a></li>
         </ul>
 
       </q-card-section>

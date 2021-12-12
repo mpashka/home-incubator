@@ -55,7 +55,10 @@ module.exports = configure(function (ctx) {
     ],
 
     // Full list of options: https://v2.quasar.dev/quasar-cli/quasar-conf-js#Property%3A-build
+    // For ctx description see totemFTC/quasar-fe/node_modules/@quasar/app/lib/helpers/get-quasar-ctx.js
     build: {
+      htmlFilename: "true" === process.env.DEMO_BUILD ? 'index.html' : 'quasar.html',
+
       //vueRouterMode: 'hash', // available values: 'hash', 'history'
       vueRouterMode: 'history',
 
@@ -82,17 +85,13 @@ module.exports = configure(function (ctx) {
       },
 
       // distDir: ctx.modeName === 'spa' && ctx.prod ? 'target/classes/META-INF/resources' : `dist/${ctx.modeName}`,
+      // distDir: "true" === process.env.DEMO_BUILD ? '../target/web' : `dist/${ctx.modeName}`,
 
       env: {
-        // Used to show login warning
-        FrontendFullUrl: ctx.dev ? 'http://localhost:8081' : 'https://totemftc.bbs.io',
-
-        // Used to open login page. See Login.vue
-        BackendFullUrl: ctx.dev ? 'http://localhost:8080' : 'https://totemftc.bbs.io',
-
         // Used to make backend api calls. See axios.ts
-        BackendUrl: ctx.dev ? 'http://localhost:8080' : '/',
-        // FrontendUrl: ctx.dev ? 'http://localhost:8081' : 'https://totemftc.bbs.io',
+        BackendUrl: ctx.dev ? 'http://localhost:8080' : 'https://api.totemftc.ga',
+        FrontendUrl: ctx.dev ? 'http://localhost:8081' : 'https://totemftc.ga',
+        demo: "true" === process.env.DEMO_BUILD,
       }
     },
 
@@ -119,7 +118,9 @@ module.exports = configure(function (ctx) {
       // directives: [],
 
       // Quasar plugins
-      plugins: []
+      plugins: [
+        'Dialog'
+      ]
     },
 
     // animations: 'all', // --- includes all animations

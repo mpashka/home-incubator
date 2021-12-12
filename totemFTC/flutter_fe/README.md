@@ -22,3 +22,12 @@ Run
 
 Generate json import files
 flutter pub run build_runner build
+
+Build web
+https://docs.flutter.dev/get-started/web
+`flutter build web`
+
+
+Build Android
+https://docs.flutter.dev/deployment/android#building-the-app-for-release
+`flutter build appbundle`

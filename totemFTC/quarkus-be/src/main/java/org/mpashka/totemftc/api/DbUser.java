@@ -434,7 +434,9 @@ public class DbUser {
                         return image;
                     })
                     .toArray(EntityImage[]::new);
+/*
             Object[] emails = row.getArrayOfJsons("emails");
+            todo [!] temporarily hardcoded off
             this.emails = emails == null ? null : Arrays.stream(emails)
                     .map(ej -> new EntityEmail().loadFromDb((JsonObject) ej))
                     .toArray(EntityEmail[]::new);
@@ -442,6 +444,7 @@ public class DbUser {
             this.phones = phones == null ? null : Arrays.stream(phones)
                     .map(pj -> new EntityPhone().loadFromDb((JsonObject) pj))
                     .toArray(EntityPhone[]::new);
+*/
             Object[] socialNetworks = row.getArrayOfJsons("social_networks");
             this.socialNetworks = socialNetworks == null ? null : Arrays.stream(socialNetworks)
                     .map(pj -> new EntitySocialNetwork().loadFromDb((JsonObject) pj))
@@ -457,9 +460,12 @@ public class DbUser {
 
             public EntitySocialNetwork loadFromDb(JsonObject row) {
                 this.networkName = row.getString("network_name");
+/*
+                todo [!] temporarily hardcoded off
                 this.id = row.getString("id");
+*/
                 this.link = row.getString("link");
-                this.link = row.getString("display_name");
+                this.displayName = row.getString("display_name");
                 return this;
             }
         }

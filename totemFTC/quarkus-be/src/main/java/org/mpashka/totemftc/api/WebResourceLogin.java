@@ -56,7 +56,7 @@ public class WebResourceLogin {
         log.debug("Init login {}.", providerName);
         AuthProvider provider = authProviders.get(providerName);
         if (provider == null) {
-            throw new RuntimeException("Unknown security provider " + providerName);
+            throw new RuntimeException("Unknown login provider " + providerName);
         }
         return Response.status(Response.Status.FOUND)
                 .location(URI.create(provider.getAuthorizationEndpoint()

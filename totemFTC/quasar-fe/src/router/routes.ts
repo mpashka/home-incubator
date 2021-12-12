@@ -19,12 +19,6 @@ const routes: RouteRecordRaw[] = [
   },
 
   { path: '/login', name: 'login', component: Login, props: (route) => ({ inProgress: (route.query.inProgress === 'true') }), },
-  { path: '/login/ok', name: 'login-ok', component: () => import('pages/login/LoginOk.vue'), },
-  { path: '/login/google', name: 'login-google', component: () => import('pages/login/LoginGoogle.vue'), },
-  { path: '/login/facebook', name: 'login-facebook', component: () => import('pages/login/LoginFacebook.vue'), },
-  { path: '/login/twitter', name: 'login-twitter', component: () => import('pages/login/LoginTwitter.vue'), },
-  { path: '/login/instagram', name: 'login-instagram', component: () => import('pages/login/LoginInstagram.vue'), },
-  { path: '/login/apple', name: 'login-apple', component: () => import('pages/login/LoginApple.vue'), },
 
   // Always leave this as last one,
   // but you can also remove it

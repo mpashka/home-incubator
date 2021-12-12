@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TotemFTC</title>
+
+    <meta charset="utf-8">
+    <meta name="description" content="<%= productDescription %>">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="viewport" content="user-scalable=no, initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width<% if (ctx.mode.cordova || ctx.mode.capacitor) { %>, viewport-fit=cover<% } %>">
+
+    <!--link rel="icon" type="image/png" sizes="128x128" href="icons/favicon-128x128.png">
+    <link rel="icon" type="image/png" sizes="96x96" href="icons/favicon-96x96.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+    <link rel="icon" type="image/ico" href="favicon.ico"-->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
+</head>
+<body>
+<div class="container">
+    <h1>TotemFTC</h1>
+    <p>Это - демо-версия приложения для учета и управления посещениями
+        фитнес-студии функционального тренинга <a href="https://totemftc.ru/">Totem</a>.
+    </p>
+
+    <p>Мобильная версия приложения предназначена для посетителей и для отметки тренировок.</p>
+    <p>Десктопная версия в теории должна обладать большими возможностями - например создание отчетов, администраторские действия.</p>
+
+    <p>И пожалуйста аккуратнее с личными данными - как вы можете заметить изучая исходный код, в настоящее время в приложении не
+        реализована проверка прав доступа на уровне backend-а. То есть кто угодно может запросто войти в приложение и используя
+        backend напрямую, а не через клиента, получить все данные - типа ФИО, e-mail, телефон и т.д.
+        <br>
+        PS: Функция просмотра e-mail и телефона на backend временно отключена (захардкожено).
+    </p>
+
+
+    <p>Пожелания и найденные ошибки направляйте:</p>
+    <ul>
+        <li><a href="https://github.com/mpashka/home-incubator/tree/totemFTC_pinia/totemFTC" target="_blank">Исходный код</a></li>
+        <li><a href="https://github.com/mpashka/home-incubator/issues" target="_blank">Ошибки и предложения</a></li>
+        <li><a href="https://trello.com/b/dQ9YlBoq/todo" target="_blank">Планы</a></li>
+        <li>Чатик в тележеньке с обсуждением - TBD</li>
+    </ul>
+
+    <a class="btn btn-primary" href="quasar.html">Десктопное</a>
+    <a class="btn btn-secondary" href="flutter.html">Мобильное</a>
+    <hr>
+    <h3>Исполнено с использованием</h3>
+    <ul>
+        <li><a href="https://vuejs.org/">Vuejs</a> web framework</li>
+        <li><a href="https://quasar.dev/">Quasar</a> набор ui компоненты для Vue / vue based framework</li>
+        <li><a href="https://www.typescriptlang.org/">TypeScript</a> JavaScript с поддержкой типизации</li>
+        <li><a href="https://quarkus.io/">Quarkus</a> Java framework</li>
+        <li><a href="https://www.docker.com/">Docker</a> контейнеры</li>
+        <li><a href="https://www.postgresql.org/">PostgreSQL</a> база данных</li>
+        <li><a href="https://flutter.dev/">Flutter</a> native app framework (iOS Android)</li>
+    </ul>
+
+</div>
+</body>
+</html>
