@@ -24,7 +24,8 @@ mv dist/spa/.well-known $target
 
 cp $root/docs/demo/* $target/
 
-curl https://cloclo58.cldmail.ru/public/get/7Y6pEVYEPvZNBBp6tcem3tU1kcpzsVnnxfYtHnax6PBsKA2eM2MjTrH68Af2GTvLtFrzTv/no/flutter.zip -o $tmp/flutter.zip
+#curl https://cloclo58.cldmail.ru/public/get/7Y6pEVYEPvZNBBp6tcem3tU1kcpzsVnnxfYtHnax6PBsKA2eM2MjTrH68Af2GTvLtFrzTv/no/flutter.zip -o $tmp/flutter.zip
+curl https://filebin.net/0t0hab6flpav3eet/flutter.zip -L -o $tmp/flutter.zip
 unzip -o $tmp/flutter.zip -d $target
 
 #cd $root/target/web
