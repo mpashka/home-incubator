@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +26,7 @@ import static org.hamcrest.Matchers.nullValue;
  * todo move dbtest from quarkus-test1
  * todo use testcontainers
  */
-@QuarkusTest
+//@QuarkusTest
 //@QuarkusTestResource(PostgresResource.class)
 public class DbTest {
     private static final Logger log = LoggerFactory.getLogger(DbTest.class);
@@ -37,6 +38,7 @@ public class DbTest {
     ObjectMapper objectMapper;
 
     @Test
+    @Disabled
     void testMark() throws JsonProcessingException {
         DbCrudVisit.EntityVisit entityVisit = objectMapper.readValue("""
 {

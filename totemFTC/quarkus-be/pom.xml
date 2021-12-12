@@ -91,16 +91,13 @@
       <artifactId>rest-assured</artifactId>
       <scope>test</scope>
     </dependency>
+    <!-- Don't put content here - we deploy content and API separately
     <dependency>
       <groupId>org.mpashka.totemftc</groupId>
       <artifactId>quasar-fe</artifactId>
       <version>1.0.0-SNAPSHOT</version>
-    </dependency>
-
-    <!--dependency>
-      <groupId>org.testcontainers</groupId>
-      <artifactId>junit-jupiter</artifactId>
     </dependency-->
+
     <dependency>
       <groupId>org.testcontainers</groupId>
       <artifactId>postgresql</artifactId>

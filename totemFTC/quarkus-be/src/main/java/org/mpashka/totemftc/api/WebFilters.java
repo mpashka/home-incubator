@@ -23,6 +23,10 @@ public class WebFilters {
     private static final List<String> TYPE_JSON = Collections.singletonList(MediaType.APPLICATION_JSON);
     private static final String TYPE_JSON_UTF8 = MediaType.APPLICATION_JSON_TYPE.withCharset(StandardCharsets.UTF_8.name()).toString();
 
+/*
+
+todo make this configurable
+
     private String indexHtml;
 
     @PostConstruct
@@ -43,6 +47,7 @@ public class WebFilters {
             responseContext.setEntity(indexHtml, null, MediaType.TEXT_HTML_TYPE);
         }
     }
+*/
 
     @ServerResponseFilter
     public void charsetFilter(ContainerResponseContext responseContext) {

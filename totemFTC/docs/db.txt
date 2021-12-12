@@ -40,3 +40,13 @@ ALTER TABLE IF EXISTS training_visit ADD PRIMARY KEY (training_id, user_id);
 
 PLPGSQL example
 https://stackoverflow.com/questions/129265/cascade-delete-just-once
+
+# Export / import
+pg_dump -U username dbname > dbexport.pgsql
+psql -U username dbname < dbexport.pgsql
+
+pg_dump --host=localhost --username=totemftc --password --dbname=totemftc --data-only --schema=public "--file=$(date +%Y-%m-%d)_totemftc.dump.sql"
+psql --host=localhost --username=totemftc --password --dbname=totemftc --file=<date>_totemftc.dump.sql
+
+pg_dump --exclude-table=public.ticket_type --exclude-table=public.training_type --exclude-table=public.user_image --exclude-table=public.user_session \
+    --exclude-table=public.user_type_description
