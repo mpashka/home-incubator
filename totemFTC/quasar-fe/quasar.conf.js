@@ -57,7 +57,7 @@ module.exports = configure(function (ctx) {
     // Full list of options: https://v2.quasar.dev/quasar-cli/quasar-conf-js#Property%3A-build
     // For ctx description see totemFTC/quasar-fe/node_modules/@quasar/app/lib/helpers/get-quasar-ctx.js
     build: {
-      htmlFilename: "true" === process.env.DEMO_BUILD ? 'index.html' : 'quasar.html',
+      htmlFilename: "true" === process.env.DEMO_BUILD ? 'quasar.html' : 'index.html',
 
       //vueRouterMode: 'hash', // available values: 'hash', 'history'
       vueRouterMode: 'history',
