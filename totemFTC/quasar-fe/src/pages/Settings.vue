@@ -19,7 +19,7 @@
     <q-card-section class="text-h5">E-Mail</q-card-section>
     <q-separator />
     <q-card-section>
-      <p v-for="email in storeUser.user.emails" :key="email.email">{{email.email }} ({{ email.confirmed }})</p>
+      <p v-for="email in storeUser.user.emails" :key="email.email">{{ email.email }} ({{ email.confirmed }})</p>
     </q-card-section>
   </q-card>
 
@@ -28,16 +28,16 @@
     <q-separator />
     <q-card-section>
       <div>
-        <q-item clickable v-ripple v-for="socialNetwork in uiSocialNetworks" :set="loginProvider = socialNetwork.loginProvider" :key="socialNetwork.loginProvider.name" @click="onClickSocialNetwork(socialNetwork)">
+        <q-item clickable v-ripple v-for="socialNetwork in uiSocialNetworks" :key="socialNetwork.loginProvider.name" @click="onClickSocialNetwork(socialNetwork)">
           <q-item-section avatar>
-            <q-icon :color="loginProvider.iconColor" :name="loginProvider.icon"/>
-            <q-icon v-if="loginProvider.loginType === 'warningRegister'" name="fas fa-exclamation-triangle" color="warning" style="position: absolute; left: 10px; top: 10px; font-size: 9px; "/>
-            <q-icon v-else-if="loginProvider.loginType.startsWith('error')" name="fas fa-exclamation-circle" color="negative" style="position: absolute; left: 10px; top: 10px; font-size: 9px; "/>
+            <q-icon :color="socialNetwork.loginProvider.iconColor" :name="socialNetwork.loginProvider.icon"/>
+            <q-icon v-if="socialNetwork.loginProvider.loginType === 'warningRegister'" name="fas fa-exclamation-triangle" color="warning" style="position: absolute; left: 10px; top: 10px; font-size: 9px; "/>
+            <q-icon v-else-if="socialNetwork.loginProvider.loginType.startsWith('error')" name="fas fa-exclamation-circle" color="negative" style="position: absolute; left: 10px; top: 10px; font-size: 9px; "/>
           </q-item-section>
 
           <q-item-section>
             <q-item-label>{{socialNetwork.label}}</q-item-label>
-            <q-item-label caption>{{loginType.site}}</q-item-label>
+            <q-item-label caption>{{socialNetwork.loginProvider.site}}</q-item-label>
           </q-item-section>
 
           <q-item-section side v-if="socialNetwork.user" @click.stop="disconnectNetworkStart(socialNetwork)">

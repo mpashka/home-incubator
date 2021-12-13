@@ -1,5 +1,6 @@
 #!/bin/bash
 
+file_bin=0t0hab6flpav3eet
 root=`pwd`
 # For testing
 #rm -rf $root/target
@@ -24,12 +25,15 @@ npm install
 
 # Download flutter
 #curl https://cloclo58.cldmail.ru/public/get/7Y6pEVYEPvZNBBp6tcem3tU1kcpzsVnnxfYtHnax6PBsKA2eM2MjTrH68Af2GTvLtFrzTv/no/flutter.zip -o $tmp/flutter.zip
-curl https://filebin.net/0t0hab6flpav3eet/flutter.zip -L -o $tmp/flutter.zip
+curl https://filebin.net/$file_bin/flutter.zip -L -o $tmp/flutter.zip
 unzip -o $tmp/flutter.zip -d $target
 mv $target/index.html $target/flutter.html
 
 # Copy quasar & demo
 cp -R -t $target $root/quasar-fe/dist/spa/. $root/docs/demo/.
+
+# Download android apk
+curl https://filebin.net/$file_bin/totemftc-release.apk -L -o $target/totemftc-release.apk
 
 #cd $root/target/web
 #zip -r ../deploy.zip * .well-known/*

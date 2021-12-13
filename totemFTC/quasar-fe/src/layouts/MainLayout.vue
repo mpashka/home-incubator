@@ -92,14 +92,6 @@
           </q-item>
         </router-link>
 
-        <router-link to="/settings">
-          <q-item clickable>
-            <q-item-section avatar>
-              <q-icon name="tools" />
-            </q-item-section>
-
-          </q-item>
-        </router-link>
       </q-list>
     </q-drawer>
 
