@@ -52,7 +52,7 @@ class Configuration {
   bool get isWeb  => kIsWeb;
   bool get isMobile  => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
   String get nativeStr => kIsWeb ? "web" : "mobile";
-  String get prodStr => kReleaseMode ? "prod" : "dev";
+  String prodStr = kReleaseMode ? "prod" : "dev";
 
   /// Client id used to select appropriate configuration on backend
   String clientId() {
@@ -87,8 +87,8 @@ class Configuration {
         .replaceAll('\${provider}', provider.name);
   }
 
-  String loginCallbackUrl() {
-    return (_getDoc(['oidc', 'callbackUrl']) as String);
+  String loginCallbackRoute() {
+    return (_getDoc(['oidc', 'loginCallbackRoute']) as String);
   }
 
   String devTelegram() {

@@ -71,7 +71,7 @@ export const useStoreLogin = defineStore('login', {
     },
 
     async logout() {
-      await api.get('/api/logout/');
+      await api.get('/api/login/logout');
       this.clearSession();
       await Router.replace('/login');
     }

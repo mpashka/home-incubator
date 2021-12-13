@@ -158,6 +158,11 @@ export const loginProviders: LoginProvider[] = [
   },
 ]
 
+interface LoginCallbackParameters {
+  callback: string,
+  referrer: string,
+}
+
 const loginWindowPopupName = 'loginWindow';
 /**
  * See login-callback.html
@@ -175,7 +180,8 @@ export async function openLoginWindow(provider:LoginProvider, action: (callbackP
   const redirectUri = `${String(process.env.FrontendUrl)}/login-callback.html`;
   const url = `${provider.authorizationEndpoint}&client_id=${clientId}&redirect_uri=${redirectUri}&state=state_client_quasar&response_type=code&nonce=${randomString(10)}`;
   const onLoginEventListener = prevLoginEventListener = ((ev: CustomEvent) => {
-    let callbackParameters = ev.detail as string;
+    const loginCallbackParameters = ev.detail as LoginCallbackParameters;
+    let callbackParameters = loginCallbackParameters.callback;
     console.log(`Call parent from popup. Callback parameters: ${callbackParameters}`);
     windowObjectReferences[loginWindowPopupName]?.close();
     if (callbackParameters.startsWith('?')) {
