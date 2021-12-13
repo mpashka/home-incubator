@@ -50,7 +50,7 @@ class Configuration {
   }
 
   bool get isWeb  => kIsWeb;
-  bool get isMobile  => Platform.isAndroid || Platform.isIOS;
+  bool get isMobile  => !kIsWeb && (Platform.isAndroid || Platform.isIOS);
   String get nativeStr => kIsWeb ? "web" : "mobile";
   String get prodStr => kReleaseMode ? "prod" : "dev";
 

@@ -124,11 +124,11 @@ class CrudEntityUser implements Comparable<CrudEntityUser> {
 @JsonSerializable()
 class CrudEntityUserSocialNetwork {
   String networkName;
-  String id;
+  String? id;
   String? link;
   String? displayName;
 
-  CrudEntityUserSocialNetwork({required this.networkName, required this.id, this.link, this.displayName});
+  CrudEntityUserSocialNetwork({required this.networkName, this.id, this.link, this.displayName});
   factory CrudEntityUserSocialNetwork.fromJson(Map<String, dynamic> json) => _$CrudEntityUserSocialNetworkFromJson(json);
   Map<String, dynamic> toJson() => _$CrudEntityUserSocialNetworkToJson(this);
 }

@@ -27,13 +27,11 @@ class Initializer {
     Logger.root.onRecord.listen((record) {
       developer.log(record.message, time: record.time, sequenceNumber: record.sequenceNumber, level: record.level.value,
           name: '${record.time} ${record.loggerName}', zone: record.zone, error: record.error, stackTrace: record.stackTrace);
-      if (record.error != null) {
-        developer.log('Error: ${record.error}', time: record.time, sequenceNumber: record.sequenceNumber, level: record.level.value,
-          name: record.loggerName, zone: record.zone);
+      if (_configuration.isWeb && record.error != null) {
+        print(record.error);
       }
-      if (record.stackTrace != null) {
-        developer.log(record.stackTrace.toString(), time: record.time, sequenceNumber: record.sequenceNumber, level: record.level.value,
-          name: record.loggerName, zone: record.zone);
+      if (_configuration.isWeb && record.stackTrace != null) {
+        print(record.stackTrace);
       }
     });
     log.info('Logger configured. Application initializing...');

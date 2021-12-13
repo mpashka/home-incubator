@@ -6,11 +6,14 @@
 </head>
 <body>
 <script>
-  try {
-    opener.parent.onLoginCompleted(window.location.search);
-  } catch (e) {
-    console.log('Error', e);
-  }
+    try {
+        opener.parent.dispatchEvent(new CustomEvent('loginCompleted', {detail: {
+                callback: window.location.search,
+                referrer: document.referrer,
+            }}));
+    } catch (e) {
+        console.log('Error', e);
+    }
 </script>
 
 </body>

@@ -49,7 +49,7 @@ class ScreenInitState extends State<ScreenInit> {
     return Scaffold(
         appBar: AppBar(title: const Text('Totem FC'),),
         body: Column(children: const [
-          Text('Please wait. Application initializing...'),
+          Text('Please wait. Application is initializing...'),
           Center(child: CircularProgressIndicator()),
         ])
     );

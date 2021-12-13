@@ -57,7 +57,7 @@ class Session {
         + '&nonce=' + getRandomString(10)
         + '&redirect_uri=' + Uri.encodeComponent(redirectUrl);
     log.info('Launch login ${provider.name} $url');
-    _loginSession = login_helper.showLoginWindow(url, (loginParams) =>
+    _loginSession = login_helper.showLoginWindow(url, (loginParams, referrer) =>
         _onLoginCallback(loginParams, provider, link, sessionBloc: sessionBloc)
             .then((value) => completer.complete(value)));
     return completer.future;
@@ -78,14 +78,15 @@ class Session {
       final user = await loadUser();
       sessionBloc?.state = LoginStateInfo(LoginState.done);
       return user;
-    } catch (e) {
+    } catch (e, s) {
+      log.warning('Login callback processing error', e, s);
       sessionBloc?.state = LoginStateInfo(LoginState.error, 'Error $e');
     }
   }
 
   void onLoginCallback(String loginParams) {
     if (_loginSession != null) {
-      _loginSession!.onLoginCallback(loginParams);
+      _loginSession!.onLoginCallback(loginParams, '');
     } else {
       log.warning('Received login callback out of session');
     }
@@ -190,7 +191,7 @@ enum EntityLoginUserType {
  newUser, existing
 }
 
-typedef LoginCallbackFunction = void Function(String loginParams);
+typedef LoginCallbackFunction = void Function(String loginParams, String referrer);
 
 class LoginSession {
   LoginCallbackFunction onLoginCallback;

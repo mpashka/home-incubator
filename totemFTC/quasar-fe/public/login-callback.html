@@ -8,7 +8,10 @@
 <script>
   try {
     // opener.parent.onLoginCompleted(window.location.search);
-    opener.parent.dispatchEvent(new CustomEvent('loginCompleted', {detail: window.location.search}));
+    opener.parent.dispatchEvent(new CustomEvent('loginCompleted', {detail: {
+        callback: window.location.search,
+        referrer: document.referrer,
+      }}));
   } catch (e) {
     console.log('Error', e);
   }

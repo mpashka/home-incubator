@@ -42,8 +42,6 @@ window.screen.availHeight 1278
   }
 }
 
-export type ProviderActionType = 'login' | 'link';
-
 export type LoginType = 'normal' | 'warningRegister' | 'errorApple' | 'errorTwitter';
 
 export interface LoginProvider {
@@ -77,7 +75,7 @@ export const loginProviders: LoginProvider[] = [
     site: 'google.com',
     icon: 'fab fa-google',
     iconColor: 'red-8',
-    authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth?scope=openid+email+profile',
+    authorizationEndpoint: 'https://accounts.google.com/o/oauth2/v2/auth?prompt=consent+select_account&scope=openid+email+profile',
     clientId: '393082269793-6em2i881catbcbfgij4m96a7br1n4sse.apps.googleusercontent.com',
     loginType: 'warningRegister',
   },
@@ -190,7 +188,7 @@ export async function openLoginWindow(provider:LoginProvider, action: (callbackP
     }
     removeLoginEventListener();
   }) as EventListener;
-  window.addEventListener(loginEventName, onLoginEventListener);
+  window.addEventListener(loginEventName, onLoginEventListener, {once: true});
 /*
   window.onLoginCompleted = async function (callbackParameters: string) {
     console.log(`Call parent from popup. Callback parameters: ${callbackParameters}`);
@@ -233,7 +231,7 @@ const loginProviderMessages: {[name in LoginType]: LoginProviderMessage} = {
       'написать разработчикам ' +
       '(<a href="https://telegram.me/M_pashka" target="_blank"><i class="fab fa-telegram"></i></a>)' +
       ', они должны добавить тебя в тестовые пользователи ' +
-      'приложения TotemFTC на платформе ${provider}.И после соответствующих манипуляций ' +
+      'приложения TotemFTC на платформе ${provider}. И после соответствующих манипуляций ' +
       'можно будет пользоваться входом. Жми "Ok" если тебя уже добавили.',
     icon: 'fas fa-exclamation-triangle',
     iconColor: 'warning',
@@ -259,7 +257,7 @@ const loginProviderMessages: {[name in LoginType]: LoginProviderMessage} = {
 
 function showErrorDialog(loginProvider: LoginProvider, callbackParameters: string) {
   Dialog.create({
-    title: `<i class="fas fa-exclamation-circle negative"></i>  Login through ${loginProvider.name} error`,
+    title: `<i class="fas fa-exclamation-circle negative"></i> Login through ${loginProvider.name} error`,
     message: `Login via provider ${loginProvider.name} error: ${callbackParameters}`,
     html: true,
   });
