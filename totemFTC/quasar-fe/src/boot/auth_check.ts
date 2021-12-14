@@ -21,6 +21,7 @@ export default boot(async ( { router } ) => {
   }
 
   const currentPath = router.currentRoute.value.path;
+  console.log(`Current path: ${currentPath}, authenticated: ${String(storeLogin.isAuthenticated)}`);
   if (!storeLogin.isAuthenticated) {
     console.log('Redirect to login');
     try {
@@ -32,8 +33,9 @@ export default boot(async ( { router } ) => {
     } catch (e) {
       console.log('Error push to login page', e);
     }
-  } else if (currentPath === '/quasar.html') {
-    await router.replace({name: '/'});
+  } else if (currentPath === '/' || currentPath === '/quasar.html') {
+    console.log('Redirect to root page');
+    await router.replace({name: 'root'});
   }
 
   router.beforeEach((to) => {
