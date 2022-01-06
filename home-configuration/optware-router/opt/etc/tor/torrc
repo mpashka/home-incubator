@@ -1,0 +1,142 @@
+## Configuration file for a typical Tor user
+## Last updated 9 October 2013 for Tor 0.2.5.2-alpha.
+## (may or may not work for much older or much newer versions of Tor.)
+##
+## Lines that begin with "## " try to explain what's going on. Lines
+## that begin with just "#" are disabled commands: you can enable them
+## by removing the "#" symbol.
+##
+## See 'man tor', or https://www.torproject.org/docs/tor-manual.html,
+## for more options you can use in this file.
+##
+## Tor will look for this file in various places based on your platform:
+## https://www.torproject.org/docs/faq#torrc
+##
+## See https://manpages.debian.org/jessie/tor/torrc.5
+## See https://2019.www.torproject.org/docs/tor-manual.html.en
+
+
+## The directory for keeping all the keys/etc. By default, we store
+## things in $HOME/.tor on Unix, and in Application Data\tor on Windows.
+DataDirectory /opt/var/lib/tor
+
+
+## Tor opens a socks proxy on port 9050 by default -- even if you don't
+## configure one below. Set "SocksPort 0" if you plan to run Tor only
+## as a relay, and not make any local application connections yourself.
+#SocksPort 9050 # Default: Bind to localhost:9050 for local connections.
+#SocksPort 192.168.2.4:9050 NoIsolateClientAddr SessionGroup=1 # Bind to this address:port too.
+SocksPort 0.0.0.0:9050
+
+
+## Open this port to listen for transparent proxy connections. Set this to 0 if you don't want to allow transparent proxy connections. Set the port to "auto" to have Tor pick a port for you.
+## This directive can be specified multiple times to bind to multiple addresses/ports. If multiple entries of this option are present in your configuration file, Tor will perform stream
+## isolation between listeners by default. See SOCKSPort for an explanation of isolation flags.
+##
+## TransPort requires OS support for transparent proxies, such as BSDs' pf or Linux's IPTables. If you're planning to use Tor as a transparent proxy for a network, you'll want to examine
+## and change VirtualAddrNetwork from the default setting. (Default: 0)
+#
+#TransPort 192.168.1.1:
+#TransPort 9040
+TransPort 0.0.0.0:9040
+
+## Tells the client to remember all DNS answers we receive from exit nodes via this connection.
+# CacheDNS
+
+
+## A list of identity fingerprints, country codes, and address patterns of nodes to never use when picking an exit node---that is,
+## a node that delivers traffic for you outside the Tor network. Note that any node listed in ExcludeNodes is automatically
+## considered to be part of this list too. See the ExcludeNodes option for more information on how to specify nodes. See also the
+## caveats on the "ExitNodes" option below.
+##ExcludeExitNodes node,node,…
+## https://www.iban.com/country-codes
+# Armenia       AM
+# Kyrgyzstan    KG
+# Kazakhstan    KZ
+# Turkmenistan  TM
+# Uzbekistan    UZ
+# Belarus       BY
+ExcludeExitNodes {RU},{AM},{BY},{KG},{KZ},{TM},{UA},{UZ}
+
+
+##StrictNodes 0|1
+## If StrictNodes is set to 1, Tor will treat solely the ExcludeNodes option as a requirement to follow for all the circuits you generate, even if doing so will break functionality for you
+## (StrictNodes applies to neither ExcludeExitNodes nor to ExitNodes, nor to MiddleNodes). If StrictNodes is set to 0, Tor will still try to avoid nodes in the ExcludeNodes list, but it
+## will err on the side of avoiding unexpected errors. Specifically, StrictNodes 0 tells Tor that it is okay to use an excluded node when it is necessary to perform relay reachability
+## self-tests, connect to a hidden service, provide a hidden service to a client, fulfill a .exit request, upload directory information, or download directory information. (Default: 0)
+StrictNodes 1
+
+
+## Tells Tor whether to run as an exit relay. If Tor is running as a non-bridge server, and ExitRelay is set to 1, then Tor allows traffic to exit according to the ExitPolicy option.
+## (or the default ExitPolicy if none is specified).
+##
+## If ExitRelay is set to 0, no traffic is allowed to exit, and the ExitPolicy option is ignored.
+##
+## If ExitRelay is set to "auto", then Tor behaves as if it were set to 1, but warns the user if this would cause traffic to exit. In a future version, the default value will be 0. (Default: auto)
+##
+ExitRelay 0
+
+
+## Set an exit policy for this server. Each policy is of the form " accept|rejectADDR[/MASK][:PORT]". If / MASK is omitted then this
+## policy just applies to the host given. Instead of giving a host or network you can also use "*" to denote the universe (0.0.0.0/0).
+## PORT can be a single port number, an interval of ports " FROM_PORT-TO_PORT", or "*". If PORT is omitted, that means "*".
+ExitPolicy reject *:*
+ExitPolicy reject6 *:*
+
+
+## When this option is enabled, and we get a request to resolve an address that ends with one of the suffixes in AutomapHostsSuffixes,
+## we map an unused virtual address to that address, and return the new virtual address. This is handy for making ".onion" addresses
+## work with applications that resolve an address and then connect to it. (Default: 0)
+AutomapHostsOnResolve 1
+
+
+## A comma-separated list of suffixes to use with AutomapHostsOnResolve. The "." suffix is equivalent to "all addresses." (Default: .exit,.onion).
+AutomapHostsSuffixes .exit,.onion
+
+
+## When Tor needs to assign a virtual (unused) address because of a MAPADDRESS command from the controller or the AutomapHostsOnResolve
+## feature, Tor picks an unassigned address from this range. (Defaults: 127.192.0.0/10 and [FE80::]/10 respectively.)
+##
+## When providing proxy server service to a network of computers using a tool like dns-proxy-tor, change the IPv4 network to "10.192.0.0/10"
+## or "172.16.0.0/12" and change the IPv6 network to "[FC00]/7". The default VirtualAddrNetwork address ranges on a properly configured
+## machine will route to the loopback or link-local interface. For local use, no change to the default VirtualAddrNetwork setting is needed.
+#VirtualAddrNetworkIPv4 Address/bits
+#VirtualAddrNetworkIPv6 [Address]/bits
+VirtualAddrNetwork 10.254.0.0/16
+
+
+## If non-zero, open this port to listen for UDP DNS requests, and resolve them anonymously. This port only handles A, AAAA, and PTR
+## requests---it doesn’t handle arbitrary DNS request types. Set the port to "auto" to have Tor pick a port for you. This directive can
+## be specified multiple times to bind to multiple addresses/ports. See SOCKSPort for an explanation of isolation flags. (Default: 0)
+##DNSPort [address:]port|auto [isolation flags]
+DNSPort 127.0.0.1:9053
+
+
+## If non-zero, try to write to disk less frequently than we would otherwise. This is useful when running on flash memory or other media
+## that support only a limited number of writes. (Default: 0)
+AvoidDiskWrites 1
+
+
+## On startup, write our PID to FILE. On clean shutdown, remove FILE.
+PidFile /opt/var/run/tor.pid
+
+
+## A filename containing IPv4 GeoIP data, for use with by-country statistics.
+GeoIPFile /opt/share/tor/geoip
+
+
+## A filename containing IPv6 GeoIP data, for use with by-country statistics.
+GeoIPv6File /opt/share/tor/geoip6
+
+
+# Log minSeverity[-maxSeverity] stderr|stdout|syslog
+## Send all messages between minSeverity and maxSeverity to the standard output stream, the standard error stream, or to the system log.
+## (The "syslog" value is only supported on Unix.) Recognized severity levels are debug, info, notice, warn, and err. We advise using
+## "notice" in most cases, since anything more verbose may provide sensitive information to an attacker who obtains the logs. If only
+## one severity level is given, all messages of that level or higher will be sent to the listed destination.
+
+# Log minSeverity[-maxSeverity] file FILENAME
+## As above, but send log messages to the listed filename. The "Log" option may appear more than once in a configuration file. Messages are
+## sent to all the logs that match their severity level.
+Log notice file /opt/var/log/tor/notices.log
+#Log debug file /opt/var/log/tor/debug.log

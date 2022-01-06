@@ -1,0 +1,2 @@
+# Auto generated from /etc/dnsmasq.d/src/dns_tor_domains.txt.i
+AutomapHostsSuffixes .exit,.onion

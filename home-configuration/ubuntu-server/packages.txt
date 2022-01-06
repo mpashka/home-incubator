@@ -1,0 +1,7 @@
+iptables-persistent
+tor
+dnsmasq
+dnscrypt-proxy
+systemd (systemd-networkd)
+netplan.io
+wireguard

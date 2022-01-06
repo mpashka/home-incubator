@@ -1,0 +1,40 @@
+#!/bin/sh
+
+### Custom user script to start wireguard
+### First param is:
+###  "start" (call at start optware),
+###  "stop" (call before stop optware),
+
+case "$1" in
+start)
+	#
+	wireguard-go wg0
+	# Debug: LOG_LEVEL=debug && wireguard-go -f wg0
+	ip address add dev wg0 10.253.1.3/24
+	wg setconf wg0 /opt/etc/wireguard/wg0.conf
+	ip link set up dev wg0
+	#ip route add 10.253.1.0/24 dev wg0 src 10.253.1.3
+	ip route add 192.168.2.0/24 dev wg0 src 192.168.3.1
+	iptables -t filter -A INPUT -i wg0 -j ACCEPT
+	iptables -t filter -A FORWARD -i wg0 -j ACCEPT
+	echo "Wireguard started"
+	;;
+stop)
+	#
+	#ip route del 10.253.1.0/24 dev wg0 src 10.253.1.3
+	ip route del 192.168.2.0/24 dev wg0 src 192.168.3.1
+	iptables -t filter -D INPUT -i wg0 -j ACCEPT
+	iptables -t filter -D FORWARD -i wg0 -j ACCEPT
+	ip link set down dev wg0
+	ip link delete dev wg0
+	echo "Wireguard stopped"
+	;;
+check|status)
+	wg showconf wg0
+	wg show
+	;;
+*)
+	echo "Usage: $0 {start|stop|check|status}"
+	exit 1
+	;;
+esac

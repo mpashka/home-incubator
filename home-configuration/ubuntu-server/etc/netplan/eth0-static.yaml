@@ -1,0 +1,13 @@
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp1s0:
+      dhcp4: no
+      addresses: [192.168.2.4/24]
+      gateway4: 192.168.2.1
+      nameservers:
+        addresses: [8.8.8.8, 8.8.4.4, 192.168.2.1]
+      mtu: 1492
+    #enp2s0:
+    #  optional: true

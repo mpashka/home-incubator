@@ -1,0 +1,88 @@
+# The Onion Router (tor) address list
+
+### Торрент-трекеры
+rutracker.org
+rutor.info
+rutor.is
+mega-tor.org
+kinozal.tv
+nnm-club.me
+nnm-club.ws
+nnmclub.to
+tfile.me
+tfile-home.org
+tfile1.cc
+megatfile.cc
+megapeer.org
+megapeer.ru
+tapochek.net
+tparser.org
+tparser.me
+rustorka.com
+uniongang.tv
+fast-torrent.ru
+underver.se
+1337x.to
+
+### Каталоги медиаконтента для программ
+rezka.ag
+hdrezka.ag
+hdrezka.me
+filmix.co
+filmix.cc
+seasonvar.ru
+kino.pub
+
+### Книги
+lib.rus.ec
+flibusta.is
+flibs.me
+flisland.net
+flibusta.site
+
+### Телеграм
+#telegram.org
+#tdesktop.com
+#tdesktop.org
+#tdesktop.info
+#tdesktop.net
+#telesco.pe
+#telegram.dog
+#telegram.me
+#t.me
+#telegra.ph
+#web.telegram.org
+#desktop.telegram.org
+#updates.tdesktop.com
+#venus.web.telegram.org
+#flora.web.telegram.org
+#vesta.web.telegram.org
+#pluto.web.telegram.org
+#aurora.web.telegram.org
+#149.154.160.0/20
+#91.108.4.0/22
+#91.108.8.0/22
+#91.108.12.0/22
+#91.108.16.0/22
+#91.108.56.0/22
+#109.239.140.0/24
+#67.198.55.0/24
+
+### Разное
+#7-zip.org
+edem.tv
+4pna.com
+2019.vote
+
+### Проверка Tor
+check.torproject.org
+torproject.org
+
+### Пример разблокировки по IP
+#195.82.146.214
+
+### Пример разблокировки по CIDR
+#103.21.244.0/22
+
+### Пример разблокировки по диапазону
+#100.100.100.200-100.100.100.210

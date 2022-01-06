@@ -1,0 +1,50 @@
+#!/bin/sh
+
+case "$1" in
+start)
+	echo "Starting specific addresses routing through tor network..."
+	modprobe ip_set
+	modprobe ip_set_hash_ip
+	modprobe ip_set_hash_net
+	modprobe ip_set_bitmap_ip
+	modprobe ip_set_list_set
+	modprobe xt_set
+
+	ipset create unblock hash:net
+	grep -q 'conf-file[ \t]*=[ \t]*/opt/etc/unblock.dnsmasq' || echo "conf-file=/opt/etc/unblock.dnsmasq" >> /etc/storage/dnsmasq/dnsmasq.conf
+	grep -q 'server[ \t]*=[ \t]*/.exit/.onion/127.0.0.1#9053' || echo "server=/.exit/.onion/127.0.0.1#9053" >> /etc/storage/dnsmasq/dnsmasq.conf
+	/opt/bin/unblock_dnsmasq.sh
+	restart_dhcpd
+	/opt/bin/unblock_ipset.sh &
+
+	# add iptables custom rules
+	iptables -t nat -A PREROUTING -i br0 -p tcp -m set --match-set unblock dst -j REDIRECT --to-port 9040
+	iptables -t nat -A OUTPUT -p tcp -m set --match-set unblock dst -j REDIRECT --to-ports 9040
+	iptables -t nat -A PREROUTING -d 10.254.0.0/16 -i br0 -p tcp -j REDIRECT --to-ports 9040
+	iptables -t nat -A OUTPUT -d 10.254.0.0/16 -p tcp -j REDIRECT --to-ports 9040
+	echo "Specific addresses routing through tor started"
+	;;
+stop)
+	echo "Stopping specific addresses routing through tor network..."
+	# delete iptables custom rules
+	iptables -t nat -D PREROUTING -i br0 -p tcp -m set --match-set unblock dst -j REDIRECT --to-port 9040
+	iptables -t nat -D OUTPUT -p tcp -m set --match-set unblock dst -j REDIRECT --to-ports 9040
+	iptables -t nat -D PREROUTING -d 10.254.0.0/16 -i br0 -p tcp -j REDIRECT --to-ports 9040
+	iptables -t nat -D OUTPUT -d 10.254.0.0/16 -p tcp -j REDIRECT --to-ports 9040
+	ipset destroy unblock
+	cat /dev/null > /opt/etc/unblock.dnsmasq
+	restart_dhcpd
+	echo "Specific addresses routing through tor stopped"
+	;;
+check|status)
+	echo "Specific addresses routing through tor network status"
+	echo "    IPSet unblock $(ipset list unblock|wc -l) entries"
+	echo "    Tor $(ps -ef|grep -v grep|grep -q /bin/tor && echo 'running' || echo 'not running')"
+	echo "    Tor api check $(curl -s https://check.torproject.org/api/ip)"
+	echo "    Get rutracker: $(curl -sL https://rutracker.org | grep -q 'rutracker.org/forum/index' && echo 'Ok' || echo 'Fail')"
+	;;
+*)
+	echo "Usage: $0 {start|stop|check|status}"
+	exit 1
+	;;
+esac
