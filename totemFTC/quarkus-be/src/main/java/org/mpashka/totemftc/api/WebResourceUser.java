@@ -5,6 +5,7 @@ import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -14,7 +15,9 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.SecurityContext;
 
 @Path("/api/user")
 @Authenticated
@@ -29,8 +32,9 @@ public class WebResourceUser {
     WebSessionService webSessionService;
 
     @GET
+    @Path("current")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<DbUser.EntityUser> user() {
+    public Uni<DbUser.EntityUser> currentUser() {
         int userId = webSessionService.getUserId();
         return dbUser.getUser(userId);
     }
@@ -38,6 +42,7 @@ public class WebResourceUser {
     @GET
     @Path("list")
     @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"trainer", "admin"})
     public Uni<DbUser.EntityUser[]> listUsers() {
         return dbUser.getAllUsers();
     }
@@ -51,6 +56,7 @@ public class WebResourceUser {
 
     @DELETE
     @Path("delete/{userId}")
+    @RolesAllowed({"admin"})
     public Uni<Void> delete(@PathParam("userId") int userId) {
         return dbUser.deleteUser(userId);
     }
@@ -63,15 +69,36 @@ public class WebResourceUser {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"admin"})
     public Uni<Integer> create(DbUser.EntityUser user) {
         log.debug("Add user {}", user);
-        return dbUser.addUser(user);
+        return dbUser.addUser(user)
+                .onItem().transform(DbUser.EntityUser::getUserId);
     }
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"admin"})
     public Uni<Void> update(DbUser.EntityUser user) {
         return dbUser.updateUser(user);
+    }
+
+    @PUT
+    @Path("current/nick")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Uni<Void> updateCurrentUserNick(DbUser.EntityUser user) {
+        return dbUser.updateUserNick(webSessionService.getUserId(), user.getNickName());
+    }
+
+    @PUT
+    @Path("current/name")
+    @Consumes(MediaType.APPLICATION_JSON)
+    public Uni<Void> updateCurrentUserName(DbUser.EntityUser user) {
+        if (!webSessionService.getUser().getTypes().isEmpty()) {
+            throw new SecurityException("Only guest is allowed to change name");
+        }
+        user.setUserId(webSessionService.getUserId());
+        return dbUser.updateUserName(user);
     }
 
 }

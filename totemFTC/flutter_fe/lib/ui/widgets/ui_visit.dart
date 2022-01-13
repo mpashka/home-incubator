@@ -30,34 +30,18 @@ class UiVisit extends StatelessWidget {
 
     final CrudEntityTraining training = _visit.training!;
     bool past = training.time.isBefore(DateTime.now());
-    IconData visitIcon = _visit.markSchedule ? MdiIcons.clockOutline : MdiIcons.checkboxBlankCircleOutline;
-    if (past) {
-      if (_visit.markMaster == CrudEntityVisitMark.on) {
-        // icon = _visit.markSelf ? MdiIcons.checkCircle : MdiIcons.checkCircleOutline;
-        visitIcon = _visit.markSelf == CrudEntityVisitMark.on ? MdiIcons
-            .checkboxMultipleMarkedCircle : MdiIcons.checkCircle;
-      } else if (_visit.markMaster == CrudEntityVisitMark.off) {
-        visitIcon = _visit.markSelf == CrudEntityVisitMark.off ? MdiIcons
-            .closeCircleMultipleOutline : MdiIcons.closeCircle;
-      } else if (_visit.markSelf == CrudEntityVisitMark.on) {
-        // icon = MdiIcons.bookmarkCheckOutline;
-        visitIcon = _visit.markSchedule ? MdiIcons.clockCheckOutline : MdiIcons.checkCircleOutline;
-      } else if (_visit.markSelf == CrudEntityVisitMark.off) {
-        // icon = MdiIcons.bookmarkCheckOutline;
-        visitIcon = _visit.markSchedule ? MdiIcons.clockRemoveOutline : MdiIcons.closeCircleOutline;
-      }
-    }
+    var icons = <Widget>[
+      if (_visit.markSchedule) Icon(MdiIcons.clockOutline),
+      if (_visit.markSelf == CrudEntityVisitMark.on) Icon(MdiIcons.accountCheckOutline),
+      if (_visit.markSelf == CrudEntityVisitMark.off) Icon(MdiIcons.accountCancelOutline),
+      if (_visit.markMaster == CrudEntityVisitMark.on) Icon(Icons.gpp_good),
+      if (_visit.markMaster == CrudEntityVisitMark.off) Icon(Icons.gpp_bad),
+    ];
 
     var listTile = ListTile(
         leading: Row(
-          // mainAxisAlignment: MainAxisAlignment.start,
-          // crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
-            children: [
-              // Training - specific icon
-              const Icon(Icons.agriculture_rounded),
-              Icon(visitIcon),
-            ]
+            children: icons,
         ),
         title: Text(forTrainer
             ? _visit.user!.displayName

@@ -3,7 +3,7 @@ CREATE USER totemftc WITH ENCRYPTED PASSWORD 'totemftc';
 GRANT ALL PRIVILEGES ON DATABASE totemftc TO totemftc;
 
 -- Users
-CREATE TYPE user_type_enum AS ENUM ('guest', 'user', 'trainer', 'admin');
+CREATE TYPE user_type_enum AS ENUM ('user', 'trainer', 'admin');
 CREATE TYPE mark_type_enum AS ENUM ('on', 'off', 'unmark');
 
 CREATE TABLE IF NOT EXISTS user_type_description (
@@ -17,8 +17,8 @@ CREATE TABLE IF NOT EXISTS user_info (
     last_name VARCHAR(30) NULL,
     nick_name VARCHAR(30) NULL,
     primary_image INTEGER NULL,
-    user_type user_type_enum NOT NULL DEFAULT 'guest',
-    user_training_types VARCHAR(10)[]        -- this is for user_type=='trainer' or 'admin'
+    user_types user_type_enum[],
+    user_training_types VARCHAR(10)[]        -- this is for user_types=='trainer'
 );
 -- FOREIGN KEY (EACH ELEMENT OF training_types) REFERENCES training_type,
 CREATE TABLE IF NOT EXISTS user_email (

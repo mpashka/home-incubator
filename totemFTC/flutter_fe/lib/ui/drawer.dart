@@ -19,47 +19,54 @@ class MyDrawer extends StatelessWidget {
   static final Logger log = Logger('MyDrawer');
 
   static final Map<CrudEntityUserType, IconData> userTypeIcons = {
-    CrudEntityUserType.guest: MdiIcons.abjadArabic,
-    CrudEntityUserType.user: MdiIcons.alpha,
-    CrudEntityUserType.trainer: MdiIcons.book,
-    CrudEntityUserType.admin: MdiIcons.alphaDCircle,
+    CrudEntityUserType.user: MdiIcons.account,
+    CrudEntityUserType.trainer: MdiIcons.accountTie,
+    CrudEntityUserType.admin: MdiIcons.accountHardHat,
   };
 
   @override
   Widget build(BuildContext context) {
     Session session = Injector().get<Session>();
     var user = session.user;
-    bool trainer = (user.type == CrudEntityUserType.trainer || user.type == CrudEntityUserType.admin)
+    bool isTrainer = (user.types.contains(CrudEntityUserType.trainer))
         && user.trainingTypes != null && user.trainingTypes!.isNotEmpty;
-    bool admin = user.type == CrudEntityUserType.admin;
+    bool isUser = user.types.contains(CrudEntityUserType.user);
+    bool isAdmin = user.types.contains(CrudEntityUserType.admin);
     final theme = Theme.of(context);
+
+    for (var type in user.types) {
+      var userTypeIcon = userTypeIcons[type];
+      log.fine("Type: $type, icon: $userTypeIcon");
+    }
+
     return Drawer(
-// Add a ListView to the drawer. This ensures the user can scroll
-// through the options in the drawer if there isn't enough vertical
-// space to fit everything.
       child: ListView(
-// Important: Remove any padding from the ListView.
         padding: EdgeInsets.zero,
         children: <Widget>[
           DrawerHeader(
             decoration: BoxDecoration(color: theme.primaryColor,),
             child: ListTile(
-              leading: Icon(userTypeIcons[user.type] ?? MdiIcons.accessPoint),
+              leading: Row(mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (user.types.isEmpty) Icon(MdiIcons.accountQuestion),
+                  for (var type in user.types) Icon(userTypeIcons[type]),
+                ],),
               title: Text('${user.firstName} ${user.lastName}'),
             ),
           ),
-          ListTile(
+
+          if (isUser) ListTile(
             title: Text('Главная'),
             onTap: () {
               log.finer('Drawer redirect to root');
               Navigator.pushNamed(context, ScreenHome.routeName,);
-              },
+            },
           ),
-          ListTile(
+          if (isUser) ListTile(
             title: Text('Абонементы'),
             onTap: () => Navigator.pushNamed(context, ScreenTickets.routeName,),
           ),
-          ListTile(
+          if (isUser) ListTile(
             title: Text('Тренировки'),
             onTap: () => Navigator.pushNamed(context, ScreenTrainings.routeName,),
           ),
@@ -69,16 +76,16 @@ class MyDrawer extends StatelessWidget {
             onTap: () => Navigator.pushNamed(context, '/purchases',),
           ),
 */
-          if (trainer) Divider(),
-          if (trainer) ListTile(
+          if (isUser && isTrainer) Divider(),
+          if (isTrainer) ListTile(
             title: Text('Мои тренировки'),
             onTap: () => Navigator.pushNamed(context, ScreenMasterTrainings.routeName,),
           ),
-          if (trainer) ListTile(
+          if (isTrainer) ListTile(
             title: Text('Мои ученики'),
             onTap: () => Navigator.pushNamed(context, ScreenMasterUserSelect.routeName,),
           ),
-          if (trainer) ListTile(
+          if (isTrainer) ListTile(
             title: Text('Мое расписание'),
             onTap: () => Navigator.pushNamed(context, ScreenSchedule.routeNameMaster,),
           ),

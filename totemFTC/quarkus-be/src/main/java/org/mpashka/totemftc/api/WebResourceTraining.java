@@ -5,6 +5,7 @@ import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -75,12 +76,14 @@ public class WebResourceTraining {
     @GET
     @Path("masterTraining/byDateInterval")
     @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"trainer"})
     public Uni<DbCrudTraining.Entity[]> masterTrainingsByDateInterval(@QueryParam("from") LocalDateTime from, @QueryParam("to") LocalDateTime to) {
         return dbTraining.getByDateIntervalForTrainer(webSessionService.getUserId(), from, to);
     }
 
     @DELETE
     @Path("training/{trainingId}")
+    @RolesAllowed({"admin"})
     public Uni<Void> delete(@PathParam("trainingId") int trainerId) {
         return dbTraining.delete(trainerId);
     }
@@ -88,6 +91,7 @@ public class WebResourceTraining {
     @POST
     @Path("training")
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"admin"})
     public Uni<Integer> create(DbCrudTraining.Entity training) {
         log.debug("Add training {}", training);
         return dbTraining.add(training);
@@ -96,6 +100,7 @@ public class WebResourceTraining {
     @PUT
     @Path("training")
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"admin"})
     public Uni<Void> update(DbCrudTraining.Entity training) {
         return dbTraining.update(training);
     }

@@ -17,8 +17,8 @@ class UiTraining extends StatelessWidget {
     return Card(
         color: forSchedule ? null :theme.colorScheme.secondary,
         child: ListTile(
-            leading: Icon(Icons.baby_changing_station_rounded),
-            title: Text('${_training.trainingType.trainingName} ${localDateTimeFormat.format(_training.time)}'),
+            leading: Text(timeFormat.format(_training.time)),
+            title: Text('${_training.trainingType.trainingName} - ${_training.trainer!.displayName}'),
         )
     );
   }

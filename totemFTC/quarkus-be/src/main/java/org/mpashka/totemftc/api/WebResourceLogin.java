@@ -19,6 +19,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -121,13 +122,13 @@ public class WebResourceLogin {
 //                .onFailure().transform(e -> new RuntimeException("Error parsing user info", e))
                 .onItem().invoke(loginState::setAuthUserInfo)
                 .onItem().transformToUni(u -> switch (action) {
-                    case login -> userIdLogin(loginState);
-                    case link -> userIdLink(linkSession, loginState);
+                    case login -> userLogin(loginState);
+                    case link -> userLink(linkSession, loginState);
                 })
-                .onItem().invoke(userId -> loginState.userId = userId)
+                .onItem().invoke(user -> loginState.user = user)
                 .onItem().transformToUni(u -> saveImage(loginState))
                 .onItem().transformToUni(imageId -> switch (action) {
-                    case login -> webSessionService.createSession(loginState.userId);
+                    case login -> webSessionService.createSession(loginState.user);
                     case link -> Uni.createFrom().item(linkSession);
                 })
                 .onItem().invoke(session -> loginState.session = session)
@@ -138,33 +139,32 @@ public class WebResourceLogin {
      * find user for login scenario, add social network if user was found by e-mail or by phone,
      * @return user id
      */
-    private Uni<Integer> userIdLogin(LoginState loginState) {
+    private Uni<DbUser.EntityUser> userLogin(LoginState loginState) {
         AuthProvider.UserInfo userInfo = loginState.getAuthUserInfo();
         return dbUser.findById(userInfo)
                 .onItem().transformToUni(searchResult -> {
                     if (searchResult != null && searchResult.getType() == DbUser.UserSearchType.socialNetwork) {
                         // Login by social network id - user id is present, no need to update database
                         loginState.loadImage = false;
-                        return Uni.createFrom().item(searchResult.getUserId());
+                        return Uni.createFrom().item(searchResult.getUser());
                     } else if (searchResult != null) {
                         // User was found by phone or email - Add social network info
                         loginState.loadImage = true;
-                        return
-                                dbUser.addUserSocialNetwork(searchResult.getUserId(), userInfo)
-                                        .onItem().transform(u -> searchResult.getUserId());
+                        DbUser.EntityUser user = searchResult.getUser();
+                        return dbUser.addUserSocialNetwork(user.getUserId(), userInfo)
+                                        .onItem().transform(u -> user);
                     } else {
-                        // User was not found - Create new user id
+                        // User was not found - Create new user
                         loginState.newUser = true;
                         loginState.loadImage = true;
-                        return
-                                dbUser.addUser(new DbUser.EntityUser()
-                                        .setFirstName(userInfo.getFirstName())
-                                        .setLastName(userInfo.getLastName())
-                                        .setType(DbUser.UserType.guest)
-                                ).onItem().transformToUni(userId ->
-                                        dbUser.addUserSocialNetwork(userId, userInfo)
-                                                .onItem().transform(u -> userId)
-                                );
+                        DbUser.EntityUser user = new DbUser.EntityUser()
+                                .setFirstName(userInfo.getFirstName())
+                                .setLastName(userInfo.getLastName())
+                                .setTypes(EnumSet.noneOf(DbUser.UserType.class));
+                        return dbUser.addUser(user)
+                                .onItem().transformToUni(u ->
+                                        dbUser.addUserSocialNetwork(u.getUserId(), userInfo)
+                                                .onItem().transform(u_ -> user));
                     }
                 });
     }
@@ -173,11 +173,11 @@ public class WebResourceLogin {
      * saves user social network info to DB
      * @return user id
      */
-    private Uni<Integer> userIdLink(WebSessionService.Session session, LoginState loginState) {
+    private Uni<DbUser.EntityUser> userLink(WebSessionService.Session session, LoginState loginState) {
         AuthProvider.UserInfo userInfo = loginState.getAuthUserInfo();
-        int userId = session.getUserId();
-        return dbUser.addUserSocialNetwork(userId, userInfo)
-                .onItem().transform(u -> userId);
+        DbUser.EntityUser user = session.getUser();
+        return dbUser.addUserSocialNetwork(user.getUserId(), userInfo)
+                .onItem().transform(u -> user);
     }
 
     /**
@@ -191,14 +191,21 @@ public class WebResourceLogin {
         }
 
         // Load image and save to db
-        return webClient.getAbs(imageUrl).send()
+        return webClient
+                .getAbs(imageUrl)
+                .timeout(3000)
+                .send()
                 .onItem().transformToUni(image -> {
                     String contentType = image.getHeader(HttpHeaders.CONTENT_TYPE);
-                    int userId = loginState.userId;
+                    int userId = loginState.user.getUserId();
                     return dbUser.addImage(userId, image.body(), contentType)
                             .onItem().transformToUni(imageId ->
                                     dbUser.setMainImage(userId, imageId, true)
                                             .onItem().transform(u -> imageId));
+                })
+                .onFailure().recoverWithItem(t -> {
+                    log.error("Error loading image {}", imageUrl, t);
+                    return 0;
                 });
     }
 
@@ -241,7 +248,7 @@ public class WebResourceLogin {
         private String token;
         private AuthProvider.UserInfo authUserInfo;
         private WebSessionService.Session session;
-        private int userId;
+        private DbUser.EntityUser user;
         /** true if this is new user, and we are adding him into db */
         private boolean newUser;
         /** true if this is new user or new social network, and thus we need to load social network image */

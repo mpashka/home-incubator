@@ -17,6 +17,8 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static java.util.Optional.ofNullable;
+
 /**
  * todo check user access rights
  */
@@ -99,9 +101,9 @@ public class WebSessionService {
         return sessions.get(sessionId);
     }
 
-    public Uni<Session> createSession(int userId) {
+    public Uni<Session> createSession(DbUser.EntityUser user) {
         String sessionId = Utils.generateRandomString(SESSION_ID_LENGTH, Utils.HTTP_VALUE_RANDOM_CHARS);
-        Session session = new Session(sessionId, userId, OffsetDateTime.now());
+        Session session = new Session(sessionId, user, OffsetDateTime.now());
         requestParameters.setSession(session);
         sessions.put(sessionId, session);
         return dbUser.createSession(session)
@@ -119,6 +121,10 @@ public class WebSessionService {
 
     public Integer getUserId() {
         return Optional.of(requestParameters.getSession()).map(Session::getUserId).orElse(null);
+    }
+
+    public DbUser.EntityUser getUser() {
+        return Optional.of(requestParameters.getSession()).map(Session::getUser).orElse(null);
     }
 
     /**
@@ -139,13 +145,13 @@ public class WebSessionService {
 
     public static class Session {
         private String sessionId;
-        private int userId;
+        private DbUser.EntityUser user;
         private OffsetDateTime lastUpdate;
         private Map<String, Object> parameters = new HashMap<>();
 
-        public Session(String sessionId, int userId, OffsetDateTime lastUpdate) {
+        public Session(String sessionId, DbUser.EntityUser user, OffsetDateTime lastUpdate) {
             this.sessionId = sessionId;
-            this.userId = userId;
+            this.user = user;
             this.lastUpdate = lastUpdate;
         }
 
@@ -153,8 +159,12 @@ public class WebSessionService {
             return sessionId;
         }
 
+        public DbUser.EntityUser getUser() {
+            return user;
+        }
+
         public Integer getUserId() {
-            return userId;
+            return ofNullable(user).map(DbUser.EntityUser::getUserId).orElse(null);
         }
 
         public OffsetDateTime getLastUpdate() {
@@ -181,7 +191,8 @@ public class WebSessionService {
         public String toString() {
             return "Session{" +
                     "id='" + sessionId + '\'' +
-                    ", user='" + userId + '\'' +
+                    ", userId='" + user.getUserId() + '\'' +
+                    ", userTypes='" + user.getTypes() + '\'' +
                     ", lastUpdate=" + lastUpdate +
                     ", " + parameters +
                     '}';

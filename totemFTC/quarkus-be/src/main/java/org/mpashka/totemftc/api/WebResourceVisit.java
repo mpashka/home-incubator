@@ -5,6 +5,7 @@ import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -40,6 +41,7 @@ public class WebResourceVisit {
     @GET
     @Path("byUser/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"trainer", "admin"})
     public Uni<DbCrudVisit.EntityVisit[]> listByUser(@PathParam("userId") int userId, @QueryParam("from") LocalDateTime from) {
         return dbVisit.getByUser(userId, from);
     }
@@ -47,6 +49,7 @@ public class WebResourceVisit {
     @GET
     @Path("byTicket/{ticketId}")
     @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"trainer", "admin"})
     public Uni<DbCrudVisit.EntityVisit[]> listByTicket(@PathParam("ticketId") int ticketId) {
         return dbVisit.getByTicket(ticketId);
     }
@@ -54,18 +57,21 @@ public class WebResourceVisit {
     @GET
     @Path("byTraining/{trainingId}")
     @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"trainer", "admin"})
     public Uni<DbCrudVisit.EntityVisit[]> listByTraining(@PathParam("trainingId") int trainingId) {
         return dbVisit.getByTraining(trainingId);
     }
 
     @PUT
     @Path("delete")
+    @RolesAllowed({"admin"})
     public Uni<DbCrudTicket.EntityTicket> delete(DbCrudVisit.EntityVisit visit) {
         return dbVisit.delete(visit);
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"admin"})
     public Uni<DbCrudTicket.EntityTicket> create(DbCrudVisit.EntityVisit visit) {
         return dbVisit.updateMark(visit, null, null, null);
     }
@@ -93,7 +99,9 @@ public class WebResourceVisit {
     @PUT
     @Path("/markMaster/{markMaster}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"trainer", "admin"})
     public Uni<DbCrudTicket.EntityTicket> updateMarkMaster(DbCrudVisit.EntityVisit visit, @PathParam("markMaster") DbCrudVisit.EntityVisitMark markMaster) {
+        // todo [!] trainer can mark only own
         return dbVisit.updateMark(visit, null, null, markMaster);
     }
 }

@@ -39,21 +39,24 @@ class ScreenConfigState extends BlocProvider<ScreenConfig> {
     super.initState();
     session = Injector().get<Session>();
     crudUserBloc = CrudUserBloc(provider: this);
-    final user = crudUserBloc.state;
+    final user = session.user;
     for (var provider in loginProviders) {
       bool userNetworkFound = user.socialNetworks?.any((s) => s.networkName == provider.name) ?? false;
       SessionBloc(state: LoginStateInfo(userNetworkFound ? LoginState.done : LoginState.none), provider:this, name: 'sessionBloc_${provider.name}');
     }
-
-    firstNameController = TextEditingController();
-    lastNameController = TextEditingController();
+    if (user.isGuest) {
+      firstNameController = TextEditingController();
+      lastNameController = TextEditingController();
+    }
     nickNameController = TextEditingController();
     nameModifiedController = StreamController<bool>();
     nameModifiedIn = nameModifiedController.sink;
     nameModifiedOut = nameModifiedController.stream.asBroadcastStream();
     _resetName(user);
-    firstNameController.addListener(checkNameModified);
-    lastNameController.addListener(checkNameModified);
+    if (user.isGuest) {
+      firstNameController.addListener(checkNameModified);
+      lastNameController.addListener(checkNameModified);
+    }
     nickNameController.addListener(checkNameModified);
   }
 
@@ -97,8 +100,10 @@ class ScreenConfigState extends BlocProvider<ScreenConfig> {
   List<Widget> _renderName(CrudEntityUser user) {
     return [
       UiDivider('Имя'),
-      TextField(controller: firstNameController, decoration: InputDecoration(labelText: 'Имя', hintText: 'Введите свое имя'),),
-      TextField(controller: lastNameController, decoration: InputDecoration(labelText: 'Фамилия', hintText: 'Введите свою фамилию',),),
+      if (user.isGuest) TextField(controller: firstNameController, decoration: InputDecoration(labelText: 'Имя', hintText: 'Введите свое имя'),),
+      if (user.isGuest) TextField(controller: lastNameController, decoration: InputDecoration(labelText: 'Фамилия', hintText: 'Введите свою фамилию',),),
+      if (!user.isGuest) Text(user.firstName ?? ''),
+      if (!user.isGuest) Text(user.lastName ?? ''),
       TextField(controller: nickNameController, decoration: InputDecoration(labelText: 'Ник', hintText: 'Введите отображаемое имя',),),
       Container(
           alignment: Alignment.centerRight,
@@ -139,10 +144,14 @@ class ScreenConfigState extends BlocProvider<ScreenConfig> {
 
   void _updateName(CrudEntityUser user) {
     String? name(String text) => text.isNotEmpty ? text : null;
-    user.firstName = name(firstNameController.text.trim());
-    user.lastName = name(lastNameController.text.trim());
     user.nickName = name(nickNameController.text.trim());
-    crudUserBloc.updateUser(user);
+    if (user.isGuest) {
+      user.firstName = name(firstNameController.text.trim());
+      user.lastName = name(lastNameController.text.trim());
+      crudUserBloc.updateUserName(user);
+    } else {
+      crudUserBloc.updateUserNick(user);
+    }
   }
 
   List<Widget> _renderSocialNetworks() {

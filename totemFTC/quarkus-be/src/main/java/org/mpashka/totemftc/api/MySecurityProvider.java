@@ -21,12 +21,11 @@ import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.HttpHeaders;
 import java.security.Permission;
 import java.security.Principal;
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * https://quarkus.io/guides/security
@@ -41,56 +40,6 @@ public class MySecurityProvider implements HttpAuthenticationMechanism {
 
     private static final String AUTH_PREFIX = "bearer ";
 
-    private static final String USER = "user";
-    private static final Principal PRINCIPAL = () -> USER;
-    private static final Set<String> ROLES = Set.of(USER);
-    private static final SecurityIdentity SECURE = new SecurityIdentity() {
-        @Override
-        public Principal getPrincipal() {
-            return PRINCIPAL;
-        }
-
-        @Override
-        public boolean isAnonymous() {
-            return false;
-        }
-
-        @Override
-        public Set<String> getRoles() {
-            return ROLES;
-        }
-
-        @Override
-        public boolean hasRole(String role) {
-            return ROLES.contains(role);
-        }
-
-        @Override
-        public <T extends Credential> T getCredential(Class<T> credentialType) {
-            return null;
-        }
-
-        @Override
-        public Set<Credential> getCredentials() {
-            return null;
-        }
-
-        @Override
-        public <T> T getAttribute(String name) {
-            return null;
-        }
-
-        @Override
-        public Map<String, Object> getAttributes() {
-            return null;
-        }
-
-        @Override
-        public Uni<Boolean> checkPermission(Permission permission) {
-            return Uni.createFrom().item(permission.getName().equals(USER));
-        }
-    };
-
     @Inject
     WebSessionService webSessionService;
 
@@ -104,7 +53,7 @@ public class MySecurityProvider implements HttpAuthenticationMechanism {
         }
         return webSessionService.fetchSession(sessionId)
                 .onItem().invoke(session -> log.debug("Session: {}", session))
-                .onItem().transform(session -> session != null ? SECURE : null);
+                .onItem().transform(session -> session != null ? new MySecurityIdentity(session) : null);
     }
 
     @Override
@@ -161,4 +110,64 @@ public class MySecurityProvider implements HttpAuthenticationMechanism {
             webSessionService.setSession(session);
         }
     }
+
+    private static class MySecurityIdentity implements SecurityIdentity, Principal {
+
+        private WebSessionService.Session session;
+
+        public MySecurityIdentity(WebSessionService.Session session) {
+            this.session = session;
+        }
+
+        @Override
+        public Principal getPrincipal() {
+            return this;
+        }
+
+        @Override
+        public String getName() {
+            return session.getUser().getNickName();
+        }
+
+        @Override
+        public boolean isAnonymous() {
+            return false;
+        }
+
+        @Override
+        public Set<String> getRoles() {
+            return session.getUser().getTypes().stream().map(DbUser.UserType::name).collect(Collectors.toSet());
+        }
+
+        @Override
+        public boolean hasRole(String role) {
+            return session.getUser().getTypes().contains(DbUser.UserType.valueOf(role));
+        }
+
+        @Override
+        public <T extends Credential> T getCredential(Class<T> credentialType) {
+            return null;
+        }
+
+        @Override
+        public Set<Credential> getCredentials() {
+            return null;
+        }
+
+        @Override
+        public <T> T getAttribute(String name) {
+            return null;
+        }
+
+        @Override
+        public Map<String, Object> getAttributes() {
+            return null;
+        }
+
+        @Override
+        public Uni<Boolean> checkPermission(Permission permission) {
+            return Uni.createFrom().item(hasRole(permission.getName()));
+        }
+    }
+
 }

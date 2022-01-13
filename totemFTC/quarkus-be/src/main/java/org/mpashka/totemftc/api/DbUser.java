@@ -1,6 +1,7 @@
 package org.mpashka.totemftc.api;
 
 import io.smallrye.mutiny.Uni;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.core.buffer.Buffer;
 import io.vertx.mutiny.pgclient.PgPool;
@@ -16,9 +17,11 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.EnumSet;
+import java.util.Objects;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static org.mpashka.totemftc.api.Utils.firstNonBlank;
@@ -46,6 +49,8 @@ public class DbUser {
     private PreparedQuery<RowSet<Row>> insertPhone;
     private PreparedQuery<RowSet<Row>> insertImage;
     private PreparedQuery<RowSet<Row>> updateUser;
+    private PreparedQuery<RowSet<Row>> updateUserNick;
+    private PreparedQuery<RowSet<Row>> updateUserName;
     private PreparedQuery<RowSet<Row>> updateMainImageIfAbsent;
     private PreparedQuery<RowSet<Row>> updateMainImage;
     private PreparedQuery<RowSet<Row>> deleteUser;
@@ -58,47 +63,38 @@ public class DbUser {
 
     @PostConstruct
     void init() {
-        String selectUserSql = "SELECT u.*," +
-                "   sn.social_networks," +
-                "   e.emails," +
-                "   p.phones," +
-                "   i.images " +
-                " FROM user_info u " +
-                "   LEFT OUTER JOIN (SELECT user_id, array_agg(row_to_json(sn.*)) AS social_networks FROM user_social_network sn GROUP BY user_id) sn ON u.user_id = sn.user_id " +
-                "   LEFT OUTER JOIN (SELECT user_id, array_agg(row_to_json(e.*)) AS emails FROM user_email e GROUP BY user_id) e ON u.user_id = e.user_id " +
-                "   LEFT OUTER JOIN (SELECT user_id, array_agg(row_to_json(p.*)) AS phones FROM user_phone p GROUP BY user_id) p ON u.user_id = p.user_id " +
-                "   LEFT OUTER JOIN (SELECT user_id, array_agg(json_build_object('image_id', i.image_id, 'content_type', i.content_type)) AS images FROM user_image i GROUP BY user_id) i ON u.user_id = i.user_id ";
-        selectUsers = client.preparedQuery(selectUserSql +
-                "ORDER BY u.last_name, u.first_name, u.nick_name, u.user_id ");
-        selectTrainers = client.preparedQuery(selectUserSql +
-                "WHERE cardinality(u.user_training_types) > 0 " +
-                "   AND u.user_type IN ('trainer', 'admin') " +
-                "ORDER BY u.last_name, u.first_name, u.nick_name, u.user_id ");
-        selectUser = client.preparedQuery("SELECT * " +
-                " FROM user_info u, " +
-                "   (SELECT array_agg(row_to_json(sn.*)) AS social_networks FROM user_social_network sn WHERE user_id = $1) sn, " +
-                "   (SELECT array_agg(row_to_json(e.*)) AS emails FROM user_email e WHERE user_id = $1) e, " +
-                "   (SELECT array_agg(row_to_json(p.*)) AS phones FROM user_phone p WHERE user_id = $1) p, " +
-                "   (SELECT array_agg(json_build_object('image_id', i.image_id, 'content_type', i.content_type)) AS images FROM user_image i WHERE user_id = $1) i " +
-                " WHERE u.user_id = $1 ");
+        selectUsers = client.preparedQuery("SELECT * FROM user_info_full " +
+                "ORDER BY last_name, first_name, nick_name, user_id ");
+        selectTrainers = client.preparedQuery("SELECT * FROM user_info_full " +
+                "WHERE cardinality(user_training_types) > 0 " +
+                "   AND user_types IN ('trainer') " +
+                "ORDER BY last_name, first_name, nick_name, user_id ");
+        selectUser = client.preparedQuery("SELECT * FROM user_info_full " +
+                "WHERE user_id = $1 ");
 
-        selectBySocialNetwork = client.preparedQuery("SELECT user_id " +
-                "FROM user_social_network " +
-                "WHERE network_name = $1 and id = $2");
-        selectByEmail = client.preparedQuery("SELECT user_id " +
-                "FROM user_email " +
-                "WHERE email = $1");
-        selectByPhone = client.preparedQuery("SELECT user_id " +
-                "FROM user_phone " +
-                "WHERE phone = $1");
+        selectBySocialNetwork = client.preparedQuery("SELECT * FROM user_info " +
+                "WHERE user_id = " +
+                "    (SELECT user_id FROM user_social_network WHERE network_name = $1 and id = $2)");
+        selectByEmail = client.preparedQuery("SELECT * FROM user_info " +
+                "WHERE user_id = " +
+                "    (SELECT user_id FROM user_email WHERE email = $1)");
+        selectByPhone = client.preparedQuery("SELECT * FROM user_info " +
+                "WHERE user_id = " +
+                "    (SELECT user_id FROM user_phone WHERE phone = $1)");
 
-        insertUser = client.preparedQuery("INSERT INTO user_info (first_name, last_name, nick_name, user_type) VALUES ($1, $2, $3, $4) RETURNING user_id");
+        insertUser = client.preparedQuery("INSERT INTO user_info (first_name, last_name, nick_name, user_types) VALUES ($1, $2, $3, $4) RETURNING user_id");
         insertSocialNetwork = client.preparedQuery("INSERT INTO user_social_network (network_name, id, user_id, link, display_name) VALUES ($1, $2, $3, $4, $5)");
         insertEmail = client.preparedQuery("INSERT INTO user_email (email, user_id, confirmed) VALUES ($1, $2, $3)");
         insertPhone = client.preparedQuery("INSERT INTO user_phone (phone, user_id, confirmed) VALUES ($1, $2, $3)");
         insertImage = client.preparedQuery("INSERT INTO user_image (user_id, image, content_type) VALUES ($1, $2, $3) RETURNING image_id");
         updateUser = client.preparedQuery("UPDATE user_info " +
-                "SET first_name=$2, last_name=$3, nick_name=$4, primary_image=$5, user_type=$6, user_training_types=$7 " +
+                "SET first_name=$2, last_name=$3, nick_name=$4, primary_image=$5, user_types=$6, user_training_types=$7 " +
+                "WHERE user_id=$1");
+        updateUserNick = client.preparedQuery("UPDATE user_info " +
+                "SET nick_name=$2 " +
+                "WHERE user_id=$1");
+        updateUserName = client.preparedQuery("UPDATE user_info " +
+                "SET first_name=$2, last_name=$3, nick_name=$4, primary_image=$5 " +
                 "WHERE user_id=$1");
         updateMainImage = client.preparedQuery("UPDATE user_info SET primary_image=$2 WHERE user_id = $1");
         updateMainImageIfAbsent = client.preparedQuery("UPDATE user_info SET primary_image=$2 WHERE user_id=$1 AND primary_image is NULL");
@@ -121,24 +117,24 @@ public class DbUser {
         return selectBySocialNetwork
                 .execute(Tuple.of(userInfo.getNetworkName(), userInfo.getId()))
                 .onItem().transform(r -> find(UserSearchType.socialNetwork, r))
-                .onItem().transformToUni(userId -> {
+                .onItem().transformToUni(user -> {
                     String email = userInfo.getEmail();
-                    if (userId == null && Utils.notEmpty(email)) {
+                    if (user == null && Utils.notEmpty(email)) {
                         return selectByEmail
                                 .execute(Tuple.of(email))
                                 .onItem().transform(r -> find(UserSearchType.email, r));
                     } else {
-                        return Uni.createFrom().item(userId);
+                        return Uni.createFrom().item(user);
                     }
                 })
-                .onItem().transformToUni(userId -> {
+                .onItem().transformToUni(user -> {
                     String phone = userInfo.getPhone();
-                    if (userId == null && Utils.notEmpty(phone)) {
+                    if (user == null && Utils.notEmpty(phone)) {
                         return selectByPhone
                                 .execute(Tuple.of(phone))
                                 .onItem().transform(r -> find(UserSearchType.phone, r));
                     } else {
-                        return Uni.createFrom().item(userId);
+                        return Uni.createFrom().item(user);
                     }
                 });
     }
@@ -147,9 +143,13 @@ public class DbUser {
      *
      * @return user id
      */
-    public Uni<Integer> addUser(EntityUser user) {
-        return insertUser.execute(Tuple.of(user.firstName, user.lastName, user.nickName, user.type.name()))
-                .onItem().transform(rows -> rows.iterator().next().getInteger("user_id"));
+    public Uni<EntityUser> addUser(EntityUser user) {
+        return insertUser.execute(Tuple.of(user.firstName, user.lastName, user.nickName, user.types.stream().map(Objects::toString).toArray(String[]::new)))
+                .onItem().transform(rows -> {
+                    Integer userId = rows.iterator().next().getInteger("user_id");
+                    user.userId = userId;
+                    return user;
+                });
     }
 
     public Uni<EntityUser> getUser(int userId) {
@@ -189,8 +189,23 @@ public class DbUser {
 
     public Uni<Void> updateUser(EntityUser user) {
         return updateUser.execute(Tuple.from(Arrays.asList(user.userId, user.firstName, user.lastName, user.nickName,
-                        user.primaryImage != null ? user.primaryImage.id : null, user.type.name(), user.trainingTypes)))
-                .onFailure().transform(e -> new RuntimeException("Error update", e))
+                        user.primaryImage != null ? user.primaryImage.id : null, user.types.stream().map(Objects::toString).toArray(String[]::new), user.trainingTypes)))
+                .onFailure().transform(e -> new RuntimeException("Error update user", e))
+                .onItem().transform(u -> null)
+                ;
+    }
+
+    public Uni<Void> updateUserNick(int userId, String nick) {
+        return updateUserNick.execute(Tuple.from(Arrays.asList(userId, nick)))
+                .onFailure().transform(e -> new RuntimeException("Error update user nick", e))
+                .onItem().transform(u -> null)
+                ;
+    }
+
+    public Uni<Void> updateUserName(EntityUser user) {
+        return updateUserName.execute(Tuple.from(Arrays.asList(user.userId, user.firstName, user.lastName, user.nickName,
+                        user.primaryImage != null ? user.primaryImage.id : null)))
+                .onFailure().transform(e -> new RuntimeException("Error update user name", e))
                 .onItem().transform(u -> null)
                 ;
     }
@@ -272,9 +287,9 @@ public class DbUser {
     private UserSearchResult find(UserSearchType type, RowSet<Row> rows) {
         if (rows.size() > 0) {
             Row row = rows.iterator().next();
-            int userId = row.getInteger("user_id");
-            log.debug("User [{}] found by {}", userId, type);
-            return new UserSearchResult(type, userId);
+            EntityUser user = new EntityUser().loadFromDb(row);
+            log.debug("User [{}] found by {}", user.userId, type);
+            return new UserSearchResult(type, user);
         } else {
             log.debug("User not found by {}", type);
             return null;
@@ -284,14 +299,17 @@ public class DbUser {
     public Uni<WebSessionService.Session> getSession(String sessionId) {
         return selectSession.execute(Tuple.of(sessionId))
                 .onFailure().transform(e -> new RuntimeException("Error getSession", e))
-                .onItem().transform(r -> {
+                .onItem().transformToUni(r -> {
                     RowIterator<Row> iterator = r.iterator();
                     if (!iterator.hasNext()) {
                         return null;
                     }
                     Row row = iterator.next();
-                    return new WebSessionService.Session(row.getString("session_id"),
-                            row.getInteger("user_id"), row.getOffsetDateTime("last_update"));
+                    int userId = row.getInteger("user_id");
+                    return getUser(userId)
+                            .map(u -> new WebSessionService.Session(
+                                    row.getString("session_id"), u,
+                                    row.getOffsetDateTime("last_update")));
                 });
     }
 
@@ -326,19 +344,19 @@ public class DbUser {
 
     public static class UserSearchResult {
         private UserSearchType type;
-        private int userId;
+        private EntityUser user;
 
-        public UserSearchResult(UserSearchType type, int userId) {
+        public UserSearchResult(UserSearchType type, EntityUser user) {
             this.type = type;
-            this.userId = userId;
+            this.user = user;
         }
 
         public UserSearchType getType() {
             return type;
         }
 
-        public int getUserId() {
-            return userId;
+        public EntityUser getUser() {
+            return user;
         }
     }
 
@@ -352,13 +370,22 @@ public class DbUser {
         private String nickName;
         private EntityImage primaryImage;
         /** todo use set here */
-        private UserType type;
+        private EnumSet<UserType> types;
         private String[] trainingTypes;
         private EntitySocialNetwork[] socialNetworks;
         private EntityPhone[] phones;
         private EntityEmail[] emails;
         private EntityImage[] images;
 
+
+        public int getUserId() {
+            return userId;
+        }
+
+        public EntityUser setUserId(int userId) {
+            this.userId = userId;
+            return this;
+        }
 
         public EntityUser setFirstName(String firstName) {
             this.firstName = firstName;
@@ -375,8 +402,12 @@ public class DbUser {
             return this;
         }
 
-        public EntityUser setType(UserType type) {
-            this.type = type;
+        public EnumSet<UserType> getTypes() {
+            return types;
+        }
+
+        public EntityUser setTypes(EnumSet<UserType> types) {
+            this.types = types;
             return this;
         }
 
@@ -385,8 +416,8 @@ public class DbUser {
             return this;
         }
 
-        public int getUserId() {
-            return userId;
+        public String getNickName() {
+            return nickName;
         }
 
         public EntityUser loadFromDb(Row row) {
@@ -394,12 +425,12 @@ public class DbUser {
             this.firstName = row.getString("first_name");
             this.lastName = row.getString("last_name");
             this.nickName = row.getString("nick_name");
-            String userType = row.getString("user_type");
+            String[] userTypes = row.getArrayOfStrings("user_types");
             try {
-                this.type = UserType.valueOf(userType);
+                this.types = Arrays.stream(userTypes).map(UserType::valueOf).collect(Collectors.toCollection(() -> EnumSet.noneOf(UserType.class)));
             } catch (IllegalArgumentException e) {
-                log.warn("Unknown user type {}", userType, e);
-                this.type = UserType.guest;
+                log.warn("Unknown user type {}", userTypes, e);
+                this.types = EnumSet.noneOf(UserType.class);
             }
             this.trainingTypes = row.getArrayOfStrings("user_training_types");
             return this;
@@ -410,12 +441,12 @@ public class DbUser {
             this.firstName = row.getString("first_name");
             this.lastName = row.getString("last_name");
             this.nickName = row.getString("nick_name");
-            String userType = row.getString("user_type");
+            JsonArray userTypes = row.getJsonArray("user_types");
             try {
-                this.type = UserType.valueOf(userType);
+                this.types = userTypes.stream().map(s -> UserType.valueOf(s.toString())).collect(Collectors.toCollection(() -> EnumSet.noneOf(UserType.class)));
             } catch (IllegalArgumentException e) {
-                log.warn("Unknown user type {}", userType, e);
-                this.type = UserType.guest;
+                log.warn("Unknown user type {}", userTypes, e);
+                this.types = EnumSet.noneOf(UserType.class);
             }
             this.trainingTypes = row.getJsonArray("user_training_types").stream().toArray(String[]::new);
             return this;
@@ -436,7 +467,7 @@ public class DbUser {
                     .toArray(EntityImage[]::new);
 /*
             Object[] emails = row.getArrayOfJsons("emails");
-            todo [!] temporarily hardcoded off
+            todo [!] temporarily hardcoded off for demo
             this.emails = emails == null ? null : Arrays.stream(emails)
                     .map(ej -> new EntityEmail().loadFromDb((JsonObject) ej))
                     .toArray(EntityEmail[]::new);
@@ -509,6 +540,6 @@ public class DbUser {
     }
 
     public enum UserType {
-        guest, user, trainer, admin
+        user, trainer, admin
     }
 }

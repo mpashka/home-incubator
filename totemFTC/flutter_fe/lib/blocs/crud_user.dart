@@ -15,14 +15,18 @@ class CrudUserBloc extends BlocBaseState<CrudEntityUser> {
 
   CrudUserBloc({required BlocProvider provider, String? name}): super(provider: provider, state: Injector().get<Session>().user, name: name);
 
-  void updateUser(CrudEntityUser user) async {
-    await backend.request('PUT', '/api/user', body: user);
+  void updateUserName(CrudEntityUser user) async {
+    await backend.request('PUT', '/api/user/current/name', body: user);
     session.user.firstName = user.firstName;
     session.user.lastName = user.lastName;
     session.user.nickName = user.nickName;
     session.user.primaryImage = user.primaryImage;
-    session.user.type = user.type;
-    session.user.trainingTypes = user.trainingTypes;
+    state = session.user;
+  }
+
+  void updateUserNick(CrudEntityUser user) async {
+    await backend.request('PUT', '/api/user/current/nick', body: user);
+    session.user.nickName = user.nickName;
     state = session.user;
   }
 
@@ -44,7 +48,7 @@ class SelectedUserBloc extends BlocBaseState<CrudEntityUser> {
   SelectedUserBloc({required CrudEntityUser user, required BlocProvider provider, String? name}): super(state: user, provider: provider, name: name);
 }
 
-CrudEntityUser emptyUser = CrudEntityUser(userId: -1, type: CrudEntityUserType.guest);
+CrudEntityUser emptyUser = CrudEntityUser(userId: -1, types: []);
 
 @JsonSerializable(explicitToJson: true)
 class CrudEntityUser implements Comparable<CrudEntityUser> {
@@ -54,7 +58,7 @@ class CrudEntityUser implements Comparable<CrudEntityUser> {
   String? lastName;
   String? nickName;
   CrudEntityUserImage? primaryImage;
-  CrudEntityUserType type;
+  List<CrudEntityUserType> types;
   List<String>? trainingTypes;
   List<CrudEntityUserSocialNetwork>? socialNetworks;
   List<CrudEntityUserPhone>? phones;
@@ -72,7 +76,7 @@ class CrudEntityUser implements Comparable<CrudEntityUser> {
       this.lastName,
       this.nickName,
       this.primaryImage,
-      required this.type,
+      required this.types,
       this.trainingTypes,
       this.socialNetworks,
       this.phones,
@@ -94,10 +98,14 @@ class CrudEntityUser implements Comparable<CrudEntityUser> {
     }
     add(firstName);
     add(lastName);
-    if (nickName == null) {
+    if (nickName == null || nickName!.isEmpty || nickName == firstName || nickName == lastName) {
       return result;
     }
     return result.isEmpty ? nickName! : add('($nickName)');
+  }
+
+  bool get isGuest {
+    return types.isEmpty;
   }
 
   @override
@@ -164,6 +172,6 @@ class CrudEntityUserImage {
 }
 
 enum CrudEntityUserType {
-  guest, user, trainer, admin
+  user, trainer, admin
 }
 

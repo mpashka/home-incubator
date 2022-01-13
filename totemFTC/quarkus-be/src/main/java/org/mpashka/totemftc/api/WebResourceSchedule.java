@@ -5,6 +5,7 @@ import io.smallrye.mutiny.Uni;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -43,6 +44,7 @@ public class WebResourceSchedule {
 
     @DELETE
     @Path("schedule/{scheduleId}")
+    @RolesAllowed("admin")
     public Uni<Void> delete(@PathParam("scheduleId") int scheduleId) {
         return dbSchedule.delete(scheduleId);
     }
@@ -50,6 +52,7 @@ public class WebResourceSchedule {
     @POST
     @Path("schedule")
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
     public Uni<Integer> create(DbCrudSchedule.Entity schedule) {
         log.debug("Add visit {}", schedule);
         return dbSchedule.add(schedule);
@@ -58,6 +61,7 @@ public class WebResourceSchedule {
     @PUT
     @Path("schedule")
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed("admin")
     public Uni<Void> update(DbCrudSchedule.Entity schedule) {
         return dbSchedule.update(schedule);
     }

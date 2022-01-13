@@ -108,7 +108,7 @@ class Session {
   }
 
   Future<CrudEntityUser> loadUser() async {
-    _user = CrudEntityUser.fromJson(await _backend.requestJson('GET', '/api/user'));
+    _user = CrudEntityUser.fromJson(await _backend.requestJson('GET', '/api/user/current'));
     return _user;
   }
 

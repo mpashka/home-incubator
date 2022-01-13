@@ -6,6 +6,7 @@ import org.jboss.resteasy.reactive.RestPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.security.RolesAllowed;
 import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -47,6 +48,7 @@ public class WebResourceTicket {
     @GET
     @Path("tickets/byUser/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"trainer", "admin"})
     public Uni<DbCrudTicket.EntityTicket[]> listTicketsByUser(@PathParam("userId") int userId) {
         return dbTicket.getTicketsByUser(userId);
     }
@@ -54,12 +56,14 @@ public class WebResourceTicket {
     @GET
     @Path("ticket/{id}")
     @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"trainer", "admin"})
     public Uni<DbCrudTicket.EntityTicket> getTicketById(@RestPath int id) {
         return dbTicket.getTicketById(id);
     }
 
     @DELETE
     @Path("ticket/{id}")
+    @RolesAllowed({"admin"})
     public Uni<Void> delete(@RestPath int id) {
         return dbTicket.deleteTicket(id);
     }
@@ -67,6 +71,7 @@ public class WebResourceTicket {
     @POST
     @Path("ticket")
     @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"admin"})
     public Uni<Integer> create(DbCrudTicket.EntityTicket ticket) {
         log.debug("Add ticket {}", ticket);
         return dbTicket.addTicket(ticket);

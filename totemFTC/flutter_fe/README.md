@@ -21,7 +21,7 @@ Run
 (Intellij Idea: Additional run args:)
 
 Generate json import files
-flutter pub run build_runner build
+`flutter pub run build_runner build`
 
 Build web
 https://docs.flutter.dev/get-started/web
