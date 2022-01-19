@@ -2,6 +2,8 @@ package org.mpashka.totemftc.api;
 
 import io.quarkus.security.Authenticated;
 import io.smallrye.mutiny.Uni;
+import org.jboss.resteasy.reactive.RestPath;
+import org.jboss.resteasy.reactive.RestQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +44,7 @@ public class WebResourceVisit {
     @Path("byUser/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({"trainer", "admin"})
-    public Uni<DbCrudVisit.EntityVisit[]> listByUser(@PathParam("userId") int userId, @QueryParam("from") LocalDateTime from) {
+    public Uni<DbCrudVisit.EntityVisit[]> listByUser(@RestPath int userId, @RestQuery LocalDateTime from) {
         return dbVisit.getByUser(userId, from);
     }
 

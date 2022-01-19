@@ -152,14 +152,14 @@ public class DbUser {
                 });
     }
 
-    public Uni<EntityUser> getUser(int userId) {
+    public Uni<EntityUser> getUser(int userId, boolean full) {
         return selectUser.execute(Tuple.of(userId))
                 .onItem().transform(rows -> {
                     RowIterator<Row> rowIterator = rows.iterator();
                     if (rowIterator.hasNext()) {
                         log.debug("User [{}] found", userId);
                         Row row = rowIterator.next();
-                        return new EntityUser().loadFromDbFull(row);
+                        return full ? new EntityUser().loadFromDbFull(row) : new EntityUser().loadFromDb(row);
                     } else {
                         log.debug("User [{}] not found", userId);
                         return null;
@@ -297,19 +297,21 @@ public class DbUser {
     }
 
     public Uni<WebSessionService.Session> getSession(String sessionId) {
+        log.debug("Select session by id {}", sessionId);
         return selectSession.execute(Tuple.of(sessionId))
                 .onFailure().transform(e -> new RuntimeException("Error getSession", e))
                 .onItem().transformToUni(r -> {
                     RowIterator<Row> iterator = r.iterator();
                     if (!iterator.hasNext()) {
-                        return null;
+                        log.debug("    Session not found");
+                        return Uni.createFrom().nullItem();
                     }
                     Row row = iterator.next();
                     int userId = row.getInteger("user_id");
-                    return getUser(userId)
-                            .map(u -> new WebSessionService.Session(
-                                    row.getString("session_id"), u,
-                                    row.getOffsetDateTime("last_update")));
+                    OffsetDateTime sessionLastUpdate = row.getOffsetDateTime("last_update");
+                    log.debug("Fetch user by id {}", userId);
+                    return getUser(userId, false)
+                            .map(u -> new WebSessionService.Session(sessionId, u, sessionLastUpdate));
                 });
     }
 

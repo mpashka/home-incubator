@@ -37,6 +37,9 @@ public class DbTest {
     @Inject
     ObjectMapper objectMapper;
 
+    @Inject
+    WebSessionService webSessionService;
+
     @Test
     @Disabled
     void testMark() throws JsonProcessingException {
@@ -85,5 +88,16 @@ public class DbTest {
         ticket = dbVisit.updateMark(entityVisit, null, null, DbCrudVisit.EntityVisitMark.unmark)
                 .await().atMost(Duration.of(1, ChronoUnit.MINUTES));
         assertThat(ticket.getVisited(), is(initial));
+    }
+
+    @Test
+    @Disabled
+    void testFetchSession() {
+        WebSessionService.Session session = webSessionService.fetchSession("WJ7TEGW@.nT\"f6K_Mll^").await().indefinitely();
+        if (session != null) {
+            log.debug("User: {}", session.getUser());
+        } else {
+            log.debug("Session not found");
+        }
     }
 }

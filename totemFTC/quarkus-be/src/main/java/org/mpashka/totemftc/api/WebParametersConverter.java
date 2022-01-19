@@ -1,5 +1,8 @@
 package org.mpashka.totemftc.api;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.ws.rs.ext.ParamConverter;
 import javax.ws.rs.ext.ParamConverterProvider;
 import javax.ws.rs.ext.Provider;
@@ -16,21 +19,27 @@ import java.util.Optional;
 
 @Provider
 public class WebParametersConverter implements ParamConverterProvider {
+    private static final Logger log = LoggerFactory.getLogger(WebParametersConverter.class);
+
+    private static final MyDateTimeConverter DEFAULT_DATE_TIME_FORMATTER = new MyDateTimeConverter(Utils.DATE_TIME_FORMATTER);
+
     @Override
     public <T> ParamConverter<T> getConverter(Class<T> rawType, Type genericType, Annotation[] annotations) {
+//        log.debug("::getConverter({})", rawType);
         if (rawType == LocalDateTime.class) {
             DateTimeFormatter dateTimeFormatter = Arrays
                     .stream(annotations)
                     .filter(a -> a.annotationType() == DateTimeFormat.class)
                     .findAny()
                     .map(a -> DateTimeFormatter.ofPattern(((DateTimeFormat) a).value()))
-                    .orElse(Utils.DATE_TIME_FORMATTER);
-            return (ParamConverter<T>) new MyDateTimeConverter(dateTimeFormatter);
+                    .orElse(null);
+
+            return (ParamConverter<T>) (dateTimeFormatter == null ? DEFAULT_DATE_TIME_FORMATTER : new MyDateTimeConverter(dateTimeFormatter));
         }
         return null;
     }
 
-    static class MyDateTimeConverter implements ParamConverter<LocalDateTime> {
+    public static class MyDateTimeConverter implements ParamConverter<LocalDateTime> {
 
         private DateTimeFormatter dateTimeFormatter;
 
@@ -40,7 +49,12 @@ public class WebParametersConverter implements ParamConverterProvider {
 
         @Override
         public LocalDateTime fromString(String value) {
-            return LocalDateTime.from(dateTimeFormatter.parse(value));
+            try {
+                return LocalDateTime.from(dateTimeFormatter.parse(value));
+            } catch (Exception e) {
+                log.error("Error converting {}", value, e);
+                throw new RuntimeException("Error converting LocalDateTime", e);
+            }
         }
 
         @Override

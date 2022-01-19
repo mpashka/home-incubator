@@ -31,7 +31,6 @@ class ScreenLoginState extends BlocProvider<ScreenLogin> {
 
   @override
   Widget build(BuildContext context) {
-    log.finer('build()');
     ThemeData theme = Theme.of(context);
     double iconSize = theme.iconTheme.size ?? 24;
     double warningIconSize = iconSize / 2;
@@ -41,6 +40,8 @@ class ScreenLoginState extends BlocProvider<ScreenLogin> {
     final configuration = Injector().get<Configuration>();
     final loginButtonColumns = <Widget>[];
     List<Widget> loginButtons = [];
+
+    // log.finer('build login screen(). Width $screenWidth, icon size: $iconSize');
     for (var provider in loginProviders) {
       final loginProviderConfig = configuration.loginProviderConfig(provider);
 
@@ -65,7 +66,7 @@ class ScreenLoginState extends BlocProvider<ScreenLogin> {
           }
         },
       ));
-      if (loginButtons.length >= (screenWidth / (iconSize + 3*padding) - 1).ceil() || provider == loginProviders.last) {
+      if (loginButtons.length >= (screenWidth / (iconSize + 2*padding) - 1).ceil() || provider == loginProviders.last) {
         loginButtonColumns.add(Row(children: loginButtons,));
         loginButtons = [];
       }
@@ -79,6 +80,7 @@ class ScreenLoginState extends BlocProvider<ScreenLogin> {
             'assets/images/logo.png',
             fit: BoxFit.contain,
           ),
+          SizedBox(height: 16,),
           Column(children: loginButtonColumns),
         ],),
         BlocProvider.streamBuilder<LoginStateInfo, SessionBloc>(

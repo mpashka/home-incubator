@@ -36,7 +36,7 @@ public class WebResourceUser {
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<DbUser.EntityUser> currentUser() {
         int userId = webSessionService.getUserId();
-        return dbUser.getUser(userId);
+        return dbUser.getUser(userId, true);
     }
 
     @GET

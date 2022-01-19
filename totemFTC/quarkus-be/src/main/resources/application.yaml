@@ -46,6 +46,10 @@ quarkus:
     category:
       "io.quarkus":
         level: INFO
+      "io.vertx":
+        level: DEBUG
+      "org.jboss":
+        level: DEBUG
       "org.mpashka":
         level: INFO
 

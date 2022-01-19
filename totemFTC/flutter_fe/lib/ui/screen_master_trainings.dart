@@ -25,7 +25,9 @@ class ScreenMasterTrainings extends StatefulWidget {
 }
 
 class ScreenMasterTrainingsState extends BlocProvider<ScreenMasterTrainings> {
+  static const backlogDays = 14;
   static final now = DateTime.now();
+  late final DateTime start = now.subtract(const Duration(days: backlogDays));
 
   late final SelectedTrainingBloc selectedTrainingBloc;
   late final CrudVisitBloc visitsBloc;
@@ -37,7 +39,7 @@ class ScreenMasterTrainingsState extends BlocProvider<ScreenMasterTrainings> {
       ..loadMasterTrainings(now.subtract(backMaster), now.add(forwardMaster));
     log.finest('Master trainings: ${t.state.length}');
     selectedTrainingBloc = SelectedTrainingBloc(state: widget.initialTraining, provider: this);
-    visitsBloc = CrudVisitBloc(selectedTrainingBloc: selectedTrainingBloc, provider: this)
+    visitsBloc = CrudVisitBloc(start: start, selectedTrainingBloc: selectedTrainingBloc, provider: this)
       ..loadUserVisits();
     combine2<CrudEntityTraining?, List<CrudEntityVisit>>('AllTrainingsBloc', selectedTrainingBloc, visitsBloc);
   }

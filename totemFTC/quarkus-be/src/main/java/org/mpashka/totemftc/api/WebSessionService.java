@@ -68,7 +68,9 @@ public class WebSessionService {
     public Uni<Session> fetchSession(String sessionId) {
         Session session = sessions.get(sessionId);
         if (session != null) {
-            if (session.getUserId() != null) {
+            DbUser.EntityUser user = session.getUser();
+            log.debug("Session found in memory. User {}", user);
+            if (user != null) {
                 if (session.getLastUpdate().isBefore(OffsetDateTime.now().minus(SESSION_UPDATE_HOURS, ChronoUnit.HOURS))) {
                     session.update();
                     log.debug("Session last update is too old. Updating...");
@@ -82,6 +84,7 @@ public class WebSessionService {
                         .replaceWith((Session) null);
             }
         }
+        log.debug("Session not found in memory. Fetch from DB");
         return dbUser.getSession(sessionId)
                 .onItem().transformToUni(s -> {
                     if (s == null) {
@@ -94,7 +97,9 @@ public class WebSessionService {
                     s.update();
                     return dbUser.updateSession(s)
                             .onItem().transform(u -> s);
-                });
+                })
+                .onFailure().invoke(e -> log.warn("Error fetch session", e))
+                ;
     }
 
     public Session getSession(String sessionId) {

@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
+import javax.security.auth.Subject;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerRequestFilter;
 import javax.ws.rs.core.HttpHeaders;
@@ -49,11 +50,14 @@ public class MySecurityProvider implements HttpAuthenticationMechanism {
         String sessionId = MySecurityProvider.extractSessionId(auth);
         log.debug("Auth[{}]: {}, sessionId: {}", context.request().uri(), auth, sessionId);
         if (sessionId == null) {
-            return Uni.createFrom().optional(Optional.empty());
+            log.debug("No session id");
+            return Uni.createFrom().nullItem();
         }
         return webSessionService.fetchSession(sessionId)
                 .onItem().invoke(session -> log.debug("Session: {}", session))
-                .onItem().transform(session -> session != null ? new MySecurityIdentity(session) : null);
+                .onItem().transform(session -> session != null ? (SecurityIdentity) new MySecurityIdentity(session) : null)
+                .onFailure().invoke(e -> log.error("Error read session {}", sessionId, e))
+                ;
     }
 
     @Override
@@ -141,32 +145,51 @@ public class MySecurityProvider implements HttpAuthenticationMechanism {
 
         @Override
         public boolean hasRole(String role) {
-            return session.getUser().getTypes().contains(DbUser.UserType.valueOf(role));
+            boolean hasRole = session.getUser().getTypes().contains(DbUser.UserType.valueOf(role));
+            log.debug("Session {}. Role {}. Has {}", session.getSessionId(), role, hasRole);
+            return hasRole;
         }
 
         @Override
         public <T extends Credential> T getCredential(Class<T> credentialType) {
+            log.trace("::getCredential({})", credentialType);
             return null;
         }
 
         @Override
         public Set<Credential> getCredentials() {
+            log.trace("::getCredentials()");
             return null;
         }
 
         @Override
         public <T> T getAttribute(String name) {
+            log.trace("::getAttribute({})", name);
             return null;
         }
 
         @Override
         public Map<String, Object> getAttributes() {
+            log.trace("::getAttributes()");
             return null;
         }
 
         @Override
         public Uni<Boolean> checkPermission(Permission permission) {
+            log.trace("::checkPermission({})", permission);
             return Uni.createFrom().item(hasRole(permission.getName()));
+        }
+
+        @Override
+        public boolean checkPermissionBlocking(Permission permission) {
+            log.trace("::checkPermissionBlocking({})", permission);
+            return hasRole(permission.getName());
+        }
+
+        @Override
+        public boolean implies(Subject subject) {
+            log.trace("::implies({})", subject);
+            return Principal.super.implies(subject);
         }
     }
 
