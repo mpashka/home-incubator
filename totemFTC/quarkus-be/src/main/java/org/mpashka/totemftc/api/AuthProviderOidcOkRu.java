@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.core.UriInfo;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -19,9 +18,9 @@ import java.security.NoSuchAlgorithmException;
  * https://apiok.ru/ext/oauth/permissions
  */
 @ApplicationScoped
-public class AuthProviderOkRu extends AuthProviderOidc {
+public class AuthProviderOidcOkRu extends AuthProviderOidc {
 
-    private static final Logger log = LoggerFactory.getLogger(AuthProviderOkRu.class);
+    private static final Logger log = LoggerFactory.getLogger(AuthProviderOidcOkRu.class);
 
     @ConfigProperty(name = "oidc.provider.okru.publicKey")
     String applicationPublicKey;
@@ -29,7 +28,7 @@ public class AuthProviderOkRu extends AuthProviderOidc {
     private MessageDigest md5;
     private String secretSignKey;
 
-    public AuthProviderOkRu() {
+    public AuthProviderOidcOkRu() {
         super("okru",
                 "VALUABLE_ACCESS;GET_EMAIL;LONG_ACCESS_TOKEN",
                 "https://connect.ok.ru/oauth/authorize?client_id=<client_id>&redirect_uri=<redirect_uri>&scope=<scope>&state=<state>&response_type=code&nonce=<nonce>",
