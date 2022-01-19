@@ -55,6 +55,7 @@ class MyDrawer extends StatelessWidget {
             ),
           ),
 
+/*
           if (isUser) ListTile(
             title: Text('Главная'),
             onTap: () {
@@ -62,6 +63,7 @@ class MyDrawer extends StatelessWidget {
               Navigator.pushNamed(context, ScreenHome.routeName,);
             },
           ),
+*/
           if (isUser) ListTile(
             title: Text('Абонементы'),
             onTap: () => Navigator.pushNamed(context, ScreenTickets.routeName,),

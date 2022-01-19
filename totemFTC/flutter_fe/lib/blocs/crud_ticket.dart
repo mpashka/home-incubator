@@ -41,7 +41,7 @@ class CrudTicketBloc extends BlocBaseList<CrudEntityTicket> {
     state = user.tickets!;
   }
 
-  void updateTicket(CrudEntityTicket ticket) {
+  CrudEntityTicket updateTicket(CrudEntityTicket ticket) {
     var indexOf = state.indexOf(ticket);
     if (indexOf >= 0) {
       log.finest('Ticket was found. Updating ticket[$indexOf] -> ${ticket.displayName}');
@@ -51,6 +51,7 @@ class CrudTicketBloc extends BlocBaseList<CrudEntityTicket> {
     } else {
       log.warning('Ticket was not found. Probably internal error. ${ticket.displayName}');
     }
+    return ticket;
   }
 }
 

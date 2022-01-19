@@ -102,7 +102,12 @@ class ScreenTicketsState extends BlocProvider<ScreenTickets> {
           markSchedule: _past ? false : true,
           markSelf: _past ? CrudEntityVisitMark.on : CrudEntityVisitMark.unmark,
           markMaster: CrudEntityVisitMark.unmark);
-      visitBloc.markSelf(visit, CrudEntityVisitMark.on);
+      var ticket = await visitBloc.markSelf(visit, CrudEntityVisitMark.on);
+
+      // Select new ticket
+      selectedTicketBloc.state = ticket;
+
+      // if (ticket != null && selectedTicketBloc.state != null && selectedTicketBloc.state!.id != ticket.id) {
     }
   }
 }

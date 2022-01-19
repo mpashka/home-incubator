@@ -10,7 +10,6 @@ import 'blocs/session.dart';
 import 'misc/container.dart';
 import 'misc/initializer.dart';
 import 'ui/screen_about.dart';
-import 'ui/screen_home.dart';
 import 'ui/screen_init.dart';
 import 'ui/screen_login.dart';
 import 'ui/screen_master_trainings.dart';
@@ -30,6 +29,7 @@ void main() {
 // todo navigator must be updated. Regular drawer call must replace route. But scenarios must remain history (e.g. user select screen -> user info)
 class MyApp extends StatelessWidget {
   static final Logger log = Logger('MyApp');
+  static const homeRouteName = '/';
 
   // This widget is the root of your application.
   @override
@@ -76,32 +76,46 @@ class MyApp extends StatelessWidget {
         if (!session.isLoggedIn()) {
           log.finer('Not logged in. Show ScreenLogin');
           return MaterialPageRoute(builder: (context) => ScreenLogin());
-        } else if (routeName == ScreenLogin.routeName) {
+
+        } else if (routeName == ScreenLogin.routeName || routeName == MyApp.homeRouteName) {
           log.finer('Logged in. Show ScreenHome');
-          return MaterialPageRoute(builder: (context) => ScreenHome());
-        } else {
-          log.finer('Normal screen show');
-          switch (routeName) {
-            case ScreenHome.routeName: return MaterialPageRoute(builder: (context) => ScreenHome());
-            case ScreenLogin.routeName: return MaterialPageRoute(builder: (context) => ScreenLogin());
-            case ScreenInit.routeName: return MaterialPageRoute(builder: (context) => ScreenInit());
-            case ScreenAbout.routeName: return MaterialPageRoute(builder: (context) => ScreenAbout());
-            case ScreenTickets.routeName: return MaterialPageRoute(builder: (context) => ScreenTickets());
-            case ScreenTrainings.routeName: return MaterialPageRoute(builder: (context) => ScreenTrainings());
-            case ScreenSchedule.routeName: return MaterialPageRoute(builder: (context) => ScreenSchedule());
-            case ScreenSchedule.routeNameMaster: return MaterialPageRoute(builder: (context) => ScreenSchedule(forTrainer: true,));
-            // case '/purchases': return MaterialPageRoute(builder: (context) => ScreenPurchases());
-            case ScreenMasterTrainings.routeName:
-              return MaterialPageRoute(builder: (context) => ScreenMasterTrainings(initialTraining: settings.arguments as CrudEntityTraining?));
-            case ScreenMasterUserSelect.routeName: return MaterialPageRoute(builder: (context) => ScreenMasterUserSelect());
-            case ScreenMasterUser.routeName:
-              final user = settings.arguments as CrudEntityUser;
-              return MaterialPageRoute(builder: (context) => ScreenMasterUser(user));
-            case ScreenConfig.routeName: return MaterialPageRoute(builder: (context) => ScreenConfig());
-          }
+          var userTypes = session.user.types;
+            if (userTypes.contains(CrudEntityUserType.user)) {
+               routeName = ScreenTickets.routeName;
+            } else if (userTypes.contains(CrudEntityUserType.trainer)) {
+              routeName = ScreenMasterTrainings.routeName;
+            } else if (userTypes.isEmpty) {
+              routeName = ScreenConfig.routeName;
+            }
         }
+
+        return selectRoute(routeName, settings);
       },
     );
+  }
+
+  MaterialPageRoute selectRoute(String? routeName, RouteSettings settings) {
+    log.finer('Normal screen show $routeName');
+    switch (routeName) {
+    // case ScreenHome.routeName: return MaterialPageRoute(builder: (context) => ScreenHome());
+      case ScreenLogin.routeName: return MaterialPageRoute(builder: (context) => ScreenLogin());
+      case ScreenInit.routeName: return MaterialPageRoute(builder: (context) => ScreenInit());
+      case ScreenAbout.routeName: return MaterialPageRoute(builder: (context) => ScreenAbout());
+      case ScreenTickets.routeName: return MaterialPageRoute(builder: (context) => ScreenTickets());
+      case ScreenTrainings.routeName: return MaterialPageRoute(builder: (context) => ScreenTrainings());
+      case ScreenSchedule.routeName: return MaterialPageRoute(builder: (context) => ScreenSchedule());
+      case ScreenSchedule.routeNameMaster: return MaterialPageRoute(builder: (context) => ScreenSchedule(forTrainer: true,));
+    // case '/purchases': return MaterialPageRoute(builder: (context) => ScreenPurchases());
+      case ScreenMasterTrainings.routeName:
+        return MaterialPageRoute(builder: (context) => ScreenMasterTrainings(initialTraining: settings.arguments as CrudEntityTraining?));
+      case ScreenMasterUserSelect.routeName: return MaterialPageRoute(builder: (context) => ScreenMasterUserSelect());
+      case ScreenMasterUser.routeName:
+        final user = settings.arguments as CrudEntityUser;
+        return MaterialPageRoute(builder: (context) => ScreenMasterUser(user));
+      case ScreenConfig.routeName: return MaterialPageRoute(builder: (context) => ScreenConfig());
+    }
+
+    return MaterialPageRoute(builder: (context) => ScreenTickets());
   }
 }
 

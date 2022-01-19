@@ -10,6 +10,7 @@ import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
+import '../main.dart';
 import '../misc/configuration.dart';
 import '../misc/utils.dart';
 import 'bloc_provider.dart';
@@ -100,7 +101,7 @@ class Session {
     await _backend.request('GET', '/api/login/logout');
     _configuration.sessionId = '';
     _user = emptyUser;
-    Navigator.pushReplacementNamed(context, '/');
+    Navigator.pushReplacementNamed(context, MyApp.homeRouteName);
   }
 
   bool isLoggedIn() {
@@ -124,7 +125,8 @@ const loginProviders = <LoginProvider>[
   LoginProvider("vk", "https://oauth.vk.com/authorize", ["email"], FaIcon(FontAwesomeIcons.vk)),
   LoginProvider("mailru", "https://oauth.mail.ru/login", ["openid", "userinfo", "email", "profile", "offline_access"], Icon(Icons.alternate_email)),
   LoginProvider("okru", "https://connect.ok.ru/oauth/authorize", ["VALUABLE_ACCESS;GET_EMAIL;LONG_ACCESS_TOKEN"], Icon(MdiIcons.odnoklassniki)),
-  LoginProvider("yandex", "https://oauth.yandex.ru/authorize?force_confirm=yes", ["login:birthday", "login:email", "login:info", "login:avatar"], Icon(FontAwesomeIcons.yandex)),
+  LoginProvider("yandex", "https://oauth.yandex.ru/authorize?force_confirm=yes", ["login:birthday", "login:email", "login:info", "login:avatar"], FaIcon(FontAwesomeIcons.yandex)),
+  LoginProvider("amazon", "https://www.amazon.com/ap/oa", ["profile"], Icon(FontAwesomeIcons.amazon)),
 ];
 
 class SessionBloc extends BlocBaseState<LoginStateInfo> {

@@ -82,27 +82,27 @@ class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
     state = user.visits!;
   }
 
-  Future<void> markSchedule(CrudEntityVisit visit, bool mark) async {
+  Future<CrudEntityTicket?> markSchedule(CrudEntityVisit visit, bool mark) async {
     var ticketJson = (await backend.requestJson('PUT', '/api/visit/markSchedule/$mark', body: visit));
     visit.markSchedule = mark;
-    _addAndUpdate(visit, ticketJson, (v) => v.markSchedule = mark);
+    return _addAndUpdate(visit, ticketJson, (v) => v.markSchedule = mark);
   }
 
-  Future<void> markSelf(CrudEntityVisit visit, CrudEntityVisitMark mark) async {
+  Future<CrudEntityTicket?> markSelf(CrudEntityVisit visit, CrudEntityVisitMark mark) async {
     log.finer('Mark self $visit -> $mark');
     var ticketJson = (await backend.requestJson('PUT', '/api/visit/markSelf/${describeEnum(mark)}', body: visit));
     visit.markSelf = mark;
-    _addAndUpdate(visit, ticketJson, (v) => v.markSelf = mark);
+    return _addAndUpdate(visit, ticketJson, (v) => v.markSelf = mark);
   }
 
-  Future<void> markMaster(CrudEntityVisit visit, CrudEntityVisitMark mark) async {
+  Future<CrudEntityTicket?> markMaster(CrudEntityVisit visit, CrudEntityVisitMark mark) async {
     log.finer('Mark master $visit -> $mark (${visit.user?.firstName})');
     var ticketJson = (await backend.requestJson('PUT', '/api/visit/markMaster/${describeEnum(mark)}', body: visit));
     visit.markMaster = mark;
-    _addAndUpdate(visit, ticketJson, (v) => v.markMaster = mark);
+    return _addAndUpdate(visit, ticketJson, (v) => v.markMaster = mark);
   }
 
-  void _addAndUpdate(CrudEntityVisit visit, ticketJson, void Function(CrudEntityVisit visit) apply) {
+  CrudEntityTicket? _addAndUpdate(CrudEntityVisit visit, ticketJson, void Function(CrudEntityVisit visit) apply) {
     var indexOf = state.indexOf(visit);
     if (indexOf >= 0) {
       log.finest('Visit was found. Updating [$indexOf] -> ${state[indexOf].user?.displayName}');
@@ -117,7 +117,11 @@ class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
       var ticket = CrudEntityTicket.fromJson(ticketJson)
         // todo [!] this is not correct. User here is buyer, not visitor.
         ..user = visit.user;
-      ticketBloc!.updateTicket(ticket);
+      ticket = ticketBloc!.updateTicket(ticket);
+      if (selectedTicketBloc != null && selectedTicketBloc!.state != null && selectedTicketBloc!.state!.id == ticket.id) {
+        selectedTicketBloc!.state = ticket;
+      }
+      return ticket;
     }
   }
 }

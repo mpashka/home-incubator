@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
 import 'package:flutter_fe/blocs/session.dart';
+import 'package:flutter_fe/main.dart';
 import 'package:flutter_fe/misc/configuration.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
@@ -58,7 +59,7 @@ class ScreenLoginState extends BlocProvider<ScreenLogin> {
             sessionBloc.login(provider).then((user) {
               // onPressed: log.fine(''),
               if (user != null) {
-                Navigator.pushReplacementNamed(context, '/',);
+                Navigator.pushReplacementNamed(context, MyApp.homeRouteName,);
               }
             });
           }
@@ -72,7 +73,6 @@ class ScreenLoginState extends BlocProvider<ScreenLogin> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Totem FC'),),
-      // drawer: MyDrawer(),
       body: Stack(children: [
         Column(children: [
           Image.asset(

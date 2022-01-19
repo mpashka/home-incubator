@@ -19,6 +19,8 @@ import 'widgets/ui_divider.dart';
 import 'widgets/ui_ticket.dart';
 import 'widgets/ui_selector_training.dart';
 
+///
+@Deprecated('Useless - use ScreenTickets instead')
 class ScreenHome extends StatefulWidget {
   static const routeName = '/';
 
