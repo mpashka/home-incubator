@@ -117,7 +117,7 @@ class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
       var ticket = CrudEntityTicket.fromJson(ticketJson)
         // todo [!] this is not correct. User here is buyer, not visitor.
         ..user = visit.user;
-      ticket = ticketBloc!.updateTicket(ticket);
+      ticket = ticketBloc!.updateTicketLocally(ticket);
       if (selectedTicketBloc != null && selectedTicketBloc!.state != null && selectedTicketBloc!.state!.id == ticket.id) {
         selectedTicketBloc!.state = ticket;
       }
@@ -128,22 +128,6 @@ class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
 
 class SelectedVisitBloc extends BlocBaseState<CrudEntityVisit?> {
   SelectedVisitBloc({CrudEntityVisit? state, required BlocProvider provider, String? name}) : super(state: state, provider: provider, name: name);
-}
-
-@JsonSerializable(explicitToJson: true)
-class CrudEntityTicketType {
-  int id;
-  List<CrudEntityTrainingType> trainingTypes;
-  String name;
-  int cost;
-  int visits;
-  int days;
-
-  CrudEntityTicketType({required this.id, required this.trainingTypes, required this.name, required this.cost, required this.visits, required this.days});
-
-  factory CrudEntityTicketType.fromJson(Map<String, dynamic> json) => _$CrudEntityTicketTypeFromJson(json);
-
-  Map<String, dynamic> toJson() => _$CrudEntityTicketTypeToJson(this);
 }
 
 @JsonSerializable(explicitToJson: true)

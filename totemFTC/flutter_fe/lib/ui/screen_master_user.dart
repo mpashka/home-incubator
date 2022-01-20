@@ -10,6 +10,7 @@ import 'package:flutter_fe/ui/widgets/ui_selector_user.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 
 import 'screen_base.dart';
+import 'widgets/ui_selector_ticket_type.dart';
 import 'widgets/ui_selector_training.dart';
 import 'widgets/ui_ticket.dart';
 import 'widgets/ui_user.dart';
@@ -34,13 +35,14 @@ class ScreenMasterUserState extends BlocProvider<ScreenMasterUser> {
 
   late final SelectedUserBloc selectedUserBloc;
   late final SelectedTicketBloc selectedTicketBloc;
+  late final CrudTicketBloc ticketBloc;
   late final CrudVisitBloc visitsBloc;
 
   @override
   void initState() {
     super.initState();
     selectedUserBloc = SelectedUserBloc(user: widget._user, provider: this);
-    var ticketBloc = CrudTicketBloc(selectedUserBloc: selectedUserBloc, provider: this)..loadUserTickets();
+    ticketBloc = CrudTicketBloc(selectedUserBloc: selectedUserBloc, provider: this)..loadUserTickets();
     selectedTicketBloc = SelectedTicketBloc(provider: this);
     combine3<CrudEntityUser, CrudEntityTicket?, List<CrudEntityTicket>>('AllTicketsBloc', selectedUserBloc, selectedTicketBloc, ticketBloc);
 
@@ -62,7 +64,17 @@ class ScreenMasterUserState extends BlocProvider<ScreenMasterUser> {
           },
         )
       ],),
-      UiDivider('Абонементы'),
+      Row(children: [
+        const Expanded(child: Divider(thickness: 3,)),
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 8),
+          child: Text('Абонементы'),
+        ),
+        if (user.types.contains(CrudEntityUserType.admin)) GestureDetector(
+          child: Icon(Icons.add_circle_outline),
+          onTap: () => _onAddTicket(context),
+        ),
+      ]),
       BlocProvider.streamBuilder<Combined3<CrudEntityUser, CrudEntityTicket?, List<CrudEntityTicket>>, BlocBaseState<Combined3<CrudEntityUser, CrudEntityTicket?, List<CrudEntityTicket>>>>(blocName: 'AllTicketsBloc', builder: (ctx, combined) {
         var user = combined.state1;
         var selectedTicket = combined.state2;
@@ -98,14 +110,14 @@ class ScreenMasterUserState extends BlocProvider<ScreenMasterUser> {
       }),),
     ]),),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _onAddTraining(context, selectedUserBloc),
+        onPressed: () => _onAddTraining(context),
         tooltip: 'Add',
         child: Icon(Icons.add),
       ),
     );
   }
 
-  Future<void> _onAddTraining(BuildContext context, SelectedUserBloc selectedUserBloc) async {
+  Future<void> _onAddTraining(BuildContext context) async {
     Session session = Injector().get<Session>();
     var training = await UiSelectorTrainingDialog(title: 'Отметить тренировку', dateRange: DateTimeRange(
         start: start,
@@ -120,6 +132,24 @@ class ScreenMasterUserState extends BlocProvider<ScreenMasterUser> {
           trainingId: training.id,
           markMaster: CrudEntityVisitMark.on);
       visitsBloc.markMaster(visit, CrudEntityVisitMark.on);
+    }
+  }
+
+  Future<void> _onAddTicket(BuildContext context) async {
+    var user = selectedUserBloc.state;
+    var ticketType = await UiSelectorTicketTypeDialog(title: 'Добавить абонемент для ${user.displayName}',)
+        .selectTicketType(context);
+    log.finer("Select ticket type dialog result: $ticketType");
+    if (ticketType != null) {
+      CrudEntityTicket ticket = CrudEntityTicket(
+        id: -1,
+        ticketType: ticketType,
+        user: selectedUserBloc.state,
+        buy: DateTime.now(),
+        visited: 0,
+      );
+      ticket = await ticketBloc.createTicket(ticket);
+      selectedTicketBloc.state = ticket;
     }
   }
 }
