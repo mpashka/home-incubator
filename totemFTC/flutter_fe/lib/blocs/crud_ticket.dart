@@ -41,7 +41,13 @@ class CrudTicketBloc extends BlocBaseList<CrudEntityTicket> {
     state = user.tickets!;
   }
 
-  CrudEntityTicket updateTicket(CrudEntityTicket ticket) {
+  Future<CrudEntityTicket> createTicket(CrudEntityTicket ticket) async {
+    var ticketId = int.parse((await backend.request('POST', '/api/ticket', body: ticket)).body);
+    ticket.id = ticketId;
+    return ticket;
+  }
+
+  CrudEntityTicket updateTicketLocally(CrudEntityTicket ticket) {
     var indexOf = state.indexOf(ticket);
     if (indexOf >= 0) {
       log.finest('Ticket was found. Updating ticket[$indexOf] -> ${ticket.displayName}');
@@ -58,6 +64,23 @@ class CrudTicketBloc extends BlocBaseList<CrudEntityTicket> {
 class SelectedTicketBloc extends BlocBaseState<CrudEntityTicket?> {
   SelectedTicketBloc({required BlocProvider provider, String? name}): super(state: null, provider: provider, name: name);
 }
+
+class SelectedTicketTypeBloc extends BlocBaseState<CrudEntityTicketType?> {
+  SelectedTicketTypeBloc({required BlocProvider provider, String? name}): super(state: null, provider: provider, name: name);
+}
+
+class CrudTicketTypeFilteredBloc extends BlocBaseList<CrudEntityTicketType> {
+  TicketTypeFilter? ticketTypeFilter;
+  CrudTicketTypeFilteredBloc({this.ticketTypeFilter, List<CrudEntityTicketType> state = const [], required BlocProvider provider, String? name}): super(provider: provider, state: state, name: name);
+
+  Future<void> loadTicketTypes({TrainingFilter? trainingFilter}) async {
+    state = await cache('ticketTypes', () async =>
+        (await backend.requestJson('GET', '/api/ticketTypes/list',) as List)
+            .map((item) => CrudEntityTicketType.fromJson(item)).toList());
+  }
+}
+
+typedef TicketTypeFilter = bool Function(CrudEntityTicketType ticketType);
 
 @JsonSerializable(explicitToJson: true)
 class CrudEntityTicketType {
