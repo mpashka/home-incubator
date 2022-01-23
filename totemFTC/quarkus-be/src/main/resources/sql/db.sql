@@ -53,14 +53,15 @@ CREATE TABLE IF NOT EXISTS user_session (
 --
 CREATE TABLE IF NOT EXISTS training_type (
     training_type VARCHAR(10) NOT NULL PRIMARY KEY,
-    name VARCHAR(20)
+    name VARCHAR(20),
+    default_cost INTEGER NOT NULL
 );
 
 ---
 
 -- This is used only for reference and data copy to training
 CREATE TABLE IF NOT EXISTS training_schedule (
-    training_schedule_id SERIAL PRIMARY KEY ,
+    training_schedule_id SERIAL PRIMARY KEY,
     training_time TIMESTAMP NOT NULL,
     trainer_id INTEGER NOT NULL REFERENCES user_info (user_id),
     training_type VARCHAR(10) NOT NULL REFERENCES training_type (training_type)
@@ -76,7 +77,7 @@ CREATE TABLE IF NOT EXISTS training (
 );
 
 CREATE TABLE IF NOT EXISTS ticket_type (
-    ticket_type_id SERIAL PRIMARY KEY ,
+    ticket_type_id SERIAL PRIMARY KEY,
     ticket_training_types VARCHAR(10)[] NOT NULL,
     ticket_name VARCHAR(20)  NOT NULL,
     ticket_cost INTEGER NOT NULL,
@@ -85,7 +86,7 @@ CREATE TABLE IF NOT EXISTS ticket_type (
 );
 
 CREATE TABLE IF NOT EXISTS training_ticket (
-    ticket_id SERIAL PRIMARY KEY ,
+    ticket_id SERIAL PRIMARY KEY,
     ticket_type_id INTEGER REFERENCES ticket_type,
     user_id INTEGER REFERENCES user_info(user_id),
     ticket_buy TIMESTAMP NOT NULL,
