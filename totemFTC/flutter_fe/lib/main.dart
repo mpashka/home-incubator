@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/misc/configuration.dart';
 import 'package:flutter_fe/ui/screen_config.dart';
+import 'package:flutter_fe/ui/screen_master_finance.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
 
@@ -89,12 +90,12 @@ class MyApp extends StatelessWidget {
             }
         }
 
-        return selectRoute(routeName, settings);
+        return selectRoute(routeName, settings, session.user);
       },
     );
   }
 
-  MaterialPageRoute selectRoute(String? routeName, RouteSettings settings) {
+  MaterialPageRoute selectRoute(String? routeName, RouteSettings settings, CrudEntityUser user) {
     log.finer('Normal screen show $routeName');
     switch (routeName) {
     // case ScreenHome.routeName: return MaterialPageRoute(builder: (context) => ScreenHome());
@@ -112,6 +113,7 @@ class MyApp extends StatelessWidget {
       case ScreenMasterUser.routeName:
         final user = settings.arguments as CrudEntityUser;
         return MaterialPageRoute(builder: (context) => ScreenMasterUser(user));
+      case ScreenMasterFinance.routeName: return MaterialPageRoute(builder: (context) => ScreenMasterFinance(total: user.types.contains(CrudEntityUserType.admin),));
       case ScreenConfig.routeName: return MaterialPageRoute(builder: (context) => ScreenConfig());
     }
 

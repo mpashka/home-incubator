@@ -12,6 +12,7 @@ import 'package:flutter_simple_dependency_injection/injector.dart';
 import 'package:logging/logging.dart';
 import 'package:material_design_icons_flutter/material_design_icons_flutter.dart';
 
+import 'screen_master_finance.dart';
 import 'screen_master_user_select.dart';
 import 'screen_schedule.dart';
 
@@ -90,6 +91,12 @@ class MyDrawer extends StatelessWidget {
           if (isTrainer) ListTile(
             title: Text('Мое расписание'),
             onTap: () => Navigator.pushNamed(context, ScreenSchedule.routeNameMaster,),
+          ),
+
+          if (isTrainer || isAdmin) Divider(),
+          if (isTrainer || isAdmin) ListTile(
+            title: Text('Финансы'),
+            onTap: () => Navigator.pushNamed(context, ScreenMasterFinance.routeName,),
           ),
 
           Divider(),

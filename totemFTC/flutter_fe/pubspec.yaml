@@ -36,7 +36,7 @@ dependencies:
   shared_preferences: ^2.0.8
   url_launcher: ^6.0.12
   http: ^0.13.4
-  json_annotation: ^4.3.0
+  json_annotation: ^4.4.0
   flutter_sticky_header: ^0.6.0
   font_awesome_flutter: ^9.2.0
 

@@ -12,6 +12,8 @@ String getRandomString(int length) => String.fromCharCodes(Iterable.generate(
     length, (_) => _chars.codeUnitAt(_rnd.nextInt(_chars.length))));
 
 final dateFormat = DateFormat('yyyy-MM-dd');
+final weekDateFormat = DateFormat('MMM dd');
+final monthDateFormat = DateFormat('MMMM');
 final dateTimeFormat = DateFormat('yyyy-MM-dd HH:mm');
 final localDateFormat = DateFormat('EEE, dd MMM');
 final localDateTimeFormat = DateFormat('EEE, dd MMM HH:mm');
