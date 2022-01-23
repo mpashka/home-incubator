@@ -1,5 +1,5 @@
 import { Dialog } from 'quasar';
-import {randomString} from 'components/utils';
+import {randomString} from 'src/misc/utils';
 
 const windowObjectReferences: {[name: string]: WindowProxy | null} = {};
 
@@ -154,6 +154,15 @@ export const loginProviders: LoginProvider[] = [
     iconColor: 'red',
     authorizationEndpoint: 'https://oauth.yandex.ru/authorize?scope=login:birthday+login:email+login:info+login:avatar&force_confirm=yes',
     clientId: '23d6b1950e904067af78ed108d33d11d',
+    loginType: 'normal',
+  },
+  {
+    name: 'amazon',
+    site: 'amazon.com',
+    icon: 'fab fa-amazon',
+    iconColor: 'yellow',
+    authorizationEndpoint: 'https://www.amazon.com/ap/oa?scope=profile',
+    clientId: 'amzn1.application-oa2-client.ad5a1a1246b24e19abea4e7fa21c8a35',
     loginType: 'normal',
   },
 ]

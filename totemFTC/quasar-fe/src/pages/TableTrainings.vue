@@ -132,7 +132,7 @@ const visitColumns = [
 ]
 
 export default defineComponent({
-  name: 'TableVisits',
+  name: 'TableTrainings',
   components: {TrainingLine},
   setup () {
 

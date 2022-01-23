@@ -10,6 +10,8 @@ import javax.inject.Inject;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotAuthorizedException;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -19,6 +21,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 
 @Path("/api")
 @Authenticated
@@ -83,25 +86,54 @@ public class WebResourceTraining {
 
     @DELETE
     @Path("training/{trainingId}")
-    @RolesAllowed({"admin"})
+    @RolesAllowed({"trainer", "admin"})
     public Uni<Void> delete(@PathParam("trainingId") int trainerId) {
-        return dbTraining.delete(trainerId);
+        EnumSet<DbUser.UserType> userTypes = webSessionService.getUser().getTypes();
+        return userTypes.contains(DbUser.UserType.admin) ? dbTraining.delete(trainerId) : dbTraining.delete(trainerId, webSessionService.getUserId());
     }
 
     @POST
     @Path("training")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"admin"})
+    @RolesAllowed({"trainer", "admin"})
     public Uni<Integer> create(DbCrudTraining.Entity training) {
         log.debug("Add training {}", training);
+        checkTrainerAccess(training);
         return dbTraining.add(training);
     }
 
     @PUT
     @Path("training")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"admin"})
+    @RolesAllowed({"trainer", "admin"})
     public Uni<Void> update(DbCrudTraining.Entity training) {
-        return dbTraining.update(training);
+        checkTrainerAccess(training);
+        return dbTraining.update(training, isAdmin());
+    }
+
+    @PUT
+    @Path("training/comment")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @RolesAllowed({"trainer", "admin"})
+    public Uni<Void> updateComment(DbCrudTraining.Entity training) {
+        checkTrainerAccess(training);
+        return dbTraining.updateComment(training, isAdmin());
+    }
+
+    private void checkTrainerAccess(DbCrudTraining.Entity training) {
+        EnumSet<DbUser.UserType> userTypes = webSessionService.getUser().getTypes();
+        if (userTypes.contains(DbUser.UserType.admin)) {
+            return;
+        } else if (!userTypes.contains(DbUser.UserType.trainer)) {
+            throw new NotAuthorizedException("Trying to access privileged method without proper permissions");
+        }
+        if (training.getTrainer().getUserId() != webSessionService.getUserId()) {
+            throw new NotAuthorizedException("Trying to access inappropriate resource");
+        }
+    }
+
+    private boolean isAdmin() {
+        EnumSet<DbUser.UserType> userTypes = webSessionService.getUser().getTypes();
+        return userTypes.contains(DbUser.UserType.admin);
     }
 }

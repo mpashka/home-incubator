@@ -1,5 +1,5 @@
 import { RouteRecordRaw } from 'vue-router';
-import MainLayout from 'src/layouts/MainLayout.vue';
+import MainLayout from 'src/pages/layouts/MainLayout.vue';
 import Login from 'pages/login/Login.vue';
 
 const routes: RouteRecordRaw[] = [
@@ -9,6 +9,7 @@ const routes: RouteRecordRaw[] = [
     children: [
       { path: '', name: 'root', component: () => import('pages/Home.vue') },
       { path: 'schedule', component: () => import('pages/TableSchedule.vue') },
+      { path: 'trainings', component: () => import('pages/TableTrainings.vue') },
       { path: 'tableUsers', component: () => import('pages/TableUsers.vue') },
       { path: 'tableVisits', component: () => import('pages/TableVisits.vue') },
       { path: 'settings', component: () => import('pages/Settings.vue') },

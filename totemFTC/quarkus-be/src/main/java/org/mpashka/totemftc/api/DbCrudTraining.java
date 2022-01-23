@@ -16,7 +16,6 @@ import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.stream.StreamSupport;
 
 @Singleton
@@ -32,8 +31,12 @@ public class DbCrudTraining {
     private PreparedQuery<RowSet<Row>> selectByDateIntervalForTrainer;
     private PreparedQuery<RowSet<Row>> selectTrainingTypes;
     private PreparedQuery<RowSet<Row>> insert;
-    private PreparedQuery<RowSet<Row>> update;
-    private PreparedQuery<RowSet<Row>> delete;
+    private PreparedQuery<RowSet<Row>> updateForAdmin;
+    private PreparedQuery<RowSet<Row>> updateForTrainer;
+    private PreparedQuery<RowSet<Row>> updateCommentForAdmin;
+    private PreparedQuery<RowSet<Row>> updateCommentForTrainer;
+    private PreparedQuery<RowSet<Row>> deleteForAdmin;
+    private PreparedQuery<RowSet<Row>> deleteForTrainer;
 
     @PostConstruct
     void init() {
@@ -53,8 +56,12 @@ public class DbCrudTraining {
         );
         selectTrainingTypes = client.preparedQuery("SELECT * FROM training_type");
         insert = client.preparedQuery("INSERT INTO training (training_time, trainer_id, training_type) VALUES ($1, $2, $3) RETURNING training_id");
-        update = client.preparedQuery("UPDATE training SET training_time=$2, trainer_id=$3, training_type=$4 WHERE training_id=$1");
-        delete = client.preparedQuery("DELETE FROM training WHERE training_id=$1");
+        updateForAdmin = client.preparedQuery("UPDATE training SET trainer_id=$2, training_time=$3, training_type=$4 WHERE training_id=$1");
+        updateCommentForAdmin = client.preparedQuery("UPDATE training SET training_comment=$3 WHERE training_id=$1 AND trainer_id=$2");
+        updateCommentForTrainer = client.preparedQuery("UPDATE training SET training_comment=$2 WHERE training_id=$1");
+        updateForTrainer = client.preparedQuery("UPDATE training SET training_time=$3, training_type=$4 WHERE training_id=$1 AND trainer_id=$2");
+        deleteForAdmin = client.preparedQuery("DELETE FROM training WHERE training_id=$1");
+        deleteForTrainer = client.preparedQuery("DELETE FROM training WHERE training_id=$1 AND trainer_id=$2");
     }
 
     public Uni<Entity[]> getAll() {
@@ -128,15 +135,36 @@ public class DbCrudTraining {
                 ;
     }
 
-    public Uni<Void> update(Entity training) {
-        return update.execute(Tuple.of(training.id, training.time, training.trainer.getUserId(), training.trainingType.trainingType))
+    public Uni<Void> update(Entity training, boolean isAdmin) {
+        PreparedQuery<RowSet<Row>> update = isAdmin ?  updateForAdmin : updateForTrainer;
+        return update.execute(Tuple.of(training.id, training.trainer.getUserId(), training.time, training.trainingType.trainingType))
+                .onFailure().transform(e -> new RuntimeException("Error update", e))
+                .onItem().transform(u -> null)
+                ;
+    }
+
+    public Uni<Void> updateComment(Entity training, boolean isAdmin) {
+        Uni<RowSet<Row>> execute;
+        if (isAdmin) {
+            execute = updateCommentForAdmin.execute(Tuple.of(training.id, training.comment));
+        } else {
+            execute = updateCommentForTrainer.execute(Tuple.of(training.id, training.trainer.getUserId(), training.comment));
+        }
+        return execute
                 .onFailure().transform(e -> new RuntimeException("Error update", e))
                 .onItem().transform(u -> null)
                 ;
     }
 
     public Uni<Void> delete(int id) {
-        return delete.execute(Tuple.of(id))
+        return deleteForAdmin.execute(Tuple.of(id))
+                .onFailure().transform(e -> new RuntimeException("Error delete", e))
+                .onItem().transform(u -> null)
+                ;
+    }
+
+    public Uni<Void> delete(int id, int trainerId) {
+        return deleteForTrainer.execute(Tuple.of(id, trainerId))
                 .onFailure().transform(e -> new RuntimeException("Error delete", e))
                 .onItem().transform(u -> null)
                 ;
@@ -149,6 +177,10 @@ public class DbCrudTraining {
         private DbUser.EntityUser trainer;
         private EntityTrainingType trainingType;
         private String comment;
+
+        public DbUser.EntityUser getTrainer() {
+            return trainer;
+        }
 
         public Entity loadFromDb(Row row) {
             this.id = row.getInteger("training_id");

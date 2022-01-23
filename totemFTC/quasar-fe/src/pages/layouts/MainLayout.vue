@@ -50,7 +50,7 @@
         <router-link to="/schedule">
           <q-item clickable>
             <q-item-section avatar>
-              <q-icon name="tools" />
+              <q-icon name="clock" />
             </q-item-section>
 
             <q-item-section>
@@ -62,10 +62,25 @@
           </q-item>
         </router-link>
 
+        <router-link to="/trainings">
+          <q-item clickable>
+            <q-item-section avatar>
+              <q-icon name="mdi-gym" />
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label>Тренировки</q-item-label>
+              <q-item-label caption>
+
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </router-link>
+
         <router-link to="/tableUsers">
           <q-item clickable>
             <q-item-section avatar>
-              <q-icon name="tools" />
+              <q-icon name="mdi-users" />
             </q-item-section>
 
             <q-item-section>
