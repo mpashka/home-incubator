@@ -67,7 +67,7 @@ public class DbUser {
                 "ORDER BY last_name, first_name, nick_name, user_id ");
         selectTrainers = client.preparedQuery("SELECT * FROM user_info_full " +
                 "WHERE cardinality(user_training_types) > 0 " +
-                "   AND user_types IN ('trainer') " +
+                "   AND user_types @> ARRAY['trainer'::user_type_enum] " +
                 "ORDER BY last_name, first_name, nick_name, user_id ");
         selectUser = client.preparedQuery("SELECT * FROM user_info_full " +
                 "WHERE user_id = $1 ");

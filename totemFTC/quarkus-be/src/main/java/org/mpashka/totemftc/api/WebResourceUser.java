@@ -42,7 +42,7 @@ public class WebResourceUser {
     @GET
     @Path("list")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"trainer", "admin"})
+    @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
     public Uni<DbUser.EntityUser[]> listUsers() {
         return dbUser.getAllUsers();
     }
@@ -56,7 +56,7 @@ public class WebResourceUser {
 
     @DELETE
     @Path("delete/{userId}")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
     public Uni<Void> delete(@PathParam("userId") int userId) {
         return dbUser.deleteUser(userId);
     }
@@ -69,7 +69,7 @@ public class WebResourceUser {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"admin"})
+    @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
     public Uni<Integer> create(DbUser.EntityUser user) {
         log.debug("Add user {}", user);
         return dbUser.addUser(user)
@@ -78,7 +78,7 @@ public class WebResourceUser {
 
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"admin"})
+    @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
     public Uni<Void> update(DbUser.EntityUser user) {
         return dbUser.updateUser(user);
     }

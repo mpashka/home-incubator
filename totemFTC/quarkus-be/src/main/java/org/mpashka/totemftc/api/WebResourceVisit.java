@@ -43,7 +43,7 @@ public class WebResourceVisit {
     @GET
     @Path("byUser/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"trainer", "admin"})
+    @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
     public Uni<DbCrudVisit.EntityVisit[]> listByUser(@RestPath int userId, @RestQuery LocalDateTime from) {
         return dbVisit.getByUser(userId, from);
     }
@@ -51,7 +51,7 @@ public class WebResourceVisit {
     @GET
     @Path("byTicket/{ticketId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"trainer", "admin"})
+    @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
     public Uni<DbCrudVisit.EntityVisit[]> listByTicket(@PathParam("ticketId") int ticketId) {
         return dbVisit.getByTicket(ticketId);
     }
@@ -59,21 +59,21 @@ public class WebResourceVisit {
     @GET
     @Path("byTraining/{trainingId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"trainer", "admin"})
+    @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
     public Uni<DbCrudVisit.EntityVisit[]> listByTraining(@PathParam("trainingId") int trainingId) {
         return dbVisit.getByTraining(trainingId);
     }
 
     @PUT
     @Path("delete")
-    @RolesAllowed({"admin"})
+    @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
     public Uni<DbCrudTicket.EntityTicket> delete(DbCrudVisit.EntityVisit visit) {
         return dbVisit.delete(visit);
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"admin"})
+    @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
     public Uni<DbCrudTicket.EntityTicket> create(DbCrudVisit.EntityVisit visit) {
         return dbVisit.updateMark(visit, null, null, null);
     }
@@ -101,7 +101,7 @@ public class WebResourceVisit {
     @PUT
     @Path("/markMaster/{markMaster}")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"trainer", "admin"})
+    @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
     public Uni<DbCrudTicket.EntityTicket> updateMarkMaster(DbCrudVisit.EntityVisit visit, @PathParam("markMaster") DbCrudVisit.EntityVisitMark markMaster) {
         // todo [!] trainer can mark only own
         return dbVisit.updateMark(visit, null, null, markMaster);

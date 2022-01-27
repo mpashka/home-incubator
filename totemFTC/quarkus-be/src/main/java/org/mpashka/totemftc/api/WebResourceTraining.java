@@ -2,6 +2,7 @@ package org.mpashka.totemftc.api;
 
 import io.quarkus.security.Authenticated;
 import io.smallrye.mutiny.Uni;
+import org.jboss.resteasy.reactive.RestPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +66,7 @@ public class WebResourceTraining {
     @GET
     @Path("training/byDate/{date}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<DbCrudTraining.Entity[]> byDate(LocalDate date) {
+    public Uni<DbCrudTraining.Entity[]> byDate(@RestPath LocalDate date) {
         return dbTraining.getByDate(date);
     }
 
@@ -79,14 +80,14 @@ public class WebResourceTraining {
     @GET
     @Path("masterTraining/byDateInterval")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"trainer"})
+    @RolesAllowed(MySecurityProvider.ROLE_TRAINER)
     public Uni<DbCrudTraining.Entity[]> masterTrainingsByDateInterval(@QueryParam("from") LocalDateTime from, @QueryParam("to") LocalDateTime to) {
         return dbTraining.getByDateIntervalForTrainer(webSessionService.getUserId(), from, to);
     }
 
     @DELETE
     @Path("training/{trainingId}")
-    @RolesAllowed({"trainer", "admin"})
+    @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
     public Uni<Void> delete(@PathParam("trainingId") int trainerId) {
         EnumSet<DbUser.UserType> userTypes = webSessionService.getUser().getTypes();
         return userTypes.contains(DbUser.UserType.admin) ? dbTraining.delete(trainerId) : dbTraining.delete(trainerId, webSessionService.getUserId());
@@ -95,7 +96,7 @@ public class WebResourceTraining {
     @POST
     @Path("training")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"trainer", "admin"})
+    @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
     public Uni<Integer> create(DbCrudTraining.Entity training) {
         log.debug("Add training {}", training);
         checkTrainerAccess(training);
@@ -105,7 +106,7 @@ public class WebResourceTraining {
     @PUT
     @Path("training")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"trainer", "admin"})
+    @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
     public Uni<Void> update(DbCrudTraining.Entity training) {
         checkTrainerAccess(training);
         return dbTraining.update(training, isAdmin());
@@ -114,7 +115,7 @@ public class WebResourceTraining {
     @PUT
     @Path("training/comment")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"trainer", "admin"})
+    @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
     public Uni<Void> updateComment(DbCrudTraining.Entity training) {
         checkTrainerAccess(training);
         return dbTraining.updateComment(training, isAdmin());

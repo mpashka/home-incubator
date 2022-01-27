@@ -48,7 +48,7 @@ public class WebResourceTicket {
     @GET
     @Path("tickets/byUser/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"trainer", "admin"})
+    @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
     public Uni<DbCrudTicket.EntityTicket[]> listTicketsByUser(@PathParam("userId") int userId) {
         return dbTicket.getTicketsByUser(userId);
     }
@@ -56,14 +56,14 @@ public class WebResourceTicket {
     @GET
     @Path("ticket/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"trainer", "admin"})
+    @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
     public Uni<DbCrudTicket.EntityTicket> getTicketById(@RestPath int id) {
         return dbTicket.getTicketById(id);
     }
 
     @DELETE
     @Path("ticket/{id}")
-    @RolesAllowed({"admin"})
+    @RolesAllowed({MySecurityProvider.ROLE_ADMIN})
     public Uni<Void> delete(@RestPath int id) {
         return dbTicket.deleteTicket(id);
     }
@@ -71,7 +71,7 @@ public class WebResourceTicket {
     @POST
     @Path("ticket")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed({"admin"})
+    @RolesAllowed({MySecurityProvider.ROLE_ADMIN})
     public Uni<Integer> create(DbCrudTicket.EntityTicket ticket) {
         log.debug("Add ticket {}", ticket);
         return dbTicket.addTicket(ticket);

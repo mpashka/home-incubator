@@ -50,13 +50,13 @@ public class DbScheduler {
     @PostConstruct
     void init() {
         selectSchedule = client.preparedQuery("SELECT * from training_schedule t");
-        selectTraining = client.preparedQuery("SELECT * from training t WHERE training_time>$1 and training_time<$2");
+        selectTraining = client.preparedQuery("SELECT * from training t WHERE training_time>=$1 and training_time<$2");
         insertTraining = client.preparedQuery("INSERT INTO training (training_schedule_id, training_time, trainer_id, training_type) VALUES ($1, $2, $3, $4) RETURNING training_time, training_type");
     }
 
     @Scheduled(cron="0 30 0 * * ?")
     public void cronSchedulePropagate(ScheduledExecution execution) {
-        schedulePropagate().await().atMost(Duration.of(10, ChronoUnit.MINUTES));
+        schedulePropagate(LocalDate.now()).await().atMost(Duration.of(10, ChronoUnit.MINUTES));
     }
 
     @Scheduled(cron="0 0 1 * * ?")
@@ -68,7 +68,8 @@ public class DbScheduler {
      * Insert records into training from schedule for the next 7 days
      * if there are no records in trainings for that specific day.
      */
-    public Uni<RowSet<Row>> schedulePropagate() {
+    public Uni<RowSet<Row>> schedulePropagate(LocalDate weekStart) {
+        log.debug("Propagate week schedule starting from {}", weekStart);
         return selectSchedule.execute()
                 .onItem().transform(set -> StreamSupport
                         .stream(set.spliterator(), false)
@@ -76,9 +77,9 @@ public class DbScheduler {
                         .collect(Collectors.groupingBy(s -> s.time.getDayOfMonth()))
                 )
                 .onItem().transformToUni(schedule -> {
-                    LocalDateTime now = LocalDateTime.of(LocalDate.now(), LocalTime.MIDNIGHT);
-                    LocalDateTime nextWeek = now.plusDays(7);
-                    return selectTraining.execute(Tuple.of(now, nextWeek))
+                    LocalDateTime weekStartTime = LocalDateTime.of(weekStart, LocalTime.MIDNIGHT);
+                    LocalDateTime weekEndTime = weekStartTime.plusDays(7);
+                    return selectTraining.execute(Tuple.of(weekStartTime, weekEndTime))
                             .onItem().transform(set -> StreamSupport
                                     .stream(set.spliterator(), false)
                                     .map(r -> new EntityTraining().loadFromDb(r))
@@ -87,16 +88,18 @@ public class DbScheduler {
                 })
                 .onItem().transformToUni(e -> {
                     List<Tuple> insertTrainingParams = new ArrayList<>();
-                    for (int i = 0; i < 7; i++) {
-                        LocalDate date = LocalDate.now().plusDays(i);
+                    for (int day = 0; day < 7; day++) {
+                        LocalDate date = weekStart.plusDays(day);
                         List<EntityTraining> trainings = e.trainings.get(date);
                         List<EntitySchedule> schedules = e.schedule.get(date.getDayOfWeek().getValue());
-                        log.debug("Day {}. Date:{}", i, date);
+                        log.debug("Day {}. Date:{}", day, date);
                         if (trainings == null && schedules != null) {
                             for (EntitySchedule schedule : schedules) {
                                 log.debug("    {}", schedule);
                                 insertTrainingParams.add(Tuple.of(schedule.id, LocalDateTime.of(date, schedule.time.toLocalTime()), schedule.trainerId, schedule.trainingType));
                             }
+                        } else if (trainings != null && schedules != null) {
+                            log.debug("    Day already has some schedule {}. Schedule propagate aborted", date);
                         }
                     }
                     return insertTrainingParams.isEmpty() ? Uni.createFrom().item((RowSet<Row>) null) :

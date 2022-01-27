@@ -1,11 +1,9 @@
 import {defineStore} from 'pinia'
 import {api} from 'boot/axios';
 import { date } from 'quasar';
-import {
-  emptyTrainingType,
-  EntityCrudTrainingType, timeFormat
-} from "src/store/store_crud_training";
+import {emptyTrainingType,EntityCrudTrainingType} from "src/store/store_crud_training";
 import {emptyUser, EntityUser} from "src/store/store_crud_user";
+import {timeFormat} from 'src/store/store_utils';
 
 export interface EntityCrudSchedule {
   id: number,
@@ -53,6 +51,7 @@ export const useStoreCrudSchedule = defineStore('crudSchedule', {
       if (index >= 0) {
         this.schedule[index] = schedule;
       }
+      this.sort();
     },
 
     sort() {

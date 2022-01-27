@@ -1,0 +1,9 @@
+# List installed versions
+npm list
+npm list -g
+
+# Upgrade
+npm update
+
+# List all versions
+npm view pinia versions

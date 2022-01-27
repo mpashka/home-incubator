@@ -39,6 +39,10 @@ public class MySecurityProvider implements HttpAuthenticationMechanism {
 
     private static final Logger log = LoggerFactory.getLogger(MySecurityProvider.class);
 
+    static final String ROLE_USER = "user"; //DbUser.UserType.user.name();
+    static final String ROLE_TRAINER = "trainer"; //DbUser.UserType.trainer.name();
+    static final String ROLE_ADMIN = "admin"; //DbUser.UserType.admin.name();
+
     private static final String AUTH_PREFIX = "bearer ";
 
     @Inject

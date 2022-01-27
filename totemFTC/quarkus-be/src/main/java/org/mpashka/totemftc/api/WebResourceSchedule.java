@@ -44,7 +44,7 @@ public class WebResourceSchedule {
 
     @DELETE
     @Path("schedule/{scheduleId}")
-    @RolesAllowed("admin")
+    @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
     public Uni<Void> delete(@PathParam("scheduleId") int scheduleId) {
         return dbSchedule.delete(scheduleId);
     }
@@ -52,7 +52,7 @@ public class WebResourceSchedule {
     @POST
     @Path("schedule")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
     public Uni<Integer> create(DbCrudSchedule.Entity schedule) {
         log.debug("Add visit {}", schedule);
         return dbSchedule.add(schedule);
@@ -61,7 +61,7 @@ public class WebResourceSchedule {
     @PUT
     @Path("schedule")
     @Consumes(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
     public Uni<Void> update(DbCrudSchedule.Entity schedule) {
         return dbSchedule.update(schedule);
     }

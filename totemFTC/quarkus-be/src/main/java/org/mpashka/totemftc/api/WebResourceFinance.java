@@ -30,7 +30,7 @@ public class WebResourceFinance {
     @GET
     @Path("currentTrainerIncome/{period}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("trainer")
+    @RolesAllowed(MySecurityProvider.ROLE_TRAINER)
     public Uni<DbCrudFinance.EntityIncome> currentTrainerIncome(@RestPath DbCrudFinance.PeriodType period, @RestQuery LocalDate from) {
         return dbFinance.getIncomeForTrainer(period, from, webSessionService.getUserId());
     }
@@ -38,7 +38,7 @@ public class WebResourceFinance {
     @GET
     @Path("trainerIncome/{period}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
     public Uni<DbCrudFinance.EntityIncome[]> trainerIncome(@RestPath DbCrudFinance.PeriodType period, @RestQuery LocalDate from) {
         return dbFinance.getTrainerIncome(period, from);
     }
@@ -46,7 +46,7 @@ public class WebResourceFinance {
     @GET
     @Path("totalIncome/{period}")
     @Produces(MediaType.APPLICATION_JSON)
-    @RolesAllowed("admin")
+    @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
     public Uni<DbCrudFinance.EntityIncome[]> totalIncome(@RestPath DbCrudFinance.PeriodType period, @RestQuery LocalDate from) {
         return dbFinance.getTotalIncome(period, from);
     }

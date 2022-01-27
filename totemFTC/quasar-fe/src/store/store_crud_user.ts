@@ -7,7 +7,7 @@ export const emptyUser: EntityUser = {
   firstName: '',
   lastName: '',
   nickName: '',
-  type: 'guest',
+  types: [],
   trainingTypes: [],
   phones: [],
   emails: [],
@@ -37,7 +37,8 @@ export interface EntityUserSocialNetwork {
   link: string,
 }
 
-export type EntityUserType = 'guest' | 'user' | 'trainer' | 'admin';
+export type EntityUserType = 'user' | 'trainer' | 'admin';
+export type EntityUserTypeFilter = EntityUserType | 'all' | 'guest';
 
 export interface EntityUser {
   userId: number,
@@ -45,7 +46,7 @@ export interface EntityUser {
   lastName: string,
   nickName: string,
   primaryImage?: EntityUserImage,
-  type: EntityUserType,
+  types: EntityUserType[],
   trainingTypes: string[],
   phones: EntityUserPhone[],
   emails: EntityUserEmail[],
@@ -53,100 +54,35 @@ export interface EntityUser {
   socialNetworks: EntityUserSocialNetwork[],
 }
 
-export type EntityUserFilterTypes = 'all' | 'trainers';
-
 export interface EntityUserFilter {
   name: string,
-  type: EntityUserFilterTypes,
+  type: EntityUserTypeFilter,
+  trainingType?: string,
+  excludeIds: number[],
 }
 
 export const emptyUserFilter: EntityUserFilter = {
   name: '',
   type: 'all',
+  excludeIds: [],
 };
 
 export const useStoreCrudUser = defineStore('crudUser', {
   state: () => ({
     user: {...emptyUser} as EntityUser,
-    rows: [] as EntityUser[],
+    users: [] as EntityUser[],
+    trainers: [] as EntityUser[],
     filterVal: {...emptyUserFilter},
     filteredRows: [] as EntityUser[],
   }),
 
-  actions: {
-    async loadUser() {
-      this.user = (await api.get<EntityUser>('/api/user')).data;
-      console.log('User received', this.user);
-    },
+  getters: {
+    isGuest(): (user: EntityUser) => boolean {return (user: EntityUser) => user.types.length === 0},
+    isUser(): (user: EntityUser) => boolean {return (user: EntityUser) => user.types.includes('user')},
+    isTrainer(): (user: EntityUser) => boolean {return (user: EntityUser) => user.types.includes('trainer')},
+    isAdmin(): (user: EntityUser) => boolean {return (user: EntityUser) => user.types.includes('admin')},
 
-    clear() {
-      this.user = {...emptyUser};
-    },
-
-    async load() {
-      this.rows = (await api.get<EntityUser[]>('/api/user/listTrainers')).data;
-      this.filter();
-      console.log('Users received', this.rows);
-    },
-
-    async delete(user: EntityUser) {
-      await api.delete(`/api/user/delete/${String(user.userId)}`)
-      this.rows = this.rows.filter(r => r.userId !== user.userId);
-      this.filter();
-    },
-
-    async create(user: EntityUser) {
-      user.userId = (await api.post<number>('/api/user', user)).data;
-      this.rows.push(user);
-      this.filter();
-    },
-
-    async update(user: EntityUser) {
-      await api.put('/api/user', user);
-      const index = this.rows.findIndex(r => r.userId === user.userId);
-      if (index >= 0) {
-        this.rows[index] = user;
-      }
-      this.filter();
-    },
-
-    async deleteSocialNetwork(name: string) {
-      await api.delete(`/api/user/current/network/${name}`);
-      this.user.socialNetworks = this.user.socialNetworks.filter(s => s.networkName !== name);
-    },
-
-    disableFilter() {
-      this.filterVal = {...emptyUserFilter};
-      this.filter();
-    },
-
-    setFilterByName(filterStr: string) {
-      this.filterVal.name = filterStr;
-      this.filter();
-    },
-
-    setFilterByType(filterType: EntityUserFilterTypes) {
-      this.filterVal.type = filterType;
-      this.filter();
-    },
-
-    isFiltered() {
-      return this.filterVal.name || this.filterVal.type !== 'all';
-    },
-
-    filter() {
-      if (!this.filterVal.name) {
-        this.filteredRows = this.rows;
-      } else {
-        const filters = this.filterVal.name.toLowerCase().split(/ +/);
-        this.filteredRows = this.rows.filter(u => contains([u.firstName.toLowerCase(), u.lastName.toLowerCase(), u.nickName.toLowerCase()], filters));
-      }
-      if (this.filterVal.type === 'trainers') {
-        this.filteredRows = this.filteredRows.filter(t => (t.type === 'trainer' || t.type === 'admin') && t.trainingTypes);
-      }
-    },
-
-    userNameString(user: EntityUser) {
+    userNameString(): (user: EntityUser) => string { return (user: EntityUser) => {
       let result = '';
       const name = user.firstName || user.lastName;
 
@@ -162,7 +98,7 @@ export const useStoreCrudUser = defineStore('crudUser', {
         }
       }
 
-      if (user.nickName) {
+      if (user.nickName && user.nickName !== user.firstName && user.nickName !== user.lastName) {
         result = user.nickName
         if (name) {
           result += ' ('
@@ -173,6 +109,107 @@ export const useStoreCrudUser = defineStore('crudUser', {
         addName();
       }
       return result;
+    }},
+
+    fullName(): string {
+      return this.userNameString(this.user);
+    },
+  },
+
+  actions: {
+    async loadUser() {
+      this.user = (await api.get<EntityUser>('/api/user/current')).data;
+      console.log('User received', this.user);
+    },
+
+    clear() {
+      this.user = {...emptyUser};
+    },
+
+    async load() {
+      this.users = (await api.get<EntityUser[]>('/api/user/list')).data;
+      this.filter();
+      console.log('Users received', this.users);
+    },
+
+    async loadTrainers() {
+      this.trainers = (await api.get<EntityUser[]>('/api/user/listTrainers')).data;
+      console.log('Trainers received', this.users);
+    },
+
+    async delete(user: EntityUser) {
+      await api.delete(`/api/user/delete/${String(user.userId)}`)
+      this.users = this.users.filter(r => r.userId !== user.userId);
+      this.filter();
+    },
+
+    async create(user: EntityUser) {
+      user.userId = (await api.post<number>('/api/user', user)).data;
+      this.users.push(user);
+      this.filter();
+    },
+
+    async update(user: EntityUser) {
+      await api.put('/api/user', user);
+      const index = this.users.findIndex(r => r.userId === user.userId);
+      if (index >= 0) {
+        this.users[index] = user;
+      }
+      this.filter();
+    },
+
+    async deleteSocialNetwork(name: string) {
+      await api.delete(`/api/user/current/network/${name}`);
+      this.user.socialNetworks = this.user.socialNetworks.filter(s => s.networkName !== name);
+    },
+
+    disableFilter() {
+      this.filterVal = {...emptyUserFilter};
+      this.filter();
+    },
+
+    setFilterByName(filterName: string) {
+      this.filterVal.name = filterName;
+      this.filter();
+    },
+
+    setFilterByType(filterType: EntityUserTypeFilter) {
+      this.filterVal.type = filterType;
+      this.filter();
+    },
+
+    setFilterExclude(excludeIds: number[]) {
+      this.filterVal.excludeIds = excludeIds;
+      this.filter();
+    },
+
+    setFilterByTrainingType(filterTrainingType?: string) {
+      this.filterVal.trainingType = filterTrainingType;
+      this.filter();
+    },
+
+    isFiltered(): boolean {
+      return this.filterVal.name.length > 0 || this.filterVal.type !== 'all' || this.filterVal.trainingType !== undefined || this.filterVal.excludeIds.length > 0;
+    },
+
+    filter() {
+      if (!this.filterVal.name) {
+        this.filteredRows = this.users;
+      } else {
+        const filters = this.filterVal.name.toLowerCase().split(/ +/);
+        this.filteredRows = this.users.filter(u => contains([u.firstName.toLowerCase(), u.lastName.toLowerCase(), u.nickName.toLowerCase()], filters));
+      }
+      if (this.filterVal.type === 'guest') {
+        this.filteredRows = this.filteredRows.filter(user => user.types.length == 0);
+      } else if (this.filterVal.type !== 'all') {
+        this.filteredRows = this.filteredRows.filter(user => user.types.includes(this.filterVal.type as EntityUserType));
+      }
+      if (this.filterVal.trainingType !== undefined) {
+        this.filteredRows = this.filteredRows.filter(user => user.trainingTypes !== null && user.trainingTypes.includes(this.filterVal.trainingType as string));
+      }
+      if (this.filterVal.excludeIds.length > 0) {
+        this.filteredRows = this.filteredRows.filter(user => !this.filterVal.excludeIds.includes(user.userId));
+      }
     },
   }
 });

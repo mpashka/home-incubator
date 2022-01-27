@@ -1,18 +1,24 @@
 import { RouteRecordRaw } from 'vue-router';
 import MainLayout from 'src/pages/layouts/MainLayout.vue';
 import Login from 'pages/login/Login.vue';
+import Home from 'pages/Home.vue';
+import TableSchedule from 'pages/TableSchedule.vue';
+import TableTrainings from 'pages/TableTrainings.vue';
+import TableUsers from 'pages/TableUsers.vue';
+import TableVisits from 'pages/TableVisits.vue';
+import Settings from 'pages/Settings.vue';
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
     component: MainLayout,
     children: [
-      { path: '', name: 'root', component: () => import('pages/Home.vue') },
-      { path: 'schedule', component: () => import('pages/TableSchedule.vue') },
-      { path: 'trainings', component: () => import('pages/TableTrainings.vue') },
-      { path: 'tableUsers', component: () => import('pages/TableUsers.vue') },
-      { path: 'tableVisits', component: () => import('pages/TableVisits.vue') },
-      { path: 'settings', component: () => import('pages/Settings.vue') },
+      { path: '', name: 'root', component: Home },
+      { path: 'schedule', component: TableSchedule },
+      { path: 'trainings', component: TableTrainings },
+      { path: 'tableUsers', component: TableUsers },
+      { path: 'tableVisits', component: TableVisits },
+      { path: 'settings', component: Settings },
     ],
     meta: {
       requiresAuth: true

@@ -30,9 +30,9 @@
           <li><a href="https://www.typescriptlang.org/">TypeScript</a> JavaScript с поддержкой типизации</li>
           <li><a href="https://quarkus.io/">Quarkus</a> Java framework</li>
           <li><a href="https://www.docker.com/">Docker</a> контейнеры</li>
-          <li><a href="https://www.docker.com/">Docker</a> контейнеры</li>
           <li><a href="https://www.postgresql.org/">PostgreSQL</a> база данных</li>
           <li><a href="https://flutter.dev/">Flutter</a> native app framework (iOS Android)</li>
+          <li><a href="https://dart.dev/">Dart</a> язык для Flutter</li>
         </ul>
 
       </q-card-section>
@@ -44,7 +44,7 @@
 import { defineComponent } from 'vue';
 
 export default defineComponent({
-  name: 'PageIndex',
+  name: 'PageHome',
   setup() {
     return {};
   },

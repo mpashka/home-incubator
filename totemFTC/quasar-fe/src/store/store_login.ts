@@ -26,11 +26,6 @@ export const useStoreLogin = defineStore('login', {
       console.log(`is authenticated: ${String(b)}`)
       return b;
     },
-
-    fullName() {
-      const storeUser = useStoreCrudUser();
-      return `${storeUser.user.firstName} ${storeUser.user.lastName}`;
-    }
   },
 
   actions: {

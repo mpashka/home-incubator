@@ -1,8 +1,16 @@
 import {defineStore} from 'pinia'
 import {api} from 'boot/axios';
-import {dateFormat, emptyTraining, EntityCrudTraining} from 'src/store/store_crud_training';
+import {emptyTraining, EntityCrudTraining} from 'src/store/store_crud_training';
+import {dateFormat, DateValue} from 'src/store/store_utils';
 import {date} from 'quasar';
 import {emptyUser, EntityUser} from "src/store/store_crud_user";
+
+export type EntityVisitMark = 'on' | 'off' | 'unmark';
+export const nextMark: Map<EntityVisitMark, EntityVisitMark> = new Map<EntityVisitMark, EntityVisitMark>([
+  ['on', 'off'],
+  ['off', 'unmark'],
+  ['unmark', 'on'],
+]);
 
 export interface EntityCrudVisit {
   trainingId: number,
@@ -10,8 +18,8 @@ export interface EntityCrudVisit {
   comment: string,
   ticketId: number,
   markSchedule: boolean,
-  markSelf: boolean,
-  markMaster: boolean,
+  markSelf: EntityVisitMark,
+  markMaster: EntityVisitMark,
 }
 
 const emptyVisit: EntityCrudVisit = {
@@ -20,8 +28,8 @@ const emptyVisit: EntityCrudVisit = {
   comment: '',
   ticketId: -1,
   markSchedule: false,
-  markSelf: false,
-  markMaster: false,
+  markSelf: 'unmark',
+  markMaster: 'unmark',
 };
 
 export {emptyVisit};
@@ -35,11 +43,19 @@ export const useStoreCrudVisit = defineStore('crudVisit', {
   }),
 
   actions: {
-    async setDate(date: string) {
+    async setDate(newDate: DateValue) {
+      await this.setDateStr(date.formatDate(newDate, dateFormat));
+    },
+
+    async setDateStr(date: string) {
       this.date = date;
       this.training = emptyTraining;
       this.visits = [];
       await this.reloadTrainings();
+    },
+
+    async addDate(days: number) {
+      await this.setDate(date.addToDate(this.date, {days: days}));
     },
 
     async reloadTrainings() {
@@ -73,13 +89,22 @@ export const useStoreCrudVisit = defineStore('crudVisit', {
         }
     },
 
-    async update(visit: EntityCrudVisit, type: 'Schedule' | 'Self' | 'Master', value: boolean) {
-      await api.put(`/api/visit/mark${type}/${String(value)}`, visit);
-      switch (type) {
-        case "Schedule": visit.markMaster = value; break;
-        case "Self": visit.markSelf = value; break;
-        case "Master": visit.markMaster = value; break;
+    async updateSchedule(visit: EntityCrudVisit, value: boolean) {
+      visit.markSchedule = value;
+      await api.put(`/api/visit/markSchedule/${String(value)}`, visit);
+    },
+
+    async updateSelf(visit: EntityCrudVisit, value: EntityVisitMark) {
+      visit.markSelf = value;
+      await api.put(`/api/visit/markSchedule/${value}`, visit);
+    },
+
+    async updateMaster(visit: EntityCrudVisit, value: EntityVisitMark | undefined) {
+      if (!value) {
+        value = 'unmark';
       }
+      visit.markMaster = value;
+      await api.put(`/api/visit/markMaster/${value}`, visit);
     },
   },
 });

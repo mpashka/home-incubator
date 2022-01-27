@@ -7,15 +7,15 @@
     <q-card-section>
       <q-table hide-header hide-bottom :columns="columns" :rows="selectSchedule(day)">
         <template v-slot:body-cell-actions="props">
-          <q-td :props="props">
+          <q-td :props="props" v-if="storeUser.isAdmin(storeUser.user)">
             <q-btn round flat size="sm" icon="edit" @click="editRowStart(day, props.row)"/>
             <q-btn round flat size="sm" icon="delete" @click="deleteRowStart(props.row)"/>
           </q-td>
         </template>
       </q-table>
     </q-card-section>
-    <q-card-actions align="right">
-      <q-btn round icon="plus" @click="editRowStart(day, defaultRow)" />
+    <q-card-actions align="right" v-if="storeUser.isAdmin(storeUser.user)">
+      <q-btn round icon="add" @click="editRowStart(day, defaultRow)" />
     </q-card-actions>
   </q-card>
   </div>
@@ -42,10 +42,10 @@
 
       <q-card-section>
         <div class="row q-gutter-md">
-        <q-input class="col-1" filled v-model="editRowObj.time" label="Время">
+        <q-input class="col-2" filled v-model="editRowObj.time" label="Время">
           <template v-slot:append>
             <q-icon name="access_time" class="cursor-pointer">
-              <q-popup-proxy transition-show="scale" transition-hide="scale" ref="uiTimePopup">
+              <q-popup-proxy transition-show="scale" transition-hide="scale" v-model="uiTimePopup">
                 <q-time v-model="editRowObj.time" mask="HH:mm" :minute-options="[0, 15, 30, 45]" format24h @update:model-value="onTimeUpdate">
                   <div class="row items-center justify-end">
                     <q-btn v-close-popup label="Close" color="primary" flat />
@@ -96,25 +96,48 @@ import {
   useStoreCrudSchedule
 } from 'src/store/store_crud_schedule';
 import {EntityCrudTrainingType, useStoreCrudTraining} from 'src/store/store_crud_training';
-import {QPopupProxy} from "quasar";
-import {EntityUser} from "src/store/store_crud_user";
+import {useStoreCrudUser, EntityUser} from 'src/store/store_crud_user';
 
 export default {
   name: 'TableSchedule',
   setup () {
+    const storeUser = useStoreCrudUser();
     const storeSchedule = useStoreCrudSchedule();
     const storeTraining = useStoreCrudTraining();
-    const trainers = ref(storeTraining.trainers);
+    const trainers:Ref<EntityUser[]> = ref([]);
     storeSchedule.load().catch(e => console.log('Load error', e));
-    storeTraining.loadTrainers()
-      .then(() => trainers.value = storeTraining.trainers)
-      .catch(e => console.log('Load error', e));
+    storeTraining.loadTrainers().catch(e => console.log('Load error', e));
     storeTraining.loadTrainingTypes().catch(e => console.log('Load error', e));
+
+    const columns = [
+      { name: 'time', required: true, label: 'Время', align: 'left', field: 'time' },
+      { name: 'type', required: true, label: 'Тренировка', align: 'left', field: 'trainingType', format: (val: EntityCrudTrainingType) => `${val.trainingName}`,},
+      { name: 'trainer', required: true, label: 'Тренер', align: 'left', field: 'trainer', format: (val: EntityUser) => `${val.nickName}`},
+      { name: 'actions', label: 'Actions'}
+    ]
+
+
+    const deleteRowObj :Ref<EntityCrudSchedule | null> = ref(null);
+
+    function deleteRowStart(row: EntityCrudSchedule) {
+      deleteRowObj.value = row;
+      console.log('Confirm delete row', row);
+    }
 
     async function deleteRowCommit() {
       console.log('Delete row ', deleteRowObj);
       deleteRowObj.value && await storeSchedule.delete(deleteRowObj.value?.id);
       deleteRowObj.value = null;
+    }
+
+
+    const editRowObj :Ref<EntityCrudSchedule | null> = ref(null);
+
+    function editRowStart(day: number, row: EntityCrudSchedule) {
+      console.log('Start edit row', row);
+      editRowObj.value = Object.assign({}, row);
+      editRowObj.value.day = day;
+      trainers.value = [];
     }
 
     async function editRowCommit() {
@@ -128,27 +151,6 @@ export default {
       editRowObj.value = null;
     }
 
-    const columns = [
-      { name: 'time', required: true, label: 'Время', align: 'left', field: 'time' },
-      { name: 'type', required: true, label: 'Тренировка', align: 'left', field: 'trainingType', format: (val: EntityCrudTrainingType) => `${val.trainingName}`,},
-      { name: 'trainer', required: true, label: 'Тренер', align: 'left', field: 'trainer', format: (val: EntityUser) => `${val.nickName}`},
-      { name: 'actions', label: 'Actions'}
-    ]
-
-    const deleteRowObj :Ref<EntityCrudSchedule | null> = ref(null);
-
-    function deleteRowStart(row: EntityCrudSchedule) {
-      deleteRowObj.value = row;
-      console.log('Confirm delete row', row);
-    }
-
-    const editRowObj :Ref<EntityCrudSchedule | null> = ref(null);
-
-    function editRowStart(day: number, row: EntityCrudSchedule) {
-      console.log('Start edit row', row);
-      editRowObj.value = Object.assign({}, row);
-      editRowObj.value.day = day;
-    }
 
     function weekDayName(weekDay: number) {
       return new Date(1971, 1, weekDay).toLocaleDateString("ru-RU", { weekday: 'long' });
@@ -162,13 +164,14 @@ export default {
       trainers.value = storeTraining.trainers.filter(v => v.trainingTypes.indexOf(type.trainingType) > -1);
     }
 
-    const uiTimePopup = ref(null);
+    const uiTimePopup = ref(false);
     function onTimeUpdate(value:string) {
       console.log(`Time updated: ${value}`);
-      (uiTimePopup.value as unknown as QPopupProxy).hide();
+      uiTimePopup.value = false;
     }
 
     return {
+      storeUser,
       columns,
       storeTraining,
       weekDayName,
