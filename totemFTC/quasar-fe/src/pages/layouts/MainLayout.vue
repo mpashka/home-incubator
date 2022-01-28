@@ -84,7 +84,7 @@
           </q-item>
         </router-link>
 
-        <router-link to="/tableUsers" v-if="storeUser.isAdmin(storeUser.user)">
+        <router-link to="/users" v-if="storeUser.isAdmin(storeUser.user)">
           <q-item clickable>
             <q-item-section avatar>
               <q-icon name="mdi-account-multiple" />
@@ -99,7 +99,7 @@
           </q-item>
         </router-link>
 
-        <router-link to="/tableVisits" v-if="storeUser.isAdmin(storeUser.user)">
+        <router-link to="/visits" v-if="storeUser.isAdmin(storeUser.user)">
           <q-item clickable>
             <q-item-section avatar>
               <q-icon name="mdi-playlist-check" />
@@ -107,6 +107,21 @@
 
             <q-item-section>
               <q-item-label>Посещения</q-item-label>
+              <q-item-label caption>
+
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </router-link>
+
+        <router-link to="/finance" v-if="storeUser.isAdmin(storeUser.user)">
+          <q-item clickable>
+            <q-item-section avatar>
+              <q-icon name="mdi-cash-multiple" />
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label>Финансы</q-item-label>
               <q-item-label caption>
 
               </q-item-label>

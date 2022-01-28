@@ -31,23 +31,27 @@ public class WebResourceFinance {
     @Path("currentTrainerIncome/{period}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(MySecurityProvider.ROLE_TRAINER)
-    public Uni<DbCrudFinance.EntityIncome> currentTrainerIncome(@RestPath DbCrudFinance.PeriodType period, @RestQuery LocalDate from) {
-        return dbFinance.getIncomeForTrainer(period, from, webSessionService.getUserId());
+    public Uni<DbCrudFinance.EntityIncome[]> currentTrainerIncome(@RestPath DbCrudFinance.PeriodType period, @RestQuery LocalDate from, @RestQuery LocalDate to) {
+        return dbFinance.getIncomeForTrainer(period, webSessionService.getUserId(), from, tillNow(to));
     }
 
     @GET
     @Path("trainerIncome/{period}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
-    public Uni<DbCrudFinance.EntityIncome[]> trainerIncome(@RestPath DbCrudFinance.PeriodType period, @RestQuery LocalDate from) {
-        return dbFinance.getTrainerIncome(period, from);
+    public Uni<DbCrudFinance.EntityIncome[]> trainerIncome(@RestPath DbCrudFinance.PeriodType period, @RestQuery LocalDate from, @RestQuery LocalDate to) {
+        return dbFinance.getTrainerIncome(period, from, tillNow(to));
     }
 
     @GET
     @Path("totalIncome/{period}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
-    public Uni<DbCrudFinance.EntityIncome[]> totalIncome(@RestPath DbCrudFinance.PeriodType period, @RestQuery LocalDate from) {
-        return dbFinance.getTotalIncome(period, from);
+    public Uni<DbCrudFinance.EntityIncome[]> totalIncome(@RestPath DbCrudFinance.PeriodType period, @RestQuery LocalDate from, @RestQuery LocalDate to) {
+        return dbFinance.getTotalIncome(period, from, tillNow(to));
+    }
+
+    private LocalDate tillNow(LocalDate to) {
+        return to != null ? to : LocalDate.now().plusDays(1);
     }
 }

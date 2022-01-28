@@ -6,6 +6,7 @@ import TableSchedule from 'pages/TableSchedule.vue';
 import TableTrainings from 'pages/TableTrainings.vue';
 import TableUsers from 'pages/TableUsers.vue';
 import TableVisits from 'pages/TableVisits.vue';
+import TableFinance from 'pages/TableFinance.vue';
 import Settings from 'pages/Settings.vue';
 
 const routes: RouteRecordRaw[] = [
@@ -16,8 +17,9 @@ const routes: RouteRecordRaw[] = [
       { path: '', name: 'root', component: Home },
       { path: 'schedule', component: TableSchedule },
       { path: 'trainings', component: TableTrainings },
-      { path: 'tableUsers', component: TableUsers },
-      { path: 'tableVisits', component: TableVisits },
+      { path: 'users', component: TableUsers },
+      { path: 'visits', component: TableVisits },
+      { path: 'finance', component: TableFinance },
       { path: 'settings', component: Settings },
     ],
     meta: {

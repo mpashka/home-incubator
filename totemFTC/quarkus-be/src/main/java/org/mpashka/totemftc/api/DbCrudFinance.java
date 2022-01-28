@@ -15,6 +15,8 @@ import javax.annotation.PostConstruct;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
@@ -50,8 +52,9 @@ public class DbCrudFinance {
                 "        LEFT JOIN training using (training_id) " +
                 "        LEFT JOIN training_type using (training_type) " +
                 "    WHERE " +
-                "        training.training_time >= $2 " +
-                "        AND training.trainer_id = $3 " +
+                "        training.trainer_id = $2 " +
+                "        AND training.training_time >= $3 " +
+                "        AND training.training_time <= $4 " +
                 "    GROUP BY 1, training.training_id " +
                 ") income " +
                 "GROUP BY date " +
@@ -79,7 +82,7 @@ public class DbCrudFinance {
                 "        LEFT JOIN training_type using (training_type) " +
                 "    WHERE " +
                 "        training.training_time >= $2 " +
-                "        AND training.trainer_id = $3 " +
+                "        AND training.training_time <= $3 " +
                 "    GROUP BY 1, training.trainer_id, training.training_id " +
                 ") income " +
                 "   LEFT JOIN user_info on user_info.user_id = income.trainer_id " +
@@ -105,35 +108,26 @@ public class DbCrudFinance {
                 "        LEFT JOIN training_type using (training_type) " +
                 "    WHERE " +
                 "        training.training_time >= $2 " +
-                "        AND training.trainer_id = $3 " +
+                "        AND training.training_time <= $3 " +
                 "    GROUP BY 1, training.training_id " +
                 ") income " +
                 "GROUP BY date " +
                 "ORDER BY date ");
     }
 
-    public Uni<EntityIncome> getIncomeForTrainer(PeriodType periodType, LocalDate date, int trainerId) {
+    public Uni<EntityIncome[]> getIncomeForTrainer(PeriodType periodType, int trainerId, LocalDate from, LocalDate to) {
         return selectIncomeForTrainer
-                .execute(Tuple.of(periodType.name(), date, trainerId))
-                .onItem().transform(rows -> {
-                    RowIterator<Row> rowIterator = rows.iterator();
-                    if (rowIterator.hasNext()) {
-                        log.debug("Income for [{}] found", trainerId);
-                        Row row = rowIterator.next();
-                        return new EntityIncome().loadFromDb(row, false);
-                    } else {
-                        log.debug("Income for [{}] not found", trainerId);
-                        return null;
-                    }
-
-                })
+                .execute(Tuple.of(periodType.name(), trainerId, LocalDateTime.of(from, LocalTime.MIDNIGHT), LocalDateTime.of(to, LocalTime.MIDNIGHT)))
+                .onItem().transform(rows -> StreamSupport.stream(rows.spliterator(), false)
+                        .map(row -> new EntityIncome().loadFromDb(row, false))
+                        .toArray(EntityIncome[]::new))
                 .onFailure().transform(e -> new RuntimeException("Error getIncomeForTrainer", e))
                 ;
     }
 
-    public Uni<EntityIncome[]> getTrainerIncome(PeriodType periodType, LocalDate from) {
+    public Uni<EntityIncome[]> getTrainerIncome(PeriodType periodType, LocalDate from, LocalDate to) {
         return selectIncome
-                .execute(Tuple.of(periodType.name(), from))
+                .execute(Tuple.of(periodType.name(), LocalDateTime.of(from, LocalTime.MIDNIGHT), LocalDateTime.of(to, LocalTime.MIDNIGHT)))
                 .onItem().transform(rows -> StreamSupport.stream(rows.spliterator(), false)
                         .map(row -> new EntityIncome().loadFromDb(row, true))
                         .toArray(EntityIncome[]::new))
@@ -141,11 +135,11 @@ public class DbCrudFinance {
                 ;
     }
 
-    public Uni<EntityIncome[]> getTotalIncome(PeriodType periodType, LocalDate from) {
+    public Uni<EntityIncome[]> getTotalIncome(PeriodType periodType, LocalDate from, LocalDate to) {
         return selectTotalIncome
-                .execute(Tuple.of(periodType.name(), from))
+                .execute(Tuple.of(periodType.name(), LocalDateTime.of(from, LocalTime.MIDNIGHT), LocalDateTime.of(to, LocalTime.MIDNIGHT)))
                 .onItem().transform(rows -> StreamSupport.stream(rows.spliterator(), false)
-                        .map(row -> new EntityIncome().loadFromDb(row, true))
+                        .map(row -> new EntityIncome().loadFromDb(row, false))
                         .toArray(EntityIncome[]::new))
                 .onFailure().transform(e -> new RuntimeException("Error getIncome", e))
                 ;

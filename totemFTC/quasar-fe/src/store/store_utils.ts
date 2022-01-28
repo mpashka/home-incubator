@@ -12,6 +12,8 @@ export interface UiDate {
   year: number, month: number, day: number,
 }
 
+export interface UiLabel {label: string, value: string}
+
 export const timeFormat = 'HH:mm';
 export const dateFormat = 'YYYY-MM-DD';
 export const dateTimeFormat = 'YYYY-MM-DD HH:mm';
@@ -22,6 +24,14 @@ export const monthsGenitiveCase = [
 export const formatGenitiveCase = {
   months: monthsGenitiveCase,
 };
+
+export function weekDateName(inDate: DateValue) {
+  const startDate = new Date(inDate);
+  const endDate = date.addToDate(startDate, {days: 6});
+  const startStr = date.formatDate(startDate, startDate.getMonth() === endDate.getMonth() ? 'D' : 'D MMMM', formatGenitiveCase);
+  const endStr = date.formatDate(endDate, 'D MMMM', formatGenitiveCase);
+  return `${startStr} - ${endStr}`;
+}
 
 export const useStoreUtils = defineStore('storeUtils', {
   state: () => ({

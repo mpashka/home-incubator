@@ -1,13 +1,11 @@
 <template>
   <q-page>
     <div class="row justify-end">
-    <q-list class="col-8">
-      <q-item>
-        <q-item-label header>
-          TODO List
-        </q-item-label>
-      </q-item>
-
+    <q-list bordered class="col-6 rounded-borders">
+      <q-expansion-item expand-separator icon="list"
+                        label="TODO List"
+                        caption="Список доработок для страницы Пользователи"
+      >
       <q-item>
         <q-item-section>
           <q-item-label>
@@ -36,6 +34,7 @@
           </q-item-label>
         </q-item-section>
       </q-item>
+      </q-expansion-item>
     </q-list>
     </div>
 

@@ -51,7 +51,7 @@
   </div>
 
   <q-table :rows="storeVisit.visits" :columns="visitColumns"
-           :loading="storeUtils.loading" :row-key="visitId"
+           :loading="storeUtils.loading" row-key="visitId"
            title="Посещения" v-if="storeVisit.training.id !== -1">
 
     <template v-slot:top-right>
@@ -126,7 +126,7 @@
 
 <script lang="ts">
 import {computed, defineComponent, Ref, ref} from 'vue';
-import {emptyVisit, EntityCrudVisit, nextMark, useStoreCrudVisit} from 'src/store/store_crud_visits';
+import {emptyVisit, EntityCrudVisit, nextMark, useStoreCrudVisit} from 'src/store/store_crud_visit';
 import {dateFormat, dateLabel, DateValue, useStoreUtils} from 'src/store/store_utils';
 import {date} from 'quasar';
 import {EntityUser, useStoreCrudUser} from 'src/store/store_crud_user';

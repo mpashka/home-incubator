@@ -1,58 +1,59 @@
 <template>
   <q-page>
     <div class="row justify-end">
-      <q-list class="col-8">
-        <q-item>
-          <q-item-label header>
-            TODO List
-          </q-item-label>
-        </q-item>
+      <q-list bordered class="col-6 rounded-borders">
+        <q-expansion-item expand-separator icon="list"
+                          label="TODO List"
+                          caption="Список доработок для страницы Тренировки"
+        >
 
-        <q-item>
-          <q-item-section>
-            <q-item-label>
-              Редактирование тренировки
-            </q-item-label>
-            <q-item-label caption>
-              Возможно стоит убрать возможность изменять время тренировки если оно в прошлом.
-              Возможно стоит проверять, что новое время должно не быть в прошлом.
-              Возможно стоит добавить возможность изменять не только время, но и дату при редактировании.
-            </q-item-label>
-          </q-item-section>
-        </q-item>
+          <q-item>
+            <q-item-section>
+              <q-item-label>
+                Редактирование тренировки
+              </q-item-label>
+              <q-item-label caption>
+                Возможно стоит убрать возможность изменять время тренировки если оно в прошлом.
+                Возможно стоит проверять, что новое время должно не быть в прошлом.
+                Возможно стоит добавить возможность изменять не только время, но и дату при редактировании.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
 
-        <q-item>
-          <q-item-section>
-            <q-item-label>
-              Права на редактирование
-            </q-item-label>
-            <q-item-label caption>
-              Сейчас у тренера нет возможности редактировать тренировку. Возможно стоит добавить
-            </q-item-label>
-          </q-item-section>
-        </q-item>
+          <q-item>
+            <q-item-section>
+              <q-item-label>
+                Права на редактирование
+              </q-item-label>
+              <q-item-label caption>
+                Сейчас у тренера нет возможности редактировать тренировку. Возможно стоит добавить
+              </q-item-label>
+            </q-item-section>
+          </q-item>
 
-        <q-item>
-          <q-item-section>
-            <q-item-label>
-              Удаление тренировки
-            </q-item-label>
-            <q-item-label caption>
-              Перед удалением надо проверять, что у тренировки нет посетителей.
-            </q-item-label>
-          </q-item-section>
-        </q-item>
+          <q-item>
+            <q-item-section>
+              <q-item-label>
+                Удаление тренировки
+              </q-item-label>
+              <q-item-label caption>
+                Перед удалением надо проверять, что у тренировки нет посетителей.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
 
-        <q-item>
-          <q-item-section>
-            <q-item-label>
-              Просмотр тренировки
-            </q-item-label>
-            <q-item-label caption>
-              Надо сделать страницу тренировки - с возможностью отмечать посетителей
-            </q-item-label>
-          </q-item-section>
-        </q-item>
+          <q-item>
+            <q-item-section>
+              <q-item-label>
+                Просмотр тренировки
+              </q-item-label>
+              <q-item-label caption>
+                Надо сделать страницу тренировки - с возможностью отмечать посетителей
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-expansion-item>
+
       </q-list>
     </div>
 
@@ -214,7 +215,7 @@
 <script lang="ts">
 import {computed, defineComponent, Ref, ref} from 'vue';
 import {emptyTraining, EntityCrudTraining, EntityCrudTrainingType, useStoreCrudTraining} from 'src/store/store_crud_training';
-import {dateFormat, DateValue, formatGenitiveCase, timeFormat, UiDate, weekStart} from 'src/store/store_utils';
+import {dateFormat, DateValue, formatGenitiveCase, timeFormat, UiDate, weekDateName, weekStart} from 'src/store/store_utils';
 import {date} from 'quasar';
 import {EntityUser, useStoreCrudUser} from 'src/store/store_crud_user';
 
@@ -249,14 +250,6 @@ export default defineComponent({
     async function schedulePropagate(d: DateValue) {
       await storeTraining.schedulePropagate(d);
       await storeTraining.loadTrainings(storeTraining.trainingsInterval);
-    }
-
-    function weekDateName(inDate: DateValue) {
-      const startDate = new Date(inDate);
-      const endDate = date.addToDate(startDate, {days: 6});
-      const startStr = date.formatDate(startDate, startDate.getMonth() === endDate.getMonth() ? 'D' : 'D MMMM', formatGenitiveCase);
-      const endStr = date.formatDate(endDate, 'D MMMM', formatGenitiveCase);
-      return `${startStr} - ${endStr}`;
     }
 
     const deleteRowObj: Ref<EntityCrudTraining | null> = ref(null);
