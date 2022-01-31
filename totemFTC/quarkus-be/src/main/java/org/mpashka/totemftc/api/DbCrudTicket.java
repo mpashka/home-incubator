@@ -29,7 +29,7 @@ public class DbCrudTicket {
     @Inject
     PgPool client;
 
-    private PreparedQuery<RowSet<Row>> selectTicketType;
+    private PreparedQuery<RowSet<Row>> selectTicketTypes;
     private PreparedQuery<RowSet<Row>> insertTicketType;
     private PreparedQuery<RowSet<Row>> updateTicketType;
     private PreparedQuery<RowSet<Row>> deleteTicketType;
@@ -40,16 +40,13 @@ public class DbCrudTicket {
 
     @PostConstruct
     void init() {
-        selectTicketType = client.preparedQuery("SELECT tit.*, array_agg(row_to_json(trt.*)) AS training_types_obj " +
-                "FROM ticket_type tit " +
-                "JOIN training_type trt ON trt.training_type=ANY(tit.ticket_training_types) " +
-                "GROUP BY tit.ticket_type_id");
+        selectTicketTypes = client.preparedQuery("SELECT * FROM ticket_type_full ORDER BY ticket_name");
         insertTicketType = client.preparedQuery("INSERT INTO ticket_type (ticket_training_types, ticket_name, ticket_cost, ticket_visits, ticket_days) VALUES ($1, $2, $3, $4, $5) RETURNING ticket_type_id");
         updateTicketType = client.preparedQuery("UPDATE ticket_type SET ticket_training_types=$2, ticket_name=$3, ticket_cost=$4, ticket_visits=$5, ticket_days=$6 WHERE ticket_type_id=$1");
         deleteTicketType = client.preparedQuery("DELETE FROM ticket_type WHERE ticket_type_id=$1");
 
         selectTicketsByUser = client.preparedQuery("SELECT * FROM training_ticket t " +
-                "JOIN ticket_type tit USING (ticket_type_id) " +
+                "JOIN ticket_type_full tit USING (ticket_type_id) " +
 //                "JOIN (SELECT array_agg(row_to_json(tt.*)) AS training_types_obj FROM training_type tt WHERE tt.training_type=ANY(t.training_types)) training_type trt ON trt.training_type=" +
                 "JOIN (SELECT tit.ticket_type_id, array_agg(row_to_json(trt.*)) AS ticket_training_types_obj " +
                 "       FROM ticket_type tit " +
@@ -64,7 +61,7 @@ public class DbCrudTicket {
     }
 
     public Uni<EntityTicketType[]> getTicketTypes() {
-        return selectTicketType
+        return selectTicketTypes
                 .execute()
                 .onItem().transform(set ->
                     StreamSupport.stream(set.spliterator(), false)
@@ -170,6 +167,8 @@ public class DbCrudTicket {
                 this.trainingTypes = Arrays.stream(trainingTypesObjs)
                         .map(tt -> new DbCrudTraining.EntityTrainingType().loadFromDb((JsonObject) tt))
                         .toArray(DbCrudTraining.EntityTrainingType[]::new);
+            } else {
+                this.trainingTypes = new DbCrudTraining.EntityTrainingType[0];
             }
             return this;
         }
@@ -182,7 +181,7 @@ public class DbCrudTicket {
             this.visits = row.getInteger("ticket_visits");
             this.days = row.getInteger("ticket_days");
             JsonArray trainingTypesObjs = row.getJsonArray("ticket_training_types_obj");
-            this.trainingTypes = trainingTypesObjs == null ? null :
+            this.trainingTypes = trainingTypesObjs == null ? new DbCrudTraining.EntityTrainingType[0] :
                     trainingTypesObjs.stream()
                             .map(tt -> new DbCrudTraining.EntityTrainingType().loadFromDb((JsonObject) tt))
                             .toArray(DbCrudTraining.EntityTrainingType[]::new);

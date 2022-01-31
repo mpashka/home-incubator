@@ -47,10 +47,31 @@ public class WebResourceTraining {
     }
 
     @GET
-    @Path("training/types")
+    @Path("trainingType/list")
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<DbCrudTraining.EntityTrainingType[]> listTrainingTypes() {
         return dbTraining.getTrainingTypes();
+    }
+
+    @POST
+    @Path("trainingType")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<Void> addTrainingTypes(DbCrudTraining.EntityTrainingType trainingType) {
+        return dbTraining.addTrainingType(trainingType);
+    }
+
+    @PUT
+    @Path("trainingType")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<Void> updateTrainingTypes(DbCrudTraining.EntityTrainingType trainingType) {
+        return dbTraining.updateTrainingType(trainingType);
+    }
+
+    @DELETE
+    @Path("trainingType/{trainingType}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<Void> deleteTrainingTypes(@RestPath String trainingType) {
+        return dbTraining.deleteTrainingType(trainingType);
     }
 
     /**

@@ -30,6 +30,9 @@ public class DbCrudTraining {
     private PreparedQuery<RowSet<Row>> selectByDateIntervalForUser;
     private PreparedQuery<RowSet<Row>> selectByDateIntervalForTrainer;
     private PreparedQuery<RowSet<Row>> selectTrainingTypes;
+    private PreparedQuery<RowSet<Row>> insertTrainingType;
+    private PreparedQuery<RowSet<Row>> updateTrainingType;
+    private PreparedQuery<RowSet<Row>> deleteTrainingType;
     private PreparedQuery<RowSet<Row>> insert;
     private PreparedQuery<RowSet<Row>> updateForAdmin;
     private PreparedQuery<RowSet<Row>> updateForTrainer;
@@ -54,7 +57,10 @@ public class DbCrudTraining {
                 "    AND t.training_time >= $2 AND t.training_time <= $3 " +
                 "ORDER BY t.training_time"
         );
-        selectTrainingTypes = client.preparedQuery("SELECT * FROM training_type");
+        selectTrainingTypes = client.preparedQuery("SELECT * FROM training_type ORDER BY training_type");
+        insertTrainingType = client.preparedQuery("INSERT INTO training_type (training_type, name, default_cost) VALUES ($1, $2, $3)");
+        updateTrainingType = client.preparedQuery("UPDATE training_type SET name=$2, default_cost=$3 WHERE training_type=$1");
+        deleteTrainingType = client.preparedQuery("DELETE FROM training_type WHERE training_type=$1");
         insert = client.preparedQuery("INSERT INTO training (training_time, trainer_id, training_type) VALUES ($1, $2, $3) RETURNING training_id");
         updateForAdmin = client.preparedQuery("UPDATE training SET trainer_id=$2, training_time=$3, training_type=$4 WHERE training_id=$1");
         updateCommentForAdmin = client.preparedQuery("UPDATE training SET training_comment=$3 WHERE training_id=$1 AND trainer_id=$2");
@@ -121,6 +127,27 @@ public class DbCrudTraining {
                             .toArray(EntityTrainingType[]::new)
                 )
                 .onFailure().transform(e -> new RuntimeException("Error getTrainers", e))
+                ;
+    }
+
+    public Uni<Void> addTrainingType(EntityTrainingType trainingType) {
+        return insertTrainingType.execute(Tuple.of(trainingType.trainingType, trainingType.trainingName, trainingType.defaultCost))
+                .onItem().transform(u -> (Void) null)
+                .onFailure().transform(e -> new RuntimeException("Error addTrainingType", e))
+                ;
+    }
+
+    public Uni<Void> updateTrainingType(EntityTrainingType trainingType) {
+        return updateTrainingType.execute(Tuple.of(trainingType.trainingType, trainingType.trainingName, trainingType.defaultCost))
+                .onItem().transform(u -> (Void) null)
+                .onFailure().transform(e -> new RuntimeException("Error updateTrainingType", e))
+                ;
+    }
+
+    public Uni<Void> deleteTrainingType(String trainingType) {
+        return deleteTrainingType.execute(Tuple.of(trainingType))
+                .onItem().transform(u -> (Void) null)
+                .onFailure().transform(e -> new RuntimeException("Error deleteTrainingType", e))
                 ;
     }
 
@@ -200,16 +227,19 @@ public class DbCrudTraining {
     public static class EntityTrainingType {
         private String trainingType;
         private String trainingName;
+        private double defaultCost;
 
         public EntityTrainingType loadFromDb(Row row) {
             this.trainingType = row.getString("training_type");
             this.trainingName = row.getString("name");
+            this.defaultCost = row.getDouble("default_cost");
             return this;
         }
 
         public EntityTrainingType loadFromDb(JsonObject row) {
             this.trainingType = row.getString("training_type");
             this.trainingName = row.getString("name");
+            this.defaultCost = row.getDouble("default_cost");
             return this;
         }
 

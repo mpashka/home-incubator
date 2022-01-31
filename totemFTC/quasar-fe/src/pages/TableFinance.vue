@@ -34,7 +34,7 @@
               {{date.formatDate(storeFinance.interval.to, dateFormat)}}
             </div>
           </div>
-          <div style="width: 9em;" v-if="storeUser.isAdmin(storeUser.user)">
+          <div style="width: 9em;" v-if="storeUser.isAdmin(storeLogin.user)">
             <q-select v-model="incomeType" :options="incomeTypeOptions" @update:model-value="reloadIncome()"
                       borderless
             />
@@ -88,10 +88,11 @@
 </template>
 
 <script lang="ts">
-import {defineComponent, Ref, ref, unref} from 'vue';
+import {defineComponent, Ref, ref} from 'vue';
 import {dateFormat, UiDate, useStoreUtils, weekDateName, weekStart} from 'src/store/store_utils';
 import {date} from 'quasar';
 import {EntityUser, useStoreCrudUser} from 'src/store/store_crud_user';
+import {useStoreLogin} from 'src/store/store_login';
 import {IncomeInterval, IncomeType, useStoreFinance} from 'src/store/store_crud_finance';
 
 
@@ -125,9 +126,10 @@ export default defineComponent({
     const end = date.addToDate(date.startOfDate(now, 'day'), {days: 1});
 
     const storeUser = useStoreCrudUser();
+    const storeLogin = useStoreLogin();
     const storeFinance = useStoreFinance();
 
-    incomeType.value = incomeTypeOptions[storeUser.isAdmin(storeUser.user) ? 2 : 0];
+    incomeType.value = incomeTypeOptions[storeUser.isAdmin(storeLogin.user) ? 2 : 0];
     storeFinance.incomeType = incomeType.value.value;
 
     storeFinance.loadIncome({from: start, to: end}).catch(e => console.log('Load error', e));
@@ -136,7 +138,7 @@ export default defineComponent({
     async function reloadIncome() {
       storeFinance.incomeType = incomeType.value.value;
       storeFinance.incomeInterval = incomeInterval.value.value;
-      await storeFinance.loadIncome(unref(storeFinance.interval));
+      await storeFinance.loadIncome(storeFinance.interval);
     }
 
     function displayDate(d: string) {
@@ -180,7 +182,7 @@ export default defineComponent({
     }
 
     return {
-      storeFinance, storeUser, storeUtils,
+      storeFinance, storeUser, storeLogin, storeUtils,
       incomeType, incomeInterval, reloadIncome, incomeColumns, incomeTypeOptions, incomeIntervalOptions,
       date, dateFormat,
       uiDatePopup, interval, beforeIntervalUpdate, onIntervalUpdate, intervalSet, loadPrev, loadNext

@@ -1,6 +1,6 @@
 import {defineStore} from 'pinia';
 import {api} from 'boot/axios';
-import {useStoreCrudUser} from 'src/store/store_crud_user';
+import {emptyUser, EntityUser} from 'src/store/store_crud_user';
 import Router from 'src/router';
 import {LoginProvider} from 'pages/login/login';
 
@@ -18,6 +18,7 @@ const client = `quasar-${String(process.env.MODE)}-${String(process.env.NODE_ENV
 export const useStoreLogin = defineStore('login', {
   state: () => ({
     sessionId: '',
+    user: {...emptyUser} as EntityUser,
   }),
 
   getters: {
@@ -44,8 +45,16 @@ export const useStoreLogin = defineStore('login', {
       }
 
       this.sessionId = sessionId;
-      const storeUser = useStoreCrudUser();
-      await storeUser.loadUser();
+      await this.loadUser();
+    },
+
+    async loadUser() {
+      this.user = (await api.get<EntityUser>('/api/user/current')).data;
+      console.log('User received', this.user);
+    },
+
+    clearUser() {
+      this.user = {...emptyUser};
     },
 
     async login(loginProvider: LoginProvider, callbackParameters: string): Promise<LoginResult> {
@@ -58,11 +67,15 @@ export const useStoreLogin = defineStore('login', {
       return (await api.get(`/api/login/linkCallback/${loginProvider.name}?client=${client}&${callbackParameters}`)).data as LoginResult;
     },
 
+    async deleteSocialNetwork(name: string) {
+      await api.delete(`/api/user/current/network/${name}`);
+      this.user.socialNetworks = this.user.socialNetworks.filter(s => s.networkName !== name);
+    },
+
     clearSession() {
       localStorage.removeItem(SESSION_ID_STORAGE_KEY);
       this.sessionId = '';
-      const storeUser = useStoreCrudUser();
-      storeUser.clear();
+      this.clearUser();
     },
 
     async logout() {

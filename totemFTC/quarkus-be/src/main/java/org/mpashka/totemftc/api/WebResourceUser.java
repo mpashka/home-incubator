@@ -2,6 +2,7 @@ package org.mpashka.totemftc.api;
 
 import io.quarkus.security.Authenticated;
 import io.smallrye.mutiny.Uni;
+import org.jboss.resteasy.reactive.RestPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,6 +37,14 @@ public class WebResourceUser {
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<DbUser.EntityUser> currentUser() {
         int userId = webSessionService.getUserId();
+        return dbUser.getUser(userId, true);
+    }
+
+    @GET
+    @Path("byId/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
+    public Uni<DbUser.EntityUser> getUserById(@RestPath int userId) {
         return dbUser.getUser(userId, true);
     }
 

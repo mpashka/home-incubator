@@ -38,6 +38,30 @@ public class WebResourceTicket {
         return dbTicket.getTicketTypes();
     }
 
+    @POST
+    @Path("ticketType")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
+    public Uni<Integer> addTicketType(DbCrudTicket.EntityTicketType ticketType) {
+        return dbTicket.addTicketType(ticketType);
+    }
+
+    @PUT
+    @Path("ticketType")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
+    public Uni<Void> updateTicketType(DbCrudTicket.EntityTicketType ticketType) {
+        return dbTicket.updateTicketType(ticketType);
+    }
+
+    @DELETE
+    @Path("ticketType/{ticketTypeId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    @RolesAllowed(MySecurityProvider.ROLE_ADMIN)
+    public Uni<Void> deleteTicketType(@RestPath int ticketTypeId) {
+        return dbTicket.deleteTicketType(ticketTypeId);
+    }
+
     @GET
     @Path("tickets/byCurrentUser")
     @Produces(MediaType.APPLICATION_JSON)

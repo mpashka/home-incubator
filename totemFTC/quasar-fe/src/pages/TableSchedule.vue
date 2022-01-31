@@ -7,14 +7,14 @@
     <q-card-section>
       <q-table hide-header hide-bottom :columns="columns" :rows="selectSchedule(day)">
         <template v-slot:body-cell-actions="props">
-          <q-td :props="props" v-if="storeUser.isAdmin(storeUser.user)">
+          <q-td :props="props" v-if="storeUser.isAdmin(storeLogin.user)">
             <q-btn round flat size="sm" icon="edit" @click="editRowStart(day, props.row)"/>
             <q-btn round flat size="sm" icon="delete" @click="deleteRowStart(props.row)"/>
           </q-td>
         </template>
       </q-table>
     </q-card-section>
-    <q-card-actions align="right" v-if="storeUser.isAdmin(storeUser.user)">
+    <q-card-actions align="right" v-if="storeUser.isAdmin(storeLogin.user)">
       <q-btn round icon="add" @click="editRowStart(day, defaultRow)" />
     </q-card-actions>
   </q-card>
@@ -89,7 +89,7 @@
 </template>
 
 <script lang="ts">
-import { ref, computed, Ref } from 'vue';
+import {ref, computed, Ref, defineComponent} from 'vue';
 import {
   emptySchedule,
   EntityCrudSchedule,
@@ -97,11 +97,13 @@ import {
 } from 'src/store/store_crud_schedule';
 import {EntityCrudTrainingType, useStoreCrudTraining} from 'src/store/store_crud_training';
 import {useStoreCrudUser, EntityUser} from 'src/store/store_crud_user';
+import {useStoreLogin} from 'src/store/store_login';
 
-export default {
+export default defineComponent({
   name: 'TableSchedule',
   setup () {
     const storeUser = useStoreCrudUser();
+    const storeLogin = useStoreLogin();
     const storeSchedule = useStoreCrudSchedule();
     const storeTraining = useStoreCrudTraining();
     const trainers:Ref<EntityUser[]> = ref([]);
@@ -171,28 +173,21 @@ export default {
     }
 
     return {
-      storeUser,
+      storeUser, storeLogin, storeTraining,
       columns,
-      storeTraining,
       weekDayName,
       selectSchedule,
-      deleteRowStart,
-      deleteRowCommit,
-      deleteRowObj,
-      editRowStart,
-      editRowCommit,
-      editRowObj,
-      trainers,
-      onTrainingTypeChange,
-      uiTimePopup,
-      onTimeUpdate,
+      deleteRowObj, deleteRowStart, deleteRowCommit,
+      editRowObj, editRowStart, editRowCommit,
+      trainers, onTrainingTypeChange,
+      uiTimePopup, onTimeUpdate,
       defaultRow: emptySchedule,
       isConfirmDelete: computed({get: () => deleteRowObj.value !== null, set: () => deleteRowObj.value = null}),
       isConfirmAdd: computed({get: () => editRowObj.value !== null, set: () => editRowObj.value = null}),
       isRowAddOrEdit: computed(() => editRowObj.value?.id === -1),
     }
   }
-}
+});
 </script>
 
 <style scoped>

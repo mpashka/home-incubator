@@ -36,6 +36,37 @@
         </ul>
 
       </q-card-section>
+
+      <q-card-section>
+        <p>TODO List - Список доработок</p>
+        <q-list>
+          <q-item>
+            <q-item-section>
+              <q-item-label>
+                <q-btn round icon="add" size="sm"/>
+                Добавление
+              </q-item-label>
+              <q-item-label caption>
+                При добавлении надо сохранять данные диалога. То есть если нажимаешь
+                добавить, вводишь какие-то данные, потом жмешь Esc или Cancel, потом
+                снова добавить - введенные данные не должны пропасть.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item>
+            <q-item-section>
+              <q-item-label>
+                Рефакторинг удаления/добавления
+              </q-item-label>
+              <q-item-label caption>
+                Стоит проверить возможность переиспользования функционала по добавлению/удалению.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+
+        </q-list>
+      </q-card-section>
     </q-card>
   </q-page>
 </template>

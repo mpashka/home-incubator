@@ -3,23 +3,23 @@
     <q-card-section class="text-h5">Имя</q-card-section>
     <q-separator />
     <q-card-section>
-      <p>{{ storeUser.user.firstName }}</p>
-      <p>{{ storeUser.user.lastName }}</p>
-      <p v-if="storeUser.user.nickName">({{ storeUser.user.nickName }})</p>
+      <p>{{ storeLogin.user.firstName }}</p>
+      <p>{{ storeLogin.user.lastName }}</p>
+      <p v-if="storeLogin.user.nickName">({{ storeLogin.user.nickName }})</p>
     </q-card-section>
   </q-card>
   <q-card>
     <q-card-section class="text-h5">Телефон</q-card-section>
     <q-separator />
     <q-card-section>
-      <p v-for="phone in storeUser.user.phones" :key="phone.phone">{{ phone.phone }} ({{ phone.confirmed }})</p>
+      <p v-for="phone in storeLogin.user.phones" :key="phone.phone">{{ phone.phone }} ({{ phone.confirmed }})</p>
     </q-card-section>
   </q-card>
   <q-card>
     <q-card-section class="text-h5">E-Mail</q-card-section>
     <q-separator />
     <q-card-section>
-      <p v-for="email in storeUser.user.emails" :key="email.email">{{ email.email }} ({{ email.confirmed }})</p>
+      <p v-for="email in storeLogin.user.emails" :key="email.email">{{ email.email }} ({{ email.confirmed }})</p>
     </q-card-section>
   </q-card>
 
@@ -96,8 +96,8 @@ export default defineComponent({
 
     const uiSocialNetworks = computed<UiSocialNetwork[]>(() => {
       return loginProviders.map(loginProvider => {
-        // console.log(`Social network ${s.name}`, 'User netw', storeUser.user.socialNetworks)
-        const userNetworkInfo = storeUser.user.socialNetworks.find((u: EntityUserSocialNetwork) => u.networkName === loginProvider.name);
+        // console.log(`Social network ${s.name}`, 'User netw', storeLogin.user.socialNetworks)
+        const userNetworkInfo = storeLogin.user.socialNetworks.find((u: EntityUserSocialNetwork) => u.networkName === loginProvider.name);
         return {loginProvider: loginProvider, user: userNetworkInfo, label: userNetworkInfo ? 'вход подключен' : 'настроить вход'};
       });
       // return r;
@@ -109,7 +109,7 @@ export default defineComponent({
 
     async function disconnectNetworkCommit() {
       const network = disconnectingNetwork.value as UiSocialNetwork;
-      await storeUser.deleteSocialNetwork(network.loginProvider.name);
+      await storeLogin.deleteSocialNetwork(network.loginProvider.name);
       disconnectingNetwork.value = null;
     }
 

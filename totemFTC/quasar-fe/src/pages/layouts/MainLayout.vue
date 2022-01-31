@@ -8,12 +8,12 @@
         </q-toolbar-title>
 
         <div v-if="storeLogin.isAuthenticated">
-          <q-icon name="fas fa-question" size="sm" v-if="storeUser.isGuest(storeUser.user)" />
-          <q-icon name="person" size="sm" v-if="storeUser.isUser(storeUser.user)" />
-          <q-icon name="sports" size="sm" v-if="storeUser.isTrainer(storeUser.user)" />
-          <q-icon name="manage_accounts" size="sm" v-if="storeUser.isAdmin(storeUser.user)" />
+          <q-icon name="fas fa-question" size="sm" v-if="storeUser.isGuest(storeLogin.user)" />
+          <q-icon name="person" size="sm" v-if="storeUser.isUser(storeLogin.user)" />
+          <q-icon name="sports" size="sm" v-if="storeUser.isTrainer(storeLogin.user)" />
+          <q-icon name="manage_accounts" size="sm" v-if="storeUser.isAdmin(storeLogin.user)" />
 
-          {{ storeUser.fullName }}
+          {{ storeUser.userNameString(storeLogin.user) }}
 
           <q-icon name="more_vert" size="sm">
             <q-menu auto-close>
@@ -36,7 +36,6 @@
       <q-scroll-area class="fit">
       <q-list class="my-menu">
         <q-item-label header>
-          Essential Links
         </q-item-label>
 
         <router-link to="/">
@@ -46,9 +45,8 @@
             </q-item-section>
 
             <q-item-section>
-              <q-item-label>Home</q-item-label>
+              <q-item-label>О программе</q-item-label>
               <q-item-label caption>
-                home
               </q-item-label>
             </q-item-section>
           </q-item>
@@ -84,7 +82,7 @@
           </q-item>
         </router-link>
 
-        <router-link to="/users" v-if="storeUser.isAdmin(storeUser.user)">
+        <router-link to="/users" v-if="storeUser.isAdmin(storeLogin.user)">
           <q-item clickable>
             <q-item-section avatar>
               <q-icon name="mdi-account-multiple" />
@@ -99,7 +97,7 @@
           </q-item>
         </router-link>
 
-        <router-link to="/visits" v-if="storeUser.isAdmin(storeUser.user)">
+        <router-link to="/visits" v-if="storeUser.isAdmin(storeLogin.user)">
           <q-item clickable>
             <q-item-section avatar>
               <q-icon name="mdi-playlist-check" />
@@ -114,7 +112,7 @@
           </q-item>
         </router-link>
 
-        <router-link to="/finance" v-if="storeUser.isAdmin(storeUser.user)">
+        <router-link to="/finance" v-if="storeUser.isAdmin(storeLogin.user)">
           <q-item clickable>
             <q-item-section avatar>
               <q-icon name="mdi-cash-multiple" />
@@ -122,6 +120,21 @@
 
             <q-item-section>
               <q-item-label>Финансы</q-item-label>
+              <q-item-label caption>
+
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+        </router-link>
+
+        <router-link to="/references" v-if="storeUser.isAdmin(storeLogin.user)">
+          <q-item clickable>
+            <q-item-section avatar>
+              <q-icon name="settings" />
+            </q-item-section>
+
+            <q-item-section>
+              <q-item-label>Справочные данные</q-item-label>
               <q-item-label caption>
 
               </q-item-label>

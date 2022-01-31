@@ -114,7 +114,7 @@
             <div class="col text-h6">{{ date.formatDate(day.date, 'dddd, D') }}
               <q-tooltip>{{ date.formatDate(day.date, 'D MMMM YYYY, ', formatGenitiveCase) + date.formatDate(day.date, 'dddd')}}</q-tooltip>
             </div>
-            <div class="col-auto" v-if="storeUser.isAdmin(storeUser.user)">
+            <div class="col-auto" v-if="storeUser.isAdmin(storeLogin.user)">
               <q-btn round icon="add" @click="editRowStart(day.date, defaultTraining)" />
             </div>
             </div>
@@ -122,7 +122,7 @@
           <q-card-section>
             <q-table hide-header hide-bottom :columns="trainingColumns" :rows="day.trainings">
               <template v-slot:body-cell-actions="props">
-                <q-td :props="props" v-if="storeUser.isAdmin(storeUser.user)">
+                <q-td :props="props" v-if="storeUser.isAdmin(storeLogin.user)">
                   <q-btn round flat size="sm" icon="edit" @click="editRowStart(day.date, props.row)"/>
                   <q-btn round flat size="sm" icon="delete" @click="deleteRowStart(props.row)"/>
                 </q-td>
@@ -218,6 +218,7 @@ import {emptyTraining, EntityCrudTraining, EntityCrudTrainingType, useStoreCrudT
 import {dateFormat, DateValue, formatGenitiveCase, timeFormat, UiDate, weekDateName, weekStart} from 'src/store/store_utils';
 import {date} from 'quasar';
 import {EntityUser, useStoreCrudUser} from 'src/store/store_crud_user';
+import {useStoreLogin} from 'src/store/store_login';
 
 interface EntityCrudTrainingEdit extends EntityCrudTraining {
   timeDate?: string,
@@ -246,6 +247,7 @@ export default defineComponent({
     storeTraining.loadTrainingTypes().catch(e => console.log('Load training types error', e));
 
     const storeUser = useStoreCrudUser();
+    const storeLogin = useStoreLogin();
 
     async function schedulePropagate(d: DateValue) {
       await storeTraining.schedulePropagate(d);
@@ -280,8 +282,9 @@ export default defineComponent({
 
     async function editRowCommit() {
       console.log('Add row', editRowObj.value);
-      editRowObj.value!.time = `${editRowObj.value!.timeDate!} ${editRowObj.value!.time}`;
-      delete editRowObj.value!.timeDate;
+      const user = editRowObj.value as EntityCrudTrainingEdit;
+      user.time = `${user.timeDate as string} ${user.time}`;
+      delete user.timeDate;
       const newValue = editRowObj.value as EntityCrudTraining;
       if (newValue.id === -1) {
         await storeTraining.createTraining(newValue);
@@ -333,7 +336,7 @@ export default defineComponent({
     }
 
     return {
-      storeUser,
+      storeUser, storeLogin,
       trainingColumns,
       storeTraining,
       trainers,

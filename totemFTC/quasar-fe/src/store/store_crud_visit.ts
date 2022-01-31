@@ -1,9 +1,10 @@
 import {defineStore} from 'pinia'
 import {api} from 'boot/axios';
 import {emptyTraining, EntityCrudTraining} from 'src/store/store_crud_training';
-import {dateFormat, DateValue} from 'src/store/store_utils';
+import {dateFormat, DateInterval, dateTimeFormat, DateValue} from 'src/store/store_utils';
 import {date} from 'quasar';
-import {emptyUser, EntityUser} from "src/store/store_crud_user";
+import {emptyUser, EntityUser, useStoreCrudUser} from 'src/store/store_crud_user';
+import {emptyTicket, EntityCrudTicket, useStoreCrudTicket} from 'src/store/store_crud_ticket';
 
 export type EntityVisitMark = 'on' | 'off' | 'unmark';
 export const nextMark: Map<EntityVisitMark, EntityVisitMark> = new Map<EntityVisitMark, EntityVisitMark>([
@@ -14,9 +15,11 @@ export const nextMark: Map<EntityVisitMark, EntityVisitMark> = new Map<EntityVis
 
 export interface EntityCrudVisit {
   trainingId: number,
+  training: EntityCrudTraining,
   user: EntityUser,
   comment: string,
   ticketId: number,
+  ticket: EntityCrudTicket,
   markSchedule: boolean,
   markSelf: EntityVisitMark,
   markMaster: EntityVisitMark,
@@ -24,9 +27,11 @@ export interface EntityCrudVisit {
 
 const emptyVisit: EntityCrudVisit = {
   trainingId: -1,
+  training: emptyTraining,
   user: emptyUser,
   comment: '',
   ticketId: -1,
+  ticket: emptyTicket,
   markSchedule: false,
   markSelf: 'unmark',
   markMaster: 'unmark',
@@ -40,6 +45,10 @@ export const useStoreCrudVisit = defineStore('crudVisit', {
     trainings: [] as EntityCrudTraining[],
     training: emptyTraining,
     visits: [] as EntityCrudVisit[],
+
+    // Show user visits
+    userVisitsInterval: {from: '', to: ''} as DateInterval,
+    userSelectedTicket: null as EntityCrudTicket | null,
   }),
 
   actions: {
@@ -72,8 +81,9 @@ export const useStoreCrudVisit = defineStore('crudVisit', {
     },
 
     async deleteVisit(visit: EntityCrudVisit) {
-      await api.put('/api/visit/delete', visit)
+      const ticket = (await api.put<EntityCrudTicket>('/api/visit/delete', visit)).data;
       this.visits = this.visits.filter(r => r.trainingId !== visit.trainingId && r.user.userId !== visit.user.userId);
+      this.updateTicket(ticket);
     },
 
     async createVisit(visit: EntityCrudVisit) {
@@ -104,7 +114,33 @@ export const useStoreCrudVisit = defineStore('crudVisit', {
         value = 'unmark';
       }
       visit.markMaster = value;
-      await api.put(`/api/visit/markMaster/${value}`, visit);
+      const ticket = (await api.put<EntityCrudTicket>(`/api/visit/markMaster/${value}`, visit)).data;
+      this.updateTicket(ticket);
     },
+
+    updateTicket(ticket: EntityCrudTicket | null) {
+      if (ticket !== null) {
+        console.log('Ticket received. Updating...');
+        const storeUser = useStoreCrudUser();
+        ticket.user = storeUser.user;
+        const storeTicket = useStoreCrudTicket();
+        storeTicket.updateTicket(ticket);
+      }
+    },
+
+    //
+    // User visits
+    //
+
+    async loadUserVisits() {
+      const user = useStoreCrudUser().user;
+      this.visits = [];
+      if (this.userSelectedTicket === null) {
+        this.visits = (await api.get<EntityCrudVisit[]>(`/api/visit/byUser/${user.userId}?from=${date.formatDate(this.userVisitsInterval.from, dateTimeFormat)}`)).data;
+      } else {
+        this.visits = (await api.get<EntityCrudVisit[]>(`/api/visit/byTicket/${this.userSelectedTicket.id}`)).data;
+      }
+      this.visits.forEach(v => v.user = user);
+    }
   },
 });

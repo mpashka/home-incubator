@@ -1,15 +1,17 @@
 <template>
-  <div class="col-3" style="min-width: 3em;">
-    {{date.formatDate(training.time, 'HH:mm')}}
-  </div>
-  <div class="col-3" style="min-width: 3em;">
-    {{training.trainer.nickName}}
-  </div>
-  <div class="col-4" style="min-width: 3em;">
-    {{training.trainingType.trainingName}}
-  </div>
-  <div class="col-2" style="min-width: 3em;">
-    {{training.comment}}
+  <div class="row q-gutter-x-sm" >
+    <div class="col-3" style="min-width: 3em;">
+      {{date.formatDate(training.time, 'HH:mm')}}
+    </div>
+    <div class="col-3" style="min-width: 3em;">
+      {{training.trainer.nickName}}
+    </div>
+    <div class="col-4" style="min-width: 3em;">
+      {{training.trainingType.trainingName}}
+    </div>
+    <div class="col-2" style="min-width: 3em;">
+      {{training.comment}}
+    </div>
   </div>
 </template>
 

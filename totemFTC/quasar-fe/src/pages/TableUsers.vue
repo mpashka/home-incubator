@@ -39,8 +39,8 @@
     </div>
 
   <q-table title="Пользователи" :rows="storeUser.filteredRows" :columns="columns" :filter="filterName" :loading="storeUtils.loading"
-           :pagination="pagination"
-           row-key="id">
+           :pagination="{sortBy: 'lastName'}"
+           row-key="id" @row-click="onUserClick">
     <template v-slot:top-right>
       <q-input borderless dense debounce="300" v-model="filterName" placeholder="Search">
         <template v-slot:append>
@@ -54,7 +54,7 @@
     </template>
 
     <template v-slot:body-cell-types="props">
-      <q-td>
+      <q-td auto-width>
         <q-icon name="fas fa-question" size="sm" v-if="storeUser.isGuest(props.row)" />
         <q-icon name="person" size="sm" v-if="storeUser.isUser(props.row)" />
         <q-icon name="sports" size="sm" v-if="storeUser.isTrainer(props.row)" />
@@ -63,9 +63,9 @@
     </template>
 
     <template v-slot:body-cell-actions="props">
-      <q-td>
-        <q-btn round flat size="sm" icon="edit" @click="editRowStart(props.row)"/>
-        <q-btn round flat size="sm" icon="delete" @click="deleteRowStart(props.row)"/>
+      <q-td auto-width>
+        <q-btn round flat size="sm" icon="edit" @click.stop="editRowStart(props.row)"/>
+        <q-btn round flat size="sm" icon="delete" @click.stop="deleteRowStart(props.row)"/>
       </q-td>
     </template>
   </q-table>
@@ -153,24 +153,20 @@
 </template>
 
 <script lang="ts">
-import { ref, computed, Ref } from 'vue';
+import {ref, computed, Ref, defineComponent} from 'vue';
 import {useStoreCrudUser, EntityUser, EntityUserType, emptyUser, EntityUserTypeFilter} from 'src/store/store_crud_user';
 import {useStoreUtils} from "src/store/store_utils";
 import {useStoreCrudTraining} from "src/store/store_crud_training";
+import router from 'src/router';
 
-interface UserType {
-  type: EntityUserType,
-  label: string,
-}
-
-const userTypes: UserType[] = [
+const userTypes: {type: EntityUserType, label: string,}[] = [
   {type: 'user'    , label: 'Посетитель'},
   {type: 'trainer' , label: 'Тренер'},
   {type: 'admin'   , label: 'Администратор'},
 ]
 
 const columns = [
-  { name: 'id', required: true, label: 'Id', align: 'left', field: 'userId', sortable: false, headerClasses: 'column-class-id' },
+  // { name: 'id', required: true, label: 'Id', align: 'left', field: 'userId', sortable: false, headerClasses: 'column-class-id' },
   { name: 'firstName', required: true, label: 'Имя', align: 'left', field: 'firstName', sortable: true },
   { name: 'lastName', required: true, label: 'Фамилия', align: 'left', field: 'lastName', sortable: true },
   { name: 'nickName', required: true, label: 'Ник', align: 'left', field: 'nickName', sortable: true },
@@ -179,17 +175,16 @@ const columns = [
   // { name: 'emails', required: false, label: 'e-mail', align: 'left', field: 'emails', sortable: false },
   // { name: 'emails', required: false, label: 'e-mail', align: 'left', field: 'emails', sortable: false },
   { name: 'types', label: 'Тип', align: 'left', field: 'types', sortable: false },
-  { name: 'actions', label: 'Actions', align: 'left' },
+  { name: 'actions', label: 'Actions', align: 'right' },
 ]
 
-export default {
+export default defineComponent({
   name: 'TableUsers',
   setup () {
     const isFilterDialogVisible = ref(false);
     const storeUtils = useStoreUtils();
     const storeUser = useStoreCrudUser();
     const storeCrudTraining = useStoreCrudTraining();
-    const pagination = {sortBy: 'lastName'};
     storeUser.disableFilter();
 
     storeCrudTraining.loadTrainingTypes().catch(e => console.log('Load error', e));
@@ -243,9 +238,12 @@ export default {
       deleteRowObj.value = null;
     }
 
+    async function onUserClick(evt: Event, user: EntityUser) { // , index: number
+      await router.push({ name: 'user', params: { userId: user.userId } });
+    }
+
     return {
       columns,
-      pagination,
       storeUser,
       storeUtils,
       storeCrudTraining,
@@ -257,9 +255,10 @@ export default {
       isRowAddOrEdit: computed(() => editRowObj.value?.userId === -1),
       userTypes,
       isFilterDialogVisible, filterDialogShow, filterDialogCommit, filterType, filterName,
+      onUserClick,
     }
   }
-}
+});
 </script>
 
 <style scoped lang="scss">

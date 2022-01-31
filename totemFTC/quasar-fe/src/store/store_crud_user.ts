@@ -69,11 +69,11 @@ export const emptyUserFilter: EntityUserFilter = {
 
 export const useStoreCrudUser = defineStore('crudUser', {
   state: () => ({
-    user: {...emptyUser} as EntityUser,
     users: [] as EntityUser[],
     trainers: [] as EntityUser[],
     filterVal: {...emptyUserFilter},
     filteredRows: [] as EntityUser[],
+    user: {...emptyUser},
   }),
 
   getters: {
@@ -111,19 +111,18 @@ export const useStoreCrudUser = defineStore('crudUser', {
       return result;
     }},
 
-    fullName(): string {
-      return this.userNameString(this.user);
-    },
+    trainerNameString(): (user: EntityUser) => string {return (user: EntityUser) => {
+      return user.nickName ? user.nickName : user.firstName;
+    }},
+
   },
 
   actions: {
-    async loadUser() {
-      this.user = (await api.get<EntityUser>('/api/user/current')).data;
-      console.log('User received', this.user);
-    },
-
-    clear() {
-      this.user = {...emptyUser};
+    async loadUserById(userId: number): Promise<EntityUser> {
+      this.user = {...emptyUser, userId: userId};
+      this.user = (await api.get<EntityUser>(`/api/user/byId/${userId}`)).data;
+      console.log(`User by ${userId} received`, this.user);
+      return this.user;
     },
 
     async load() {
@@ -156,11 +155,6 @@ export const useStoreCrudUser = defineStore('crudUser', {
         this.users[index] = user;
       }
       this.filter();
-    },
-
-    async deleteSocialNetwork(name: string) {
-      await api.delete(`/api/user/current/network/${name}`);
-      this.user.socialNetworks = this.user.socialNetworks.filter(s => s.networkName !== name);
     },
 
     disableFilter() {

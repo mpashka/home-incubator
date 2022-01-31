@@ -7,11 +7,13 @@ import {date} from 'quasar';
 export interface EntityCrudTrainingType {
   trainingType: string,
   trainingName: string,
+  defaultCost: number,
 }
 
 export const emptyTrainingType: EntityCrudTrainingType = {
   trainingType: '',
   trainingName: '',
+  defaultCost: 0,
 }
 
 export interface EntityCrudTraining {
@@ -94,8 +96,27 @@ export const useStoreCrudTraining = defineStore('crudTraining', {
     },
 
     async loadTrainingTypes() {
-      this.trainingTypes = (await api.get<EntityCrudTrainingType[]>('/api/training/types')).data;
+      this.trainingTypes = (await api.get<EntityCrudTrainingType[]>('/api/trainingType/list')).data;
       console.log('TrainingTypes received', this.trainingTypes);
+    },
+
+    async createTrainingType(trainingType: EntityCrudTrainingType) {
+      await api.post('/api/trainingType', trainingType);
+      this.trainingTypes.push(trainingType);
+      this.trainingTypes.sort((a, b) => a.trainingType.localeCompare(b.trainingType));
+    },
+
+    async updateTrainingType(trainingType: EntityCrudTrainingType) {
+      await api.put('/api/trainingType', trainingType);
+      const oldTrainingTypeIndex = this.trainingTypes.findIndex(t => t.trainingType === trainingType.trainingType);
+      if (oldTrainingTypeIndex >= 0) {
+        this.trainingTypes[oldTrainingTypeIndex] = trainingType;
+      }
+    },
+
+    async deleteTrainingType(trainingType: EntityCrudTrainingType) {
+      await api.delete(`/api/trainingType/${trainingType.trainingType}`);
+      this.trainingTypes = this.trainingTypes.filter(t => t.trainingType !== trainingType.trainingType);
     },
 
     async loadTrainings(interval: DateInterval) {

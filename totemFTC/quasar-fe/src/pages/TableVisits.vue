@@ -27,22 +27,17 @@
               :options="storeVisit.trainings" option-label="displayTraining"
               @update:model-value="storeVisit.reloadVisits()" filled >
 
-      <template v-slot:before-options>
-        Тренировки ...
-      </template>
-
       <template v-slot:selected-item="props">
-        <div class="q-gutter-x-sm" style="display: flex">
-        <training-line :training="props.opt"/>
-        </div>
+        <training-line :training="props.opt" v-if="props.opt.id !== -1"/>
+        <q-item-section class="text-grey" v-else>
+          Пожалуйста выберите тренировку
+        </q-item-section>
       </template>
 
       <template v-slot:option="props">
         <q-item @click="props.toggleOption(props.opt)" clickable :active="props.selected">
           <q-item-section>
-            <div class="row" >
-              <training-line :training="props.opt"/>
-            </div>
+            <training-line :training="props.opt"/>
           </q-item-section>
         </q-item>
       </template>
@@ -55,12 +50,12 @@
            title="Посещения" v-if="storeVisit.training.id !== -1">
 
     <template v-slot:top-right>
-      <q-btn round icon="fas fa-plus" @click="editRowStart(emptyVisit)" v-if="storeUser.isAdmin(storeUser.user)"/>
+      <q-btn round icon="fas fa-plus" @click="editRowStart(emptyVisit)" v-if="storeUser.isAdmin(storeLogin.user)"/>
     </template>
 
 
     <template v-slot:body-cell-actions="props">
-      <q-td :props="props" v-if="storeUser.isAdmin(storeUser.user)">
+      <q-td :props="props" v-if="storeUser.isAdmin(storeLogin.user)">
         <q-btn round flat size="sm" @click="rowMark(props.row)">
           <q-icon name="schedule" size="sm" v-if="props.row.markSchedule"/>
           <q-icon name="mdi-account-check" size="sm" v-if="props.row.markSelf === 'on'"/>
@@ -81,7 +76,7 @@
     <q-card>
       <q-card-section class="row items-center">
         <q-avatar icon="signal_wifi_off" color="primary" text-color="white" />
-        <span class="q-ml-sm">Удалить посещение {{ storeUser.userNameString(deleteRowObj.user) }}</span>
+        <span class="q-ml-sm">Удалить посещение {{ storeLogin.userNameString(deleteRowObj.user) }}</span>
       </q-card-section>
 
       <q-card-actions align="right">
@@ -101,7 +96,7 @@
         <q-select v-if="isRowAddOrEdit"
                   filled v-model="editRowObj.user" use-input
                   input-debounce="0" label="Посетитель"
-                  :options="storeUser.filteredRows" :option-label="storeUser.userNameString"
+                  :options="storeUser.filteredRows" :option-label="storeLogin.userNameString"
                   @filter="(f, u) => u(() => storeUser.setFilterByName(f))"
         >
           <template v-slot:no-option>
@@ -130,23 +125,25 @@ import {emptyVisit, EntityCrudVisit, nextMark, useStoreCrudVisit} from 'src/stor
 import {dateFormat, dateLabel, DateValue, useStoreUtils} from 'src/store/store_utils';
 import {date} from 'quasar';
 import {EntityUser, useStoreCrudUser} from 'src/store/store_crud_user';
+import {useStoreLogin} from 'src/store/store_login';
 import TrainingLine from 'pages/components/TrainingLine.vue';
-
-const visitColumns = [
-  { name: 'userFirstName', required: true, label: 'Фамилия', align: 'left', field: 'user', format: (val: EntityUser) => val.firstName, sortable: true },
-  { name: 'userLastName', required: true, label: 'Имя', align: 'left', field: 'user', format: (val: EntityUser) => val.lastName, sortable: true },
-  { name: 'userNickName', required: true, label: 'Ник', align: 'left', field: 'user', format: (val: EntityUser) => val.nickName, sortable: true },
-  { name: 'comment', required: false, label: 'Примечание', align: 'left', field: 'comment', sortable: false },
-  { name: 'actions', label: 'Actions'},
-]
 
 export default defineComponent({
   name: 'TableVisits',
   components: {TrainingLine},
   setup () {
 
+    const visitColumns = [
+      { name: 'userFirstName', required: true, label: 'Фамилия', align: 'left', field: 'user', format: (val: EntityUser) => val.firstName, sortable: true },
+      { name: 'userLastName', required: true, label: 'Имя', align: 'left', field: 'user', format: (val: EntityUser) => val.lastName, sortable: true },
+      { name: 'userNickName', required: true, label: 'Ник', align: 'left', field: 'user', format: (val: EntityUser) => val.nickName, sortable: true },
+      { name: 'comment', required: false, label: 'Примечание', align: 'left', field: 'comment', sortable: false },
+      { name: 'actions', label: 'Actions'},
+    ];
+
     const storeVisit = useStoreCrudVisit();
     const storeUser = useStoreCrudUser();
+    const storeLogin = useStoreLogin();
     const storeUtils = useStoreUtils();
     storeVisit.reloadTrainings().catch(e => console.log('Load error', e));
     storeUser.load().catch(e => console.log('Load error', e));
@@ -215,10 +212,8 @@ export default defineComponent({
     }
 
     return {
+      storeVisit, storeUtils, storeUser, storeLogin,
       visitColumns,
-      storeVisit,
-      storeUtils,
-      storeUser,
       emptyVisit,
       visitDateLabel: computed(() => dateLabel(storeVisit.date)),
       visitId,
@@ -227,12 +222,8 @@ export default defineComponent({
       isConfirmDelete: computed({get: () => deleteRowObj.value !== null, set: () => deleteRowObj.value = null}),
       isConfirmAdd: computed({get: () => editRowObj.value !== null, set: () => editRowObj.value = null}),
       isRowAddOrEdit: computed(() => editRowObj.value?.trainingId === -1),
-      deleteRowObj,
-      deleteRowStart,
-      deleteRowCommit,
-      editRowObj,
-      editRowStart,
-      editRowCommit,
+      deleteRowObj, deleteRowStart, deleteRowCommit,
+      editRowObj, editRowStart, editRowCommit,
       rowMark,
       date,
     }
