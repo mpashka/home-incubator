@@ -36,14 +36,25 @@ export default boot(({ app, router }) => {
   // https://stackoverflow.com/questions/43051291/attach-authorization-header-for-all-axios-requests
   api.interceptors.request.use(function (config) {
       const authenticated = storeLogin.isAuthenticated;
-      console.log(`Check if request is authenticated ${String(authenticated)}. Session: ${storeLogin.sessionId}`)
+      console.log(`Check if request is authenticated ${String(authenticated)}. Session: ${storeLogin.sessionId}`);
       if (authenticated) {
-        (config.headers as {[key: string]: string})['Authorization'] = `Bearer ${storeLogin.sessionId}`
+        (config.headers as {[key: string]: string})['Authorization'] = `Bearer ${storeLogin.sessionId}`;
       }
       return config;
     }
   );
   // api.defaults.headers.common['Authorization'] = `Bearer ${sessionId}`;
+
+  /* tslint:disable */
+  api.interceptors.request.use(function (config) {
+      console.log('Remove all local fields');
+      if (config.data && typeof config.data !== 'string') {
+        config.data = JSON.stringify(config.data, (key, value: unknown) => key.startsWith('localProperty') ? undefined : value);
+        (config.headers as {[key: string]: string})['Content-Type'] = 'application/json';
+      }
+      return config;
+    }
+  );
 
   api.interceptors.response.use(response => {return response},
     error => {

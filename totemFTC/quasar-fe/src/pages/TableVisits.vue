@@ -1,6 +1,28 @@
 <template>
   <q-page>
 
+    <div class="row justify-end">
+      <q-list bordered class="col-6 rounded-borders">
+        <q-expansion-item expand-separator icon="list"
+                          label="TODO List"
+                          caption="Список доработок для страницы Пользователь"
+        >
+          <q-item>
+            <q-item-section>
+              <q-item-label>
+                <q-icon name="" />
+                Показывать все посещения
+              </q-item-label>
+              <q-item-label caption>
+                Стоит показывать все посещения если не выбрана тренировка.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+
+        </q-expansion-item>
+      </q-list>
+    </div>
+
   <div class="row">
     <div style="display: contents">
       <q-btn icon="fas fa-caret-left" @click="storeVisit.addDate(-1)"/>
@@ -46,7 +68,7 @@
   </div>
 
   <q-table :rows="storeVisit.visits" :columns="visitColumns"
-           :loading="storeUtils.loading" row-key="visitId"
+           :loading="storeUtils.loading" :row-key="visitIdFn"
            title="Посещения" v-if="storeVisit.training.id !== -1">
 
     <template v-slot:top-right>
@@ -89,14 +111,24 @@
   <q-dialog v-model="isConfirmAdd" persistent>
     <q-card class="q-gutter-md" style="width: 60%; max-width: 60%">
       <q-card-section>
-        <div class="text-h6">{{ isRowAddOrEdit ? 'Добавить' : 'Редактировать' }}</div>
+        <div class="col text-h6">{{ editRowObj.localPropertyEdit === 'add' ? 'Добавить' : 'Редактировать' }} посещение</div>
+      </q-card-section>
+
+      <q-card-section >
+        <q-field label="Тренировка" stack-label><template v-slot:control>
+          <div class="self-center full-width no-outline" tabindex="0">{{ editRowObj.training.trainingType.trainingName }} {{ storeUser.trainerNameString(editRowObj.training.trainer) }}</div>
+        </template></q-field>
+        <q-field label="Посетитель" stack-label v-if="editRowObj.localPropertyEdit !== 'add'"><template v-slot:control>
+          <div class="self-center full-width no-outline" tabindex="0">{{storeUser.userNameString(editRowObj.user)}}</div>
+        </template></q-field>
       </q-card-section>
 
       <q-card-section>
-        <q-select v-if="isRowAddOrEdit"
+        <q-select v-if="editRowObj.localPropertyEdit === 'add'"
                   filled v-model="editRowObj.user" use-input
                   input-debounce="0" label="Посетитель"
-                  :options="storeUser.filteredRows" :option-label="storeLogin.userNameString"
+                  :options="storeUser.filteredRows"
+                  :option-label="storeUser.userNameString"
                   @filter="(f, u) => u(() => storeUser.setFilterByName(f))"
         >
           <template v-slot:no-option>
@@ -127,6 +159,8 @@ import {date} from 'quasar';
 import {EntityUser, useStoreCrudUser} from 'src/store/store_crud_user';
 import {useStoreLogin} from 'src/store/store_login';
 import TrainingLine from 'pages/components/TrainingLine.vue';
+import {emptyTraining, useStoreCrudTraining} from 'src/store/store_crud_training';
+import {useRoute} from 'vue-router';
 
 export default defineComponent({
   name: 'TableVisits',
@@ -142,10 +176,27 @@ export default defineComponent({
     ];
 
     const storeVisit = useStoreCrudVisit();
+    const storeTraining = useStoreCrudTraining();
     const storeUser = useStoreCrudUser();
     const storeLogin = useStoreLogin();
     const storeUtils = useStoreUtils();
-    storeVisit.reloadTrainings().catch(e => console.log('Load error', e));
+    const route = useRoute();
+    storeVisit.reloadTrainings()
+      .then(async () => {
+        if (route.params.trainingId) {
+          const trainingId = Number(route.params.trainingId);
+          const training = await storeTraining.loadTrainingById(trainingId);
+          await storeVisit.setDateStr(date.formatDate(training.time, dateFormat));
+          const findTraining = storeVisit.trainings.find(t => t.id === trainingId);
+          if (findTraining) {
+            storeVisit.training = findTraining;
+          }
+        }
+      })
+      .catch(e => console.log('Load error', e));
+    storeVisit.training = emptyTraining;
+    storeVisit.visits = [];
+
     storeUser.load().catch(e => console.log('Load error', e));
     storeUser.disableFilter();
 
@@ -169,31 +220,24 @@ export default defineComponent({
       console.log('Start edit row', row);
       storeUser.setFilterByType('user');
       storeUser.setFilterExclude(storeVisit.visits.map(v => v.user.userId));
-      editRowObj.value = Object.assign({}, row);
+      editRowObj.value = Object.assign({localPropertyEdit: row.trainingId === -1 ? 'add' : 'edit'}, row);
+      editRowObj.value.markMaster = 'on';
+      if (editRowObj.value?.localPropertyEdit === 'add') {
+        editRowObj.value.trainingId = storeVisit.training.id;
+        editRowObj.value.training = storeVisit.training;
+      }
     }
 
     async function editRowCommit() {
-      console.log('Add row', editRowObj, 'Selected training id', storeVisit.training.id);
-      const newValue = editRowObj.value as EntityCrudVisit;
-      if (newValue.trainingId === -1) {
-        const presentUserVisits = storeVisit.visits.filter(v => v.user.userId == newValue.user.userId);
-        if (presentUserVisits.length === 0) {
-          // New user visit
-          newValue.trainingId = storeVisit.training.id;
-          newValue.markMaster = 'on';
-          await storeVisit.createVisit(newValue);
+      console.log('Add row', editRowObj.value, 'Selected training id', storeVisit.training.id);
+      const visit = editRowObj.value as EntityCrudVisit;
 
-        } else {
-          // User is already present in visit list
-          const presentVisit = presentUserVisits[0];
-          await storeVisit.updateMaster(presentVisit, 'on');
-          presentVisit.comment = newValue.comment;
-          await storeVisit.updateComment(presentVisit);
-        }
+      if (visit.localPropertyEdit === 'add') {
+        await storeVisit.createVisit(visit);
 
       } else {
-        // For existing user just update comment
-        await storeVisit.updateComment(newValue);
+        // For existing visit just update comment
+        await storeVisit.updateComment(visit);
       }
       editRowObj.value = null;
     }
@@ -207,7 +251,7 @@ export default defineComponent({
       await storeVisit.setDate(value);
     }
 
-    function visitId(visit: EntityCrudVisit): string {
+    function visitIdFn(visit: EntityCrudVisit): string {
       return String(visit.trainingId) + '_' + String(visit.user.userId);
     }
 
@@ -216,12 +260,11 @@ export default defineComponent({
       visitColumns,
       emptyVisit,
       visitDateLabel: computed(() => dateLabel(storeVisit.date)),
-      visitId,
+      visitIdFn,
       dateFormat,
       onVisitDateUpdate,
       isConfirmDelete: computed({get: () => deleteRowObj.value !== null, set: () => deleteRowObj.value = null}),
       isConfirmAdd: computed({get: () => editRowObj.value !== null, set: () => editRowObj.value = null}),
-      isRowAddOrEdit: computed(() => editRowObj.value?.trainingId === -1),
       deleteRowObj, deleteRowStart, deleteRowCommit,
       editRowObj, editRowStart, editRowCommit,
       rowMark,

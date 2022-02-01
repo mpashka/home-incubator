@@ -41,6 +41,13 @@ public class WebResourceVisit {
     }
 
     @GET
+    @Path("byCurrentUser/byTicket/{ticketId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Uni<DbCrudVisit.EntityVisit[]> listByCurrentUserByTicket(@PathParam("ticketId") int ticketId) {
+        return dbVisit.getByTicket(webSessionService.getUserId(), ticketId);
+    }
+
+    @GET
     @Path("byUser/{userId}")
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
@@ -53,7 +60,7 @@ public class WebResourceVisit {
     @Produces(MediaType.APPLICATION_JSON)
     @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
     public Uni<DbCrudVisit.EntityVisit[]> listByTicket(@PathParam("ticketId") int ticketId) {
-        return dbVisit.getByTicket(ticketId);
+        return dbVisit.getByTicket(-1, ticketId);
     }
 
     @GET

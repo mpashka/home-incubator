@@ -1,13 +1,15 @@
 import {emptyUser, EntityUser} from "src/store/store_crud_user";
 import {defineStore} from "pinia";
 import {api} from "boot/axios";
-import {dateFormat, DateInterval, DateValue, weekStart} from 'src/store/store_utils';
+import {dateFormat, DateInterval, DateValue, EditType, weekStart} from 'src/store/store_utils';
 import {date} from 'quasar';
 
 export interface EntityCrudTrainingType {
   trainingType: string,
   trainingName: string,
   defaultCost: number,
+
+  localPropertyEdit?: EditType,
 }
 
 export const emptyTrainingType: EntityCrudTrainingType = {
@@ -22,6 +24,9 @@ export interface EntityCrudTraining {
   trainer: EntityUser,
   trainingType: EntityCrudTrainingType,
   comment: string,
+
+  // to show time in dialog
+  localPropertyTime?: string,
 }
 
 export const emptyTraining: EntityCrudTraining = {
@@ -102,12 +107,14 @@ export const useStoreCrudTraining = defineStore('crudTraining', {
 
     async createTrainingType(trainingType: EntityCrudTrainingType) {
       await api.post('/api/trainingType', trainingType);
+      delete trainingType.localPropertyEdit;
       this.trainingTypes.push(trainingType);
       this.trainingTypes.sort((a, b) => a.trainingType.localeCompare(b.trainingType));
     },
 
     async updateTrainingType(trainingType: EntityCrudTrainingType) {
       await api.put('/api/trainingType', trainingType);
+      delete trainingType.localPropertyEdit;
       const oldTrainingTypeIndex = this.trainingTypes.findIndex(t => t.trainingType === trainingType.trainingType);
       if (oldTrainingTypeIndex >= 0) {
         this.trainingTypes[oldTrainingTypeIndex] = trainingType;
@@ -124,6 +131,10 @@ export const useStoreCrudTraining = defineStore('crudTraining', {
       this.trainings = await loadTrainingsByDate(interval);
       this.trainingsInterval = interval;
       console.log('Trainings received', this.trainings);
+    },
+
+    async loadTrainingById(trainingId: number): Promise<EntityCrudTraining> {
+      return (await api.get<EntityCrudTraining>(`/api/training/byId/${String(trainingId)}`)).data;
     },
 
     async loadTrainingsPrev(from: DateValue) {

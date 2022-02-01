@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.mutiny.pgclient.PgPool;
 import io.vertx.mutiny.sqlclient.PreparedQuery;
 import io.vertx.mutiny.sqlclient.Row;
+import io.vertx.mutiny.sqlclient.RowIterator;
 import io.vertx.mutiny.sqlclient.RowSet;
 import io.vertx.mutiny.sqlclient.Tuple;
 import org.slf4j.Logger;
@@ -26,6 +27,7 @@ public class DbCrudTraining {
     PgPool client;
 
     private PreparedQuery<RowSet<Row>> selectForUser;
+    private PreparedQuery<RowSet<Row>> selectById;
     private PreparedQuery<RowSet<Row>> selectByDateForUser;
     private PreparedQuery<RowSet<Row>> selectByDateIntervalForUser;
     private PreparedQuery<RowSet<Row>> selectByDateIntervalForTrainer;
@@ -43,19 +45,18 @@ public class DbCrudTraining {
 
     @PostConstruct
     void init() {
-        String sql = "SELECT * FROM training t, " +
-                "   LATERAL (SELECT row_to_json(ut.*) trainer FROM user_info ut WHERE ut.user_id=t.trainer_id) ut, " +
-                "   LATERAL (SELECT row_to_json(trt.*) training_type_obj FROM training_type trt WHERE trt.training_type=t.training_type) trt " +
-                " <where> " +
-                "ORDER BY t.training_time";
-        selectForUser = client.preparedQuery(sql.replace("<where>", ""));
-        selectByDateForUser = client.preparedQuery(sql.replace("<where>", "WHERE date(t.training_time) = $1"));
-        selectByDateIntervalForUser = client.preparedQuery(sql.replace("<where>", "WHERE t.training_time >= $1 AND t.training_time <= $2 "));
-        selectByDateIntervalForTrainer = client.preparedQuery("SELECT * FROM training t, " +
-                "    LATERAL (SELECT row_to_json(tt.*) training_type_obj FROM training_type tt WHERE tt.training_type=t.training_type) trty " +
-                "WHERE t.trainer_id = $1 " +
-                "    AND t.training_time >= $2 AND t.training_time <= $3 " +
-                "ORDER BY t.training_time"
+        selectById = client.preparedQuery("SELECT * FROM training_view WHERE training_id=$1");
+        selectForUser = client.preparedQuery("SELECT * FROM training_view ORDER BY training_time");
+        selectByDateForUser = client.preparedQuery("SELECT * FROM training_view " +
+                "WHERE date(training_time) = $1 " +
+                "ORDER BY training_time");
+        selectByDateIntervalForUser = client.preparedQuery("SELECT * FROM training_view " +
+                "WHERE training_time >= $1 AND training_time <= $2 " +
+                "ORDER BY training_time");
+        selectByDateIntervalForTrainer = client.preparedQuery("SELECT * FROM training_view " +
+                "WHERE trainer_id = $1 " +
+                "    AND training_time >= $2 AND training_time <= $3 " +
+                "ORDER BY training_time"
         );
         selectTrainingTypes = client.preparedQuery("SELECT * FROM training_type ORDER BY training_type");
         insertTrainingType = client.preparedQuery("INSERT INTO training_type (training_type, name, default_cost) VALUES ($1, $2, $3)");
@@ -80,6 +81,23 @@ public class DbCrudTraining {
                 )
                 .onFailure().transform(e -> new RuntimeException("Error getAll", e))
                 ;
+    }
+
+    public Uni<Entity> getById(int trainingId) {
+        return selectById
+                .execute(Tuple.of(trainingId))
+                .onItem().transform(rows -> {
+                    RowIterator<Row> rowIterator = rows.iterator();
+                    if (rowIterator.hasNext()) {
+                        log.debug("Training [{}] found", trainingId);
+                        Row row = rowIterator.next();
+                        return new Entity().loadFromDb(row);
+                    } else {
+                        log.debug("Training [{}] not found", trainingId);
+                        return null;
+                    }
+                })
+                .onFailure().transform(e -> new RuntimeException("Error getAll", e));
     }
 
     public Uni<Entity[]> getByDate(LocalDate date) {
@@ -218,7 +236,7 @@ public class DbCrudTraining {
                     this.trainer = new DbUser.EntityUser().loadFromDb(trainerJson);
                 }
             }
-            this.trainingType = new EntityTrainingType().loadFromDb(row.getJsonObject("training_type_obj"));
+            this.trainingType = new EntityTrainingType().loadFromDb(row);
             this.comment = row.getString("training_comment");
             return this;
         }
@@ -231,14 +249,14 @@ public class DbCrudTraining {
 
         public EntityTrainingType loadFromDb(Row row) {
             this.trainingType = row.getString("training_type");
-            this.trainingName = row.getString("name");
+            this.trainingName = row.getString("training_name");
             this.defaultCost = row.getDouble("default_cost");
             return this;
         }
 
         public EntityTrainingType loadFromDb(JsonObject row) {
             this.trainingType = row.getString("training_type");
-            this.trainingName = row.getString("name");
+            this.trainingName = row.getString("training_name");
             this.defaultCost = row.getDouble("default_cost");
             return this;
         }

@@ -33,12 +33,6 @@ export function weekDateName(inDate: DateValue) {
   return `${startStr} - ${endStr}`;
 }
 
-export const useStoreUtils = defineStore('storeUtils', {
-  state: () => ({
-    loading: false,
-  }),
-});
-
 /** Returns true if all filters are present in some obj parts */
 export function contains(objStrings: string[], filters: string[]): boolean {
   for (let i = 0; i < objStrings.length; i++) {
@@ -79,3 +73,11 @@ export function dateLabel(d: DateValue): string {
   }
   return '';
 }
+
+export type EditType = 'add' | 'edit' | undefined;
+
+export const useStoreUtils = defineStore('storeUtils', {
+  state: () => ({
+    loading: false,
+  }),
+});

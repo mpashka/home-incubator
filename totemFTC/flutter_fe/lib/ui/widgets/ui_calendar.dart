@@ -9,11 +9,12 @@ import 'package:logging/logging.dart';
 /// todo introduce types and type methods
 ///
 class UiCalendar extends StatefulWidget {
-  final int weeks;
+  final DateTime firstDay;
+  final DateTime lastDay;
   final Set<DateTime> selectedDates;
   final void Function(DateFilterInfo) onFilterChange;
 
-  const UiCalendar({required this.weeks, required this.selectedDates, required this.onFilterChange, Key? key}) : super(key: key);
+  const UiCalendar({required this.firstDay, required this.lastDay, required this.selectedDates, required this.onFilterChange, Key? key}) : super(key: key);
 
   @override
   State createState() => UiCalendarState();
@@ -33,7 +34,7 @@ class UiCalendarState extends State<UiCalendar> {
   static const charWidth = 8.0;
   late final int _weeks;
   late final int _widgetRows;
-  static const selectionRadiusConst = Radius.circular(15);
+  static const selectionRadiusConst = Radius.circular(10);
 
   _SelectionType _selectionType = _SelectionType.none;
   int _selectionIndex = 0;
@@ -41,7 +42,8 @@ class UiCalendarState extends State<UiCalendar> {
 
   late final DateTime now;
   late final DateTime firstDay;
-  late final DateTime lastDay;
+  late final DateTime firstVisibleDay;
+  late final DateTime lastVisibleDay;
   late final DateFilterInfo filterNone;
   /// Last value shown in calendar (used for now and hide)
   int _lastIndex = 0;
@@ -49,16 +51,15 @@ class UiCalendarState extends State<UiCalendar> {
   @override
   void initState() {
     super.initState();
-    _weeks = widget.weeks;
-    _widgetRows = _weeks+headerRows;
-    DateTime now = DateTime.now();
-    now = DateTime(now.year, now.month, now.day);
-    var calendarDays = now.weekday - 1 + 7*(_weeks-1);
-    firstDay = now.subtract(Duration(days: calendarDays));
-    lastDay = now.add(Duration(days: 1));
-    this.now = now;
-    filterNone = filter(_SelectionType.none, firstDay, lastDay);
+    firstVisibleDay = widget.firstDay;
+    lastVisibleDay = widget.lastDay;
+    firstDay = firstVisibleDay.subtract(Duration(days: firstVisibleDay.weekday - 1));
+    var calendarDays = lastVisibleDay.difference(firstDay).inDays;
     _lastIndex = widgetIndex(calendarDays);
+    _weeks = (calendarDays / 7.0).ceil();
+    _widgetRows = _weeks+headerRows;
+    now = DateTime.now().dayDate();
+    filterNone = filter(_SelectionType.none, firstDay, lastVisibleDay);
     widget.onFilterChange(filterNone);
   }
 
@@ -75,7 +76,7 @@ class UiCalendarState extends State<UiCalendar> {
     double screenWidth = MediaQuery.of(context).size.width;
     double width = screenWidth / (7 + 2);
 
-    bool isLastWeek(DateTime dayTime) => dayTime.month < dayTime.add(Duration(days: 7)).month;
+    bool isLastWeek(DateTime dayTime) => dayTime.month != dayTime.add(Duration(days: 7)).month;
     // bool isLastMonthDay(DateTime dayTime) => dayTime.month < dayTime.add(Duration(days: 1)).month;
 
     return Stack(children: [Column(
@@ -88,11 +89,11 @@ class UiCalendarState extends State<UiCalendar> {
           for (int day = 0; day < 7; day++)
             // Week day widget
             _buildItem(0, day+headerColumns, width, height, text: weekDayFormat.format(weekDayYear.add(Duration(days: day))), underline: true,
-              onTap: () => setSelection(filter(_SelectionType.column, firstDay.add(Duration(days: day)), lastDay), day+2),
+              onTap: () => setSelection(filter(_SelectionType.column, firstDay.add(Duration(days: day)), lastVisibleDay), day+2),
             ),
         ],),
         // Dates
-        for (var weekNum = 0, weekDate = firstDay.add(Duration(days: weekNum*7)); weekNum < _weeks; weekNum++, weekDate = firstDay.add(Duration(days: weekNum*7)))
+        for (var weekNum = 0, weekDate = firstDay; weekNum < _weeks; weekNum++, weekDate = firstDay.add(Duration(days: weekNum*7)))
           Row(children: [
             _buildItem(weekNum+headerRows, 0, width, height, underline: isLastWeek(weekDate), vertlineEnd: true),
             // Week # widget
@@ -101,12 +102,15 @@ class UiCalendarState extends State<UiCalendar> {
               underline: isLastWeek(weekDate), vertlineEnd: true,
               onTap: () => setSelection(filter(_SelectionType.row, weekDate, weekDate.add(Duration(days: 7))), weekNum+1),
             ),
-            for (var dayNum = 0, dayDate = weekDate.add(Duration(days: dayNum)); dayNum < 7; dayNum++, dayDate = weekDate.add(Duration(days: dayNum)))
-              if (dayDate.isBefore(lastDay)) _buildItem(weekNum+headerRows, dayNum+headerColumns, width, height,
+            for (var dayNum = 0, dayDate = weekDate; dayNum < 7; dayNum++, dayDate = weekDate.add(Duration(days: dayNum)))
+              if (!dayDate.isBefore(firstVisibleDay) && !dayDate.isAfter(lastVisibleDay))
+                _buildItem(weekNum+headerRows, dayNum+headerColumns, width, height,
                   training: widget.selectedDates.contains(dayDate),
                   text: dayDate.day.toString(), underline: isLastWeek(dayDate), vertlineStart: dayNum > 0 && dayDate.day == 1,
-                  onTap: () => setSelection(filter(_SelectionType.single, dayDate, dayDate.add(Duration(days: 1))), (weekNum+headerRows)*widgetColumns + dayNum+headerColumns))
-              else _buildItem(weekNum+headerRows, dayNum+headerColumns, width, height, noDecoration: true)
+                  onTap: () => setSelection(filter(_SelectionType.single, dayDate, dayDate.add(Duration(days: 1))), (weekNum+headerRows)*widgetColumns + dayNum+headerColumns),
+                  now: dayDate.isAtSameMomentAs(now),
+                )
+              else _buildItem(weekNum+headerRows, dayNum+headerColumns, width, height, noDecoration: true, underline: isLastWeek(dayDate))
           ],)
       ],),
       ..._buildMonthNames(width, height),
@@ -138,7 +142,8 @@ class UiCalendarState extends State<UiCalendar> {
         DateSelectionType.values[_SelectionType.values.indexOf(selectionType)]);
   }
 
-  ///
+  /// calendarIndex - day idx starting from firstDay
+  /// return internal index value
   int widgetIndex(int calendarIndex, [bool shiftZero=false]) {
     int row = calendarIndex ~/ 7;
     int column = calendarIndex % 7;
@@ -149,17 +154,18 @@ class UiCalendarState extends State<UiCalendar> {
   List<Widget> _buildMonthNames(double width, double height) {
     var monthNames = <Widget>[];
     int yearMonth(DateTime date) => date.year*12 + date.month;
-    for (int ym = yearMonth(firstDay), index = 0; ym <= yearMonth(now); ym++, index++) {
+    final lastDayMonth = yearMonth(lastVisibleDay);
+    for (int ym = yearMonth(firstDay), index = 0; ym <= lastDayMonth; ym++, index++) {
       DateTime firstMonthDay = DateTime(ym ~/ 12, ym % 12);
       DateTime lastMonthDay = DateTime(ym ~/ 12, ym % 12 + 1, 0);
       int firstWeek = max(0, (firstMonthDay.difference(firstDay).inDays / 7).ceil());
-      int lastWeek = min(_weeks-1, (lastMonthDay.difference(firstDay).inDays / 7).truncate());
-      bool last = ym == yearMonth(now);
+      int lastWeek = min(_weeks-1, (lastMonthDay.difference(firstDay).inDays / 7).floor());
+      bool last = ym == lastDayMonth;
       // log.finer('First day: $firstMonthDay');
       // log.finer('Last day: $lastMonthDay');
       // log.finer('${monthFormat.format(firstMonthDay)}, firstWeek: $firstWeek, lastWeek: $lastWeek');
       int firstDayIdx = max(0, firstMonthDay.difference(firstDay).inDays);
-      int lastDayIdx = min(lastMonthDay.difference(firstDay).inDays, now.difference(firstDay).inDays);
+      int lastDayIdx = min(lastMonthDay.difference(firstDay).inDays, lastVisibleDay.difference(firstDay).inDays);
       monthNames.add(Positioned(
           top: height * (firstWeek + 1),
           left: 0,
@@ -178,7 +184,10 @@ class UiCalendarState extends State<UiCalendar> {
   }
 
   Widget _buildItem(int row, int column, double width, double height,
-      {String? text, GestureTapCallback? onTap, bool training=false, bool underline=false, bool vertlineStart=false, bool vertlineEnd=false, bool noDecoration=false}) {
+      {String? text, GestureTapCallback? onTap, bool training=false, bool underline=false, bool vertlineStart=false, bool vertlineEnd=false,
+        bool noDecoration=false, bool now=false,
+      })
+  {
     final theme = Theme.of(context);
     BorderRadiusGeometry? selectionRadius;
     bool selection = false;
@@ -201,23 +210,14 @@ class UiCalendarState extends State<UiCalendar> {
       selection = true;
       bool firstLine = widgetIndex-widgetColumns < _selectionIndex;
       bool lastLine = widgetIndex+widgetColumns > _selectionIndexEnd;
-      if (widgetIndex == _selectionIndex) {
-        selectionRadius = BorderRadius.only(topLeft: selectionRadiusConst, topRight: column == widgetColumns-1 ? selectionRadiusConst : Radius.zero);
-      } else if (widgetIndex == _selectionIndexEnd) {
-        selectionRadius = BorderRadius.only(bottomRight: selectionRadiusConst);
-      } else if (column == 0 && firstLine && lastLine) {
-        selectionRadius = BorderRadius.only(topLeft: selectionRadiusConst, bottomLeft: selectionRadiusConst);
-      } else if (column == 0 && firstLine) {
-        selectionRadius = BorderRadius.only(topLeft: selectionRadiusConst);
-      } else if (column == 0 && lastLine) {
-        selectionRadius = BorderRadius.only(bottomLeft: selectionRadiusConst);
-      } else if (column == widgetColumns-1 && firstLine && lastLine) {
-        selectionRadius = BorderRadius.only(topRight: selectionRadiusConst, bottomRight: selectionRadiusConst);
-      } else if (column == widgetColumns-1 && firstLine) {
-        selectionRadius = BorderRadius.only(topRight: selectionRadiusConst);
-      } else if (column == widgetColumns-1 && lastLine) {
-        selectionRadius = BorderRadius.only(bottomRight: selectionRadiusConst);
-      }
+      bool lastColumn = column == widgetColumns-1;
+      var topLeft = Radius.zero, topRight = Radius.zero, bottomLeft = Radius.zero, bottomRight = Radius.zero;
+
+      if (widgetIndex == _selectionIndex || column == 0 && firstLine) topLeft = selectionRadiusConst;
+      if (widgetIndex == _selectionIndexEnd || lastColumn && lastLine) bottomRight = selectionRadiusConst;
+      if (lastLine && (column == 0 || widgetIndex == _selectionIndex)) bottomLeft = selectionRadiusConst;
+      if (firstLine && (lastColumn || widgetIndex == _selectionIndexEnd)) topRight = selectionRadiusConst;
+      selectionRadius = BorderRadius.only(topLeft: topLeft, topRight: topRight, bottomLeft: bottomLeft, bottomRight: bottomRight);
     } else if (_selectionType == _SelectionType.single && widgetIndex == _selectionIndex) {
       selection = true;
       selectionRadius = BorderRadius.all(selectionRadiusConst);
@@ -256,6 +256,14 @@ class UiCalendarState extends State<UiCalendar> {
             height: height+1,
             width: lineWidth,
           )),
+      if (now) Container(alignment: Alignment.center, child: Container(
+        decoration: BoxDecoration(
+          color: theme.colorScheme.secondaryVariant.withAlpha(150),
+          borderRadius: BorderRadius.all(Radius.circular(height / 2)),
+        ),
+        width: (width + height)/2,
+        height: height,
+      ),),
       GestureDetector(child: Container(
         alignment: Alignment.center,
         child: text != null ? Text(text/*, textAlign: TextAlign.center,*/) : null,

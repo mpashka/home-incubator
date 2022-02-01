@@ -45,17 +45,8 @@ public class DbCrudTicket {
         updateTicketType = client.preparedQuery("UPDATE ticket_type SET ticket_training_types=$2, ticket_name=$3, ticket_cost=$4, ticket_visits=$5, ticket_days=$6 WHERE ticket_type_id=$1");
         deleteTicketType = client.preparedQuery("DELETE FROM ticket_type WHERE ticket_type_id=$1");
 
-        selectTicketsByUser = client.preparedQuery("SELECT * FROM training_ticket t " +
-                "JOIN ticket_type_full tit USING (ticket_type_id) " +
-//                "JOIN (SELECT array_agg(row_to_json(tt.*)) AS training_types_obj FROM training_type tt WHERE tt.training_type=ANY(t.training_types)) training_type trt ON trt.training_type=" +
-                "JOIN (SELECT tit.ticket_type_id, array_agg(row_to_json(trt.*)) AS ticket_training_types_obj " +
-                "       FROM ticket_type tit " +
-                "       JOIN training_type trt ON trt.training_type=ANY(tit.ticket_training_types) " +
-                "       GROUP BY tit.ticket_type_id) trto USING (ticket_type_id) " +
-                "WHERE t.user_id=$1");
-        selectTicketById = client.preparedQuery("SELECT * FROM training_ticket t " +
-                "JOIN ticket_type tty USING (ticket_type_id) " +
-                "WHERE t.ticket_id=$1");
+        selectTicketsByUser = client.preparedQuery("SELECT * FROM ticket_view WHERE user_id=$1");
+        selectTicketById = client.preparedQuery("SELECT * FROM ticket_view WHERE ticket_id=$1");
         insertTicket = client.preparedQuery("SELECT * FROM insert_ticket($1, $2)");
         deleteTicket = client.preparedQuery("SELECT * FROM delete_ticket($1)");
     }
@@ -158,7 +149,6 @@ public class DbCrudTicket {
         public EntityTicketType loadFromDb(Row row) {
             this.id = row.getInteger("ticket_type_id");
             this.name = row.getString("ticket_name");
-            this.cost = row.getInteger("ticket_cost");
             this.cost = row.getInteger("ticket_cost");
             this.visits = row.getInteger("ticket_visits");
             this.days = row.getInteger("ticket_days");

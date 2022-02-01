@@ -92,6 +92,12 @@ public class WebResourceTraining {
     }
 
     @GET
+    @Path("training/byId/{trainingId}")
+    public Uni<DbCrudTraining.Entity> byId(@RestPath int trainingId) {
+        return dbTraining.getById(trainingId);
+    }
+
+    @GET
     @Path("userTraining/byDateInterval")
     @Produces(MediaType.APPLICATION_JSON)
     public Uni<DbCrudTraining.Entity[]> userTrainingsByDateInterval(@QueryParam("from") LocalDateTime from, @QueryParam("to") LocalDateTime to) {
@@ -109,9 +115,9 @@ public class WebResourceTraining {
     @DELETE
     @Path("training/{trainingId}")
     @RolesAllowed({MySecurityProvider.ROLE_TRAINER, MySecurityProvider.ROLE_ADMIN})
-    public Uni<Void> delete(@PathParam("trainingId") int trainerId) {
+    public Uni<Void> delete(@PathParam("trainingId") int trainingId) {
         EnumSet<DbUser.UserType> userTypes = webSessionService.getUser().getTypes();
-        return userTypes.contains(DbUser.UserType.admin) ? dbTraining.delete(trainerId) : dbTraining.delete(trainerId, webSessionService.getUserId());
+        return userTypes.contains(DbUser.UserType.admin) ? dbTraining.delete(trainingId) : dbTraining.delete(trainingId, webSessionService.getUserId());
     }
 
     @POST

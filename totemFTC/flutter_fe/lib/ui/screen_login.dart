@@ -66,7 +66,7 @@ class ScreenLoginState extends BlocProvider<ScreenLogin> {
           }
         },
       ));
-      if (loginButtons.length >= (screenWidth / (iconSize + 2*padding) - 1).ceil() || provider == loginProviders.last) {
+      if (loginButtons.length >= (screenWidth / (iconSize + 3*padding) - 1).ceil() || provider == loginProviders.last) {
         loginButtonColumns.add(Row(children: loginButtons,));
         loginButtons = [];
       }

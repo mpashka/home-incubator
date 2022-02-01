@@ -65,6 +65,48 @@
             </q-item-section>
           </q-item>
 
+          <q-item>
+            <q-item-section>
+              <q-item-label>
+                Переименовать переменные в store.select
+              </q-item-label>
+              <q-item-label caption>
+                Надо чтобы название переменной в store отражало ее временное значение и отличалось
+                от обычных, постоянных значений. Например storeVisit.training ⇨ selectedTraining.
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item>
+            <q-item-section>
+              <q-item-label>
+                Стандартизировать Edit objects
+              </q-item-label>
+              <q-item-label caption>
+                Для сущностей у которых id генерируется можно различить add/edit по id.
+                Для других сущностей необходим Edit объект с дополнительными свойствами.
+                Стоит подумать над стандартизацией таких вещей - может стоит внести
+                эти свойства в основной объект и всегда удалять их перед отправкой на сервер.
+                Например можно все локальные свойства именовать как local или localProperty и использовать
+                json.stringify с функцией фильтрации по ключу. И добавить для этого свой axios.interceptor.
+                Таким образом можно сохранять промежуточный state и не использовать null для объектов во
+                время редактирования.
+                Check Reflect.defineMetadata - https://stackoverflow.com/questions/51170130/check-if-property-is-decorated-with-specific-annotation-typescript
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+
+          <q-item>
+            <q-item-section>
+              <q-item-label>
+                Переименовать функции
+              </q-item-label>
+              <q-item-label caption>
+                Добавить постфикс Fn для функций, чтоб было понятно - например userStore.isAdmin ⇨ isAdminFn
+              </q-item-label>
+            </q-item-section>
+          </q-item>
+
         </q-list>
       </q-card-section>
     </q-card>

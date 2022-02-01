@@ -47,6 +47,7 @@ class CrudApi {
       http.Response response = await http.Response.fromStream(responseStream);
       if (response.statusCode == 403) {
         // Forbidden. Clear session
+        log.info('Access denied. Clear session "${_configuration.sessionId}" $method $apiUri ${response.statusCode}');
         _configuration.sessionId = '';
         throw ApiException('Access denied', 'Please relogin');
       } if (response.statusCode != 200 && response.statusCode != 204) {
@@ -57,6 +58,8 @@ class CrudApi {
       log.fine('Response received $apiUri ${response.statusCode}');
       log.finer(response.body);
       return response;
+    } on ApiException {
+      rethrow;
     } catch (e,s) {
       log.severe('Internal error ${_configuration.backendUrl()} $method $apiUri', e, s);
       throw ApiException('Internal error', e.toString());

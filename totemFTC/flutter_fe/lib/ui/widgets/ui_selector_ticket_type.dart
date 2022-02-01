@@ -63,7 +63,8 @@ class UiSelectorTicketTypeDialogState extends BlocProvider<UiSelectorTicketTypeD
   }
   
   String ticketString(CrudEntityTicketType ticketType) {
-    String trainingTypes = ticketType.trainingTypes?.map((t) => t.trainingName).join(', ') ?? '';
-    return '${ticketType.name}, ${ticketType.days} дней, ${ticketType.cost} рублей, $trainingTypes';
+    // String trainingTypes = ticketType.trainingTypes?.map((t) => t.trainingName).join(', ') ?? '';
+    // return '${ticketType.name}, ${ticketType.days} дней, ${ticketType.cost} рублей, $trainingTypes';
+    return ticketType.name;
   }
 }

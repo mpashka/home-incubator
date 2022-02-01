@@ -12,6 +12,7 @@ import 'screen_base.dart';
 import 'widgets/ui_divider.dart';
 import 'widgets/ui_selector_training.dart';
 
+// todo Probably add icons into this screen
 class ScreenTrainings extends StatefulWidget {
   static const routeName = '/trainings';
 
@@ -20,19 +21,24 @@ class ScreenTrainings extends StatefulWidget {
 }
 
 class ScreenTrainingsState extends BlocProvider<ScreenTrainings> {
-  static const int weeks = 6;
+  static const int weeksBeforeNow = 5;
+  static const int weeksAfterNow = 1;
 
   final GlobalKey _keyFAB = GlobalKey();
   late final CrudVisitBloc visitBloc;
   late final CrudVisitBlocFiltered filteredVisitBloc;
   CrudEntityTrainingType? selectedTrainingType;
 
+  late final DateTime firstDay;
+  late final DateTime lastDay;
+
   @override
   void initState() {
     super.initState();
     // _session = Injector().get<Session>();
-    final now = DateTime.now();
-    final DateTime firstDay = now.subtract(Duration(days: now.weekday - 1 + 7*(weeks-1)));
+    final now = DateTime.now().dayDate();
+    firstDay = now.subtract(Duration(days: now.weekday - 1 + 7*weeksBeforeNow));
+    lastDay = now.add(Duration(days: 7 - now.weekday + 7*weeksAfterNow));
     visitBloc = CrudVisitBloc(start: firstDay.monthDate(), provider: this)
       ..loadCurrentUserVisits();
     filteredVisitBloc = CrudVisitBlocFiltered(visitBloc, firstDay, provider: this);
@@ -41,10 +47,14 @@ class ScreenTrainingsState extends BlocProvider<ScreenTrainings> {
 
   @override
   Widget build(BuildContext context) {
+    final now = DateTime.now().dayDate();
     return UiScreen(body: BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(
       builder: (ctx, data) => Column(children: [
         UiCalendar(
-          weeks: weeks,
+          // firstDay: firstDay,
+          // lastDay: lastDay,
+          firstDay: now.subtract(Duration(days: 7*weeksBeforeNow)),
+          lastDay: now.add(Duration(days: 7*weeksAfterNow)),
           selectedDates: data.where((v) => v.isVisible()).map((v) => v.training!.time).map((t) => DateTime(t.year, t.month, t.day)).toSet(),
           onFilterChange: filteredVisitBloc.onFilterChange,
         ),

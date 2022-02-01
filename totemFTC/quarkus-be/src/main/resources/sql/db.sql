@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS user_session (
 --
 CREATE TABLE IF NOT EXISTS training_type (
     training_type VARCHAR(10) NOT NULL PRIMARY KEY,
-    name VARCHAR(20),
+    training_name VARCHAR(20),
     default_cost INTEGER NOT NULL
 );
 

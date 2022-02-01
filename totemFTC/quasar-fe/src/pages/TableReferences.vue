@@ -90,14 +90,14 @@
   <q-dialog v-model="isTrainingTypeConfirmAdd" persistent>
     <q-card class="q-gutter-md" style="width: 60%; max-width: 60%">
       <q-card-section>
-        <div class="text-h6">{{ editTrainingTypeObj.add ? 'Добавить' : 'Редактировать' }} тренировку</div>
+        <div class="text-h6">{{ editTrainingTypeObj.localPropertyEdit === 'add' ? 'Добавить' : 'Редактировать' }} тренировку</div>
       </q-card-section>
 
       <q-card-section>
         <div class="column q-gutter-lg">
           <q-input filled v-model="editTrainingTypeObj.trainingType" label="Тип"
                    :rules="[ val => val && val.length > 0 || 'Please type something']"
-                   v-if="editTrainingTypeObj.add"
+                   v-if="editTrainingTypeObj.localPropertyEdit === 'add'"
           />
           <q-input filled v-model="editTrainingTypeObj.trainingName" label="Название"
                    :rules="[ val => val && val.length > 0 || 'Please type something']"
@@ -146,9 +146,10 @@
       </q-card-section>
 
       <q-card-section>
+
         <q-checkbox v-for="trainingType in storeTraining.trainingTypes"
-                    v-model="editTicketTrainingModel"
-                    :val="trainingType.trainingType"
+                    v-model="editTicketTypeObj.trainingTypes"
+                    :val="trainingType"
                     :label="trainingType.trainingName"
                     :key="'training-type-' + trainingType.trainingType"
         />
@@ -168,10 +169,6 @@ import {computed, defineComponent, Ref, ref} from 'vue';
 import {useStoreUtils} from 'src/store/store_utils';
 import {emptyTrainingType, EntityCrudTrainingType, useStoreCrudTraining} from 'src/store/store_crud_training';
 import {emptyTicketType, EntityCrudTicketType, useStoreCrudTicket} from 'src/store/store_crud_ticket';
-
-interface EntityCrudTrainingTypeEdit extends EntityCrudTrainingType {
-  add?: boolean,
-}
 
 export default defineComponent({
   name: 'TableUsers',
@@ -196,6 +193,8 @@ export default defineComponent({
     function editTicketTypeStart(ticketType: EntityCrudTicketType) {
       console.log('Start edit ticketType', ticketType);
       editTicketTypeObj.value = Object.assign({}, ticketType);
+      // Use store objects for training types to implement q-checkbox
+      editTicketTypeObj.value.trainingTypes = ticketType.trainingTypes.map(ticket => storeTraining.trainingTypes.find(store => store.trainingType == ticket.trainingType) as EntityCrudTrainingType);
     }
 
     async function editTicketTypeCommit() {
@@ -236,22 +235,20 @@ export default defineComponent({
       { name: 'actions', label: 'Actions', align: 'right' },
     ];
 
-    const editTrainingTypeObj :Ref<EntityCrudTrainingTypeEdit | null> = ref(null);
+    const editTrainingTypeObj :Ref<EntityCrudTrainingType | null> = ref(null);
 
     function editTrainingTypeStart(trainingType: EntityCrudTrainingType) {
       console.log('Start edit trainingType', trainingType);
-      editTrainingTypeObj.value = Object.assign({add: trainingType === emptyTrainingType}, trainingType);
+      editTrainingTypeObj.value = Object.assign({localPropertyEdit: trainingType === emptyTrainingType ? 'add' : 'edit'}, trainingType);
     }
 
     async function editTrainingTypeCommit() {
       console.log('Add trainingType', editTrainingTypeObj.value);
-      const editValue = editTrainingTypeObj.value as EntityCrudTrainingTypeEdit;
-      const add = editValue.add;
-      delete editValue.add;
-      if (add) {
-        await storeTraining.createTrainingType(editValue);
+      const trainingType = editTrainingTypeObj.value as EntityCrudTrainingType;
+      if (trainingType.localPropertyEdit === 'add') {
+        await storeTraining.createTrainingType(trainingType);
       } else {
-        await storeTraining.updateTrainingType(editValue);
+        await storeTraining.updateTrainingType(trainingType);
       }
       editTrainingTypeObj.value = null;
     }
@@ -278,10 +275,6 @@ export default defineComponent({
       defaultTicketType: emptyTicketType,
       isTicketTypeConfirmDelete: computed({get: () => deleteTicketTypeObj.value !== null, set: () => deleteTicketTypeObj.value = null}),
       isTicketTypeConfirmAdd: computed({get: () => editTicketTypeObj.value !== null, set: () => editTicketTypeObj.value = null}),
-      editTicketTrainingModel: computed<string[]>({
-        get: () => editTicketTypeObj.value?.trainingTypes.map(t => t.trainingType) as string[],
-        set: (model: string[]) => editTicketTypeObj.value!.trainingTypes = model.map(ticketType => storeTraining.trainingTypes.find(t => t.trainingType === ticketType) as EntityCrudTrainingType)
-      }),
 
       trainingTypeColumns, trainingTypeFilterName: ref(''),
       editTrainingTypeObj, editTrainingTypeStart, editTrainingTypeCommit,

@@ -126,9 +126,11 @@ class ScreenConfigState extends BlocProvider<ScreenConfig> {
     CrudEntityUser user = crudUserBloc.state;
 
     bool same(String text, String? value) => value != null ? text == value : text.isEmpty;
-    bool modified = !same(firstNameController.text.trim(), user.firstName?.trim()) ||
-        !same(lastNameController.text.trim(), user.lastName?.trim()) ||
-        !same(nickNameController.text.trim(), user.nickName?.trim());
+    bool modified = user.isGuest
+        ? !same(firstNameController.text.trim(), user.firstName?.trim())
+        || !same(lastNameController.text.trim(), user.lastName?.trim())
+        || !same(nickNameController.text.trim(), user.nickName?.trim())
+        : !same(nickNameController.text.trim(), user.nickName?.trim());
 
     if (modified != isNameModified) {
       isNameModified = modified;
@@ -137,8 +139,10 @@ class ScreenConfigState extends BlocProvider<ScreenConfig> {
   }
 
   void _resetName(CrudEntityUser user) {
-    firstNameController.text = user.firstName?.trim() ?? '';
-    lastNameController.text = user.lastName?.trim() ?? '';
+    if (user.isGuest) {
+      firstNameController.text = user.firstName?.trim() ?? '';
+      lastNameController.text = user.lastName?.trim() ?? '';
+    }
     nickNameController.text = user.nickName?.trim() ?? '';
   }
 

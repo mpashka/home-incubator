@@ -16,6 +16,8 @@ part 'crud_visit.g.dart';
 
 // todo in mark*** methods we must take care about returning ticket
 class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
+  static const alwaysReload = true;
+
   final DateTime? start;
   final SelectedUserBloc? selectedUserBloc;
   final SelectedTicketBloc? selectedTicketBloc;
@@ -41,9 +43,9 @@ class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
 
     if (ticket != null) {
       log.finest('loadUserVisits(). Loading ticket visits');
-      if (ticket.visits == null) {
+      if (alwaysReload || ticket.visits == null) {
         state = [];
-        ticket.visits = (await backend.requestJson('GET', '/api/visit/byTicket/${ticket.id}', params: params) as List)
+        ticket.visits = (await backend.requestJson('GET', '/api/visit/byCurrentUser/byTicket/${ticket.id}', params: params) as List)
             .map((v) => CrudEntityVisit.fromJson(v)
               ..user = user
               ..ticket = ticket)
@@ -51,7 +53,8 @@ class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
       }
       state = ticket.visits!;
     } else if (training != null) {
-      if (training.visits == null) {
+      log.finest('loadUserVisits(). Loading training visits');
+      if (alwaysReload || training.visits == null) {
         state = [];
         training.visits = (await backend.requestJson('GET', '/api/visit/byTraining/${training.id}') as List)
             .map((item) => CrudEntityVisit.fromJson(item)..training = training)
@@ -59,10 +62,10 @@ class CrudVisitBloc extends BlocBaseList<CrudEntityVisit> {
       }
       state = training.visits!;
     } else {
-      log.finest('loadUserVisits(). No ticket. Loading user visits');
-      if (user.visits == null) {
+      log.finest('loadUserVisits(). Loading user visits');
+      if (alwaysReload || user.visits == null) {
         state = [];
-        user.visits = (await backend.requestJson('GET', '/api/visit/byUser/${user.userId}', params: params) as List)
+        user.visits = (await backend.requestJson('GET', '/api/visit/byCurrentUser', params: params) as List)
             .map((v) => CrudEntityVisit.fromJson(v)..user = user)
             .toList();
       }
@@ -155,15 +158,20 @@ class CrudEntityVisit implements Comparable<CrudEntityVisit> {
   }
 
   bool isVisible() {
-    switch (markMaster) {
-      case CrudEntityVisitMark.off: return false;
-      case CrudEntityVisitMark.unmark:
-        switch (markSelf) {
-          case CrudEntityVisitMark.off: return false;
-          case CrudEntityVisitMark.unmark: return markSchedule;
-          default: return true;
-        }
-      default: return true;
+    var now = DateTime.now();
+    if (training!.time.isAfter(now)) {
+      switch (markMaster) {
+        case CrudEntityVisitMark.off: return false;
+        case CrudEntityVisitMark.unmark:
+          switch (markSelf) {
+            case CrudEntityVisitMark.off: return false;
+            case CrudEntityVisitMark.unmark: return markSchedule;
+            default: return true;
+          }
+        default: return true;
+      }
+    } else {
+      return markSchedule;
     }
   }
 

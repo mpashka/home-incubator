@@ -22,6 +22,7 @@ const routes: RouteRecordRaw[] = [
       { name: 'users',      path: 'users',      component: TableUsers },
       { name: 'user',       path: 'user/:userId(\\d+)', component: TableUser },
       { name: 'visits',     path: 'visits',     component: TableVisits },
+      { name: 'visit',      path: 'visit/:trainingId(\\d+)', component: TableVisits },
       { name: 'finance',    path: 'finance',    component: TableFinance },
       { name: 'settings',   path: 'settings',   component: () => import('pages/Settings.vue') },
       { name: 'references', path: 'references', component: () => import('pages/TableReferences.vue') },

@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/blocs/bloc_provider.dart';
 import 'package:flutter_fe/blocs/crud_ticket.dart';
-import 'package:flutter_fe/blocs/crud_user.dart';
 import 'package:flutter_fe/blocs/crud_visit.dart';
 import 'package:flutter_fe/blocs/session.dart';
 import 'package:flutter_fe/misc/utils.dart';
 import 'package:flutter_fe/ui/widgets/ui_selector_training.dart';
 import 'package:flutter_fe/ui/widgets/ui_visit.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
-import 'package:intl/intl.dart';
-import 'package:logging/logging.dart';
 
 import 'screen_base.dart';
 import 'widgets/ui_divider.dart';
@@ -66,10 +63,10 @@ class ScreenTicketsState extends BlocProvider<ScreenTickets> {
               UiDivider(selectedTicket != null ? 'Посещения по абонементу ${selectedTicket.displayName}' : 'Посещения с ${localDateFormat.format(start)}'),
             ],);
           }),
-          BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(builder: (ctx, visits) => Column(children: [
+          BlocProvider.streamBuilder<List<CrudEntityVisit>, CrudVisitBloc>(builder: (ctx, visits) => Expanded(child: Column(children: [
             if (selectedTicketBloc.state != null && visits.isEmpty) Text('Посещений нет'),
-            for (var visit in visits) UiVisit(visit),
-          ])),
+            Expanded(child: Scrollbar(child: ListView(children: <Widget>[for (var visit in visits) UiVisit(visit),]),),),
+          ])),),
         ]
     ),
       floatingActionButton: FloatingActionButton(
@@ -106,8 +103,6 @@ class ScreenTicketsState extends BlocProvider<ScreenTickets> {
 
       // Select new ticket
       selectedTicketBloc.state = ticket;
-
-      // if (ticket != null && selectedTicketBloc.state != null && selectedTicketBloc.state!.id != ticket.id) {
     }
   }
 }

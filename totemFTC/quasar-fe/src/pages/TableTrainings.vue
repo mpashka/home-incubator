@@ -52,6 +52,17 @@
               </q-item-label>
             </q-item-section>
           </q-item>
+
+          <q-item>
+            <q-item-section>
+              <q-item-label>
+                Пустые недели
+              </q-item-label>
+              <q-item-label caption>
+                Надо показывать пустые недели и пустые дни - чтобы была возможность их заполнить
+              </q-item-label>
+            </q-item-section>
+          </q-item>
         </q-expansion-item>
 
       </q-list>
@@ -113,6 +124,7 @@
             <div class="row">
             <div class="col text-h6">{{ date.formatDate(day.date, 'dddd, D') }}
               <q-tooltip>{{ date.formatDate(day.date, 'D MMMM YYYY, ', formatGenitiveCase) + date.formatDate(day.date, 'dddd')}}</q-tooltip>
+              <q-chip style="position: absolute; top: 0; right: 10em;" dense size="xs" class="self-end" :label="dateLabel(day.date)" v-if="dateLabel(day.date)"/>
             </div>
             <div class="col-auto" v-if="storeUser.isAdmin(storeLogin.user)">
               <q-btn round icon="add" @click="editRowStart(day.date, defaultTraining)" />
@@ -120,11 +132,11 @@
             </div>
           </q-card-section>
           <q-card-section>
-            <q-table hide-header hide-bottom :columns="trainingColumns" :rows="day.trainings">
+            <q-table hide-header hide-bottom :columns="trainingColumns" :rows="day.trainings" @row-click="onTrainingClick">
               <template v-slot:body-cell-actions="props">
                 <q-td :props="props" v-if="storeUser.isAdmin(storeLogin.user)">
-                  <q-btn round flat size="sm" icon="edit" @click="editRowStart(day.date, props.row)"/>
-                  <q-btn round flat size="sm" icon="delete" @click="deleteRowStart(props.row)"/>
+                  <q-btn round flat size="sm" icon="edit" @click.stop="editRowStart(day.date, props.row)"/>
+                  <q-btn round flat size="sm" icon="delete" @click.stop="deleteRowStart(props.row)"/>
                 </q-td>
               </template>
             </q-table>
@@ -165,11 +177,11 @@
 
       <q-card-section>
         <div class="row q-gutter-md">
-          <q-input class="col-2" filled v-model="editRowObj.time" label="Время">
+          <q-input class="col-2" filled v-model="editRowObj.localPropertyTime" label="Время">
             <template v-slot:append>
               <q-icon name="access_time" class="cursor-pointer">
                 <q-popup-proxy transition-show="scale" transition-hide="scale" v-model="uiTimePopup">
-                  <q-time v-model="editRowObj.time" mask="HH:mm" :minute-options="[0, 15, 30, 45]" format24h @update:model-value="onTimeUpdate">
+                  <q-time v-model="editRowObj.localPropertyTime" mask="HH:mm" :minute-options="[0, 15, 30, 45]" format24h @update:model-value="onTimeUpdate">
                     <div class="row items-center justify-end">
                       <q-btn v-close-popup label="Close" color="primary" flat />
                     </div>
@@ -215,14 +227,11 @@
 <script lang="ts">
 import {computed, defineComponent, Ref, ref} from 'vue';
 import {emptyTraining, EntityCrudTraining, EntityCrudTrainingType, useStoreCrudTraining} from 'src/store/store_crud_training';
-import {dateFormat, DateValue, formatGenitiveCase, timeFormat, UiDate, weekDateName, weekStart} from 'src/store/store_utils';
+import {dateFormat, dateLabel, DateValue, formatGenitiveCase, timeFormat, UiDate, weekDateName, weekStart} from 'src/store/store_utils';
 import {date} from 'quasar';
 import {EntityUser, useStoreCrudUser} from 'src/store/store_crud_user';
 import {useStoreLogin} from 'src/store/store_login';
-
-interface EntityCrudTrainingEdit extends EntityCrudTraining {
-  timeDate?: string,
-}
+import router from 'src/router';
 
 export default defineComponent({
   name: 'TableTrainings',
@@ -268,28 +277,28 @@ export default defineComponent({
     }
 
 
-    const editRowObj: Ref<EntityCrudTrainingEdit | null> = ref(null);
+    const editRowObj: Ref<EntityCrudTraining | null> = ref(null);
 
     function editRowStart(d: string, training: EntityCrudTraining) {
       console.log('Start edit row', training);
       editRowObj.value = Object.assign({}, training);
-      editRowObj.value.timeDate = date.formatDate(d, dateFormat);
-      if (training.id !== -1) {
-        editRowObj.value.time = date.formatDate(editRowObj.value.time, timeFormat);
+      if (training.id === -1) {
+        editRowObj.value.localPropertyTime = '00:00';
+        editRowObj.value.time = d;
+      } else {
+        editRowObj.value.localPropertyTime = date.formatDate(training.time, timeFormat);
       }
       trainers.value = [];
     }
 
     async function editRowCommit() {
       console.log('Add row', editRowObj.value);
-      const user = editRowObj.value as EntityCrudTrainingEdit;
-      user.time = `${user.timeDate as string} ${user.time}`;
-      delete user.timeDate;
-      const newValue = editRowObj.value as EntityCrudTraining;
-      if (newValue.id === -1) {
-        await storeTraining.createTraining(newValue);
+      const training = editRowObj.value as EntityCrudTraining;
+      training.time = `${date.formatDate(training.time, dateFormat)} ${training.localPropertyTime as string}`;
+      if (training.id === -1) {
+        await storeTraining.createTraining(training);
       } else {
-        await storeTraining.updateTraining(newValue);
+        await storeTraining.updateTraining(training);
       }
       editRowObj.value = null;
     }
@@ -335,6 +344,10 @@ export default defineComponent({
       trainers.value = storeTraining.trainers.filter(v => v.trainingTypes.indexOf(type.trainingType) > -1);
     }
 
+    async function onTrainingClick(evt: Event, training: EntityCrudTraining) {
+      await router.push({ name: 'visit', params: { trainingId: training.id } });
+    }
+
     return {
       storeUser, storeLogin,
       trainingColumns,
@@ -359,8 +372,9 @@ export default defineComponent({
       editRowCommit,
       defaultTraining: emptyTraining,
       date,
-      dateFormat, formatGenitiveCase,
-      uiTimePopup, onTimeUpdate, onTrainingTypeChange
+      dateLabel, dateFormat, formatGenitiveCase,
+      uiTimePopup, onTimeUpdate, onTrainingTypeChange,
+      onTrainingClick,
     }
   }
 });

@@ -1,7 +1,7 @@
 import {defineStore} from 'pinia'
 import {api} from 'boot/axios';
 import {emptyTraining, EntityCrudTraining} from 'src/store/store_crud_training';
-import {dateFormat, DateInterval, dateTimeFormat, DateValue} from 'src/store/store_utils';
+import {dateFormat, DateInterval, dateTimeFormat, DateValue, EditType} from 'src/store/store_utils';
 import {date} from 'quasar';
 import {emptyUser, EntityUser, useStoreCrudUser} from 'src/store/store_crud_user';
 import {emptyTicket, EntityCrudTicket, useStoreCrudTicket} from 'src/store/store_crud_ticket';
@@ -23,6 +23,9 @@ export interface EntityCrudVisit {
   markSchedule: boolean,
   markSelf: EntityVisitMark,
   markMaster: EntityVisitMark,
+
+  //
+  localPropertyEdit?: EditType,
 }
 
 const emptyVisit: EntityCrudVisit = {
@@ -48,6 +51,7 @@ export const useStoreCrudVisit = defineStore('crudVisit', {
 
     // Show user visits
     userVisitsInterval: {from: '', to: ''} as DateInterval,
+    // todo Move to storeTicket
     userSelectedTicket: null as EntityCrudTicket | null,
   }),
 
@@ -87,15 +91,27 @@ export const useStoreCrudVisit = defineStore('crudVisit', {
     },
 
     async createVisit(visit: EntityCrudVisit) {
+      const presentUserVisits = this.visits.filter(v => v.user.userId == visit.user.userId);
+      delete visit.localPropertyEdit;
+      if (presentUserVisits.length === 0) {
+        // New user visit
         await api.post('/api/visit', visit);
         this.visits.push(visit);
+
+      } else {
+        // User is already present in this training visit list, just update comment and set master mark
+        const presentVisit = presentUserVisits[0];
+        await this.updateMaster(presentVisit, 'on');
+        presentVisit.comment = visit.comment;
+        await this.updateComment(presentVisit);
+      }
     },
 
     async updateComment(visit: EntityCrudVisit) {
         await api.put('/api/visit', visit);
         const index = this.visits.findIndex(r => r.trainingId === visit.trainingId && r.user.userId === visit.user.userId);
         if (index >= 0) {
-          this.visits[index] = visit;
+          this.visits[index].comment = visit.comment;
         }
     },
 
@@ -119,8 +135,8 @@ export const useStoreCrudVisit = defineStore('crudVisit', {
     },
 
     updateTicket(ticket: EntityCrudTicket | null) {
-      if (ticket !== null) {
-        console.log('Ticket received. Updating...');
+      if (ticket) {
+        console.log('Ticket received. Updating...', ticket);
         const storeUser = useStoreCrudUser();
         ticket.user = storeUser.user;
         const storeTicket = useStoreCrudTicket();
