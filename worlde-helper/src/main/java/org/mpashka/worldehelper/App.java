@@ -169,6 +169,27 @@ public class App {
     }
 
 
+    private void reverseI() throws IOException {
+        BitSet chars = new BitSet(letters);
+        String word = "театр";
+        for (int i = 0; i < word.length(); i++) {
+            chars.set(word.charAt(i) - firstLetter);
+        }
+        Set<String> words = wordsSet(language.fileName);
+        Predicate<String> filter = s -> {
+            for (int i = 0; i < 5; i++) {
+                boolean present = chars.get(s.charAt(i) - firstLetter);
+                if (!present ^ (i == 3) || s.charAt(i) == word.charAt(i)) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        Set<String> foundWords = words.stream().filter(filter).collect(Collectors.toSet());
+        log.info("Words found: {}", foundWords.size());
+        log.info("Words: {}", foundWords);
+    }
+
     public static void main(String[] args) throws IOException {
         App app = new App(args);
 
@@ -177,7 +198,8 @@ public class App {
 //        app.saveWords(".in/f_out2_.txt", ".in/f_out3_wrong_char.txt", App::isWrongChar);
         app.saveWords(".in/f_out2_.txt", ".in/f_out3_incorrect.txt", w -> !isCorrectWord(w));
 */
-        app.analyze();
+//        app.analyze();
+        app.reverseI();
     }
 
 
@@ -365,6 +387,18 @@ public class App {
         interface CharProcessor {
             void nextChar(char c);
         }
+    }
+
+    /**
+     * letter[+-=]
+     * + present but wrong pos
+     * - not present
+     * = present and pos is correct
+     *
+     * todo
+     */
+    private static class CharVisitParser2 {
+
     }
 
     private static class VisitedCharInfo {
