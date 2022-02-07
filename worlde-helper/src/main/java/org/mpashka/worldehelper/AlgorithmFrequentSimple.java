@@ -13,6 +13,7 @@ import java.util.stream.IntStream;
 
 import static org.mpashka.worldehelper.CompetitionInterface.WordResult;
 import static org.mpashka.worldehelper.Utils.WORD_LENGTH;
+import static org.mpashka.worldehelper.Utils.contains;
 
 /**
  * Check char frequency, create word from most frequent unknown chars
@@ -59,7 +60,6 @@ public class AlgorithmFrequentSimple {
         conformedWords = conformedWords.stream()
                 .filter(w -> wordChecker.conform(w))
                 .collect(Collectors.toList());
-        log.trace("        {} words", conformedWords.size());
         if (conformedWords.isEmpty()) {
             log.error("Conformed words are empty");
         }
@@ -67,33 +67,34 @@ public class AlgorithmFrequentSimple {
 
         boolean notFoundChars = wordChecker.getWordMaxChars() > wordChecker.getPresentChars().size();
 
-        char[] wordChars = new char[WORD_LENGTH];
+        byte[] wordChars = new byte[WORD_LENGTH];
         if (notFoundChars) {
-            log.trace("        Find chars. Known: {}, total: {}", wordChecker.getPresentChars().size(), wordChecker.getWordMaxChars());
+            log.trace("    Guess word. From: {}. Known chars: {}, total chars: {}", conformedWords.size(), wordChecker.getPresentChars().size(), wordChecker.getWordMaxChars());
             // Some chars are not known
             BitSet[] freq = IntStream.range(0, language.letters()).mapToObj(i -> new BitSet(conformedWords.size())).toArray(BitSet[]::new);
             for (ListIterator<String> iter = conformedWords.listIterator(); iter.hasNext(); ) {
                 int wordIdx = iter.nextIndex();
                 String w = iter.next();
                 for (int i = 0; i < WORD_LENGTH; i++) {
-                    int c = w.charAt(i) - language.firstLetter();
+                    byte c = language.idx(w.charAt(i));
                     freq[c].set(wordIdx);
                 }
             }
 
             for (int i = 0; i < WORD_LENGTH; i++) {
-                char c = (char) (mostFreqCharIdx(freq, idx -> wordChecker.getPresentChars().get(language.firstLetter()) != null) + language.firstLetter());
+                int i1 = i;
+                byte c = mostFreqCharIdx(freq, idx -> wordChecker.getPresentChars().get(idx) == null && !contains(idx, wordChars, 0, i1));
                 wordChars[i] = c;
                 freq = clearChar(freq, c);
             }
         } else {
             // All chars are found but order is not. Sure this can't be. Put doubles to find order
-            log.info("All chars are found but order is not.");
+            log.info("        All chars are found but order is not. Words {}/{}.", conformedWords.size(), conformedWords);
 
             WordChecker.CharInfo[] chars = wordChecker.getPresentChars().values().toArray(WordChecker.CharInfo[]::new);
             int charIdx = 0;
             for (int i = 0; i < WORD_LENGTH; i++) {
-                char c;
+                byte c;
                 while (true) {
                     WordChecker.CharInfo charInfo = chars[charIdx++ % chars.length];
                     if (charInfo.getCorrectPositions().get(i) || charInfo.isPosAllKnown()) continue;
@@ -103,13 +104,13 @@ public class AlgorithmFrequentSimple {
                 wordChars[i] = c;
             }
         }
-        return new String(wordChars);
+        return language.word(wordChars);
     }
 
-    private int mostFreqCharIdx(BitSet[] charsFreq, Predicate<Integer> filter) {
-        int mostFreqChar = -1;
+    private byte mostFreqCharIdx(BitSet[] charsFreq, Predicate<Byte> filter) {
+        byte mostFreqChar = -1;
         int maxCardinality = -1;
-        for (int i = 0; i < charsFreq.length; i++) {
+        for (byte i = 0; i < charsFreq.length; i++) {
             BitSet freq = charsFreq[i];
             if (freq == null || !filter.test(i)) {
                 continue;
@@ -123,8 +124,7 @@ public class AlgorithmFrequentSimple {
         return mostFreqChar;
     }
 
-    private BitSet[] clearChar(BitSet[] charsFreq, char c) {
-        int mostFreqChar = c - language.firstLetter();
+    private BitSet[] clearChar(BitSet[] charsFreq, byte mostFreqChar) {
         BitSet maxFreq = charsFreq[mostFreqChar];
         charsFreq[mostFreqChar] = null;
         for (BitSet bitSet : charsFreq) {

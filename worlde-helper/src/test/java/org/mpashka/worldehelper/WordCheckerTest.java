@@ -43,4 +43,26 @@ public class WordCheckerTest {
         assertThat(wordChecker.conform("heooo"), is(false));
         assertThat(wordChecker.conform("hhllo"), is(false));
     }
+
+    @Test
+    public void test2() {
+        WordChecker wordChecker = new WordChecker(Language.rus);
+        wordChecker.clear();
+        // word - атаба
+        wordChecker.guessWordAttempt("аоеиу", new WordResult(false, new CharResult[]{
+                green,black,black,black,black,
+        }));
+        wordChecker.guessWordAttempt("крлтн", new WordResult(false, new CharResult[]{
+                black,black,black,yellow,black,
+        }));
+        wordChecker.guessWordAttempt("бгмвп", new WordResult(false, new CharResult[]{
+                yellow,black,black,black,black,
+        }));
+        wordChecker.guessWordAttempt("аббат", new WordResult(false, new CharResult[]{
+                green,yellow,yellow,yellow,yellow,
+        }));
+
+        assertThat(wordChecker.conform("атаба"), is(true));
+    }
+
 }

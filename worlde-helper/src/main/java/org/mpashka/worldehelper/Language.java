@@ -16,8 +16,16 @@ public record Language(String name, char firstLetter, char lastLetter, String fi
         return lastLetter - firstLetter + 1;
     }
 
-    int idx(char c) {
-        return c - firstLetter;
+    byte idx(char c) {
+        return (byte) (c - firstLetter);
+    }
+
+    String word(byte[] chars) {
+        char[] res = new char[chars.length];
+        for (int i = 0; i < chars.length; i++) {
+            res[i] = (char) (chars[i] + firstLetter);
+        }
+        return new String(res);
     }
 
     boolean isCorrect(char c) {

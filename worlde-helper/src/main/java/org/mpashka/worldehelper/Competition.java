@@ -36,7 +36,7 @@ public class Competition implements CompetitionInterface {
         String wordsFile = language.fileName();
         try (Stream<String> wordsStream = Files.lines(Paths.get(wordsFile))
                 .map(String::toLowerCase)
-                .filter(this::checkWordValid)) {
+                .filter(w -> language.isCorrect(w))) {
             wordList = wordsStream.toArray(String[]::new);
         }
         log.info("Lang {}, {} words", language.name(), wordList.length);
@@ -45,15 +45,6 @@ public class Competition implements CompetitionInterface {
 
     void setWordList(String[] wordList) {
         this.wordList = wordList;
-    }
-
-    private boolean checkWordValid(String word) {
-        if (word.length() != WORD_LENGTH) return false;
-        for (int i = 0; i < word.length(); i++) {
-            char c = word.charAt(i);
-            if (c < firstLetter || c > lastLetter) return false;
-        }
-        return true;
     }
 
     @Override
@@ -78,7 +69,7 @@ public class Competition implements CompetitionInterface {
 
         String expectedWord = wordList[session.nextIndex()];
         log.trace("Expected word: {}", expectedWord);
-        Map<Character, BitSet> doubleChars = wordChars(expectedWord);
+        Map<Byte, BitSet> doubleChars = wordChars(language, expectedWord);
         session.setMyWord(new MyWordSession(doubleChars));
         return true;
     }
@@ -89,17 +80,17 @@ public class Competition implements CompetitionInterface {
 
 //        String expectedWord = wordList[Integer.parseInt(sessionId.sessionId())];
         word = word.toLowerCase();
-        if (!checkWordValid(word)) {
+        if (!language.isCorrect(word)) {
             throw new IllegalArgumentException("Unexpected word '" + word + "'");
         }
         MyWordSession expectedWord = session.getMyWord();
 
-        Map<Character, BitSet> wordChars = wordChars(word);
-        Map<Character, BitSet> expectedChars = expectedWord.getChars();
+        Map<Byte, BitSet> wordChars = wordChars(language, word);
+        Map<Byte, BitSet> expectedChars = expectedWord.getChars();
         int found = 0;
         CharResult[] result = new CharResult[WORD_LENGTH];
         for (int i = 0; i < WORD_LENGTH; i++) {
-            char wordChar = word.charAt(i);
+            byte wordChar = language.idx(word.charAt(i));
             BitSet expectedCharPos = expectedChars.get(wordChar);
             BitSet charPos = wordChars.get(wordChar);
             CharResult charResult;
@@ -119,8 +110,8 @@ public class Competition implements CompetitionInterface {
                     int yellowChars = expectedCharCount - samePosCount;
                     BitSet notSamePos = (BitSet) charPos.clone();
                     notSamePos.andNot(expectedCharPos);
-                    if (i < WORD_LENGTH -1) {
-                        notSamePos.clear(i, WORD_LENGTH -1);
+                    if (i < WORD_LENGTH-1) {
+                        notSamePos.clear(i+1, WORD_LENGTH);
                     }
                     int charNum = notSamePos.cardinality();
                     charResult = charNum <= yellowChars ? CharResult.yellow : CharResult.black;
@@ -140,7 +131,7 @@ public class Competition implements CompetitionInterface {
         if (fin) {
             session.setMyWord(null);
         }
-        log.trace("    Attempt: {} -> {}", word, new String(Arrays.stream(result).mapToInt(r -> r.name().charAt(0)).toArray(), 0, WORD_LENGTH));
+        log.trace("      Attempt: {} -> {}", word, new String(Arrays.stream(result).mapToInt(r -> r.name().charAt(0)).toArray(), 0, WORD_LENGTH));
         return new WordResult(fin, result);
     }
 
@@ -203,14 +194,14 @@ public class Competition implements CompetitionInterface {
     }
 
     private class MyWordSession {
-        private Map<Character, BitSet> chars;
+        private Map<Byte, BitSet> chars;
         private int answers;
 
-        public MyWordSession(Map<Character, BitSet> chars) {
+        public MyWordSession(Map<Byte, BitSet> chars) {
             this.chars = chars;
         }
 
-        public Map<Character, BitSet> getChars() {
+        public Map<Byte, BitSet> getChars() {
             return chars;
         }
 

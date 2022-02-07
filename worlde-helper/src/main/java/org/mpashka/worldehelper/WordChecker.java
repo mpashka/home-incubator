@@ -18,8 +18,8 @@ public class WordChecker {
 
     private Language language;
     private BitSet nonPresentChars;
-    private char[] greenChars = new char[WORD_LENGTH];
-    private Map<Character, CharInfo> presentChars; // green + yellow
+    private byte[] greenChars = new byte[WORD_LENGTH];
+    private Map<Byte, CharInfo> presentChars; // green + yellow
     /** Max number of chars in the word. Decrease if we have guessed 2 double chars in single word */
     private int wordMaxChars;
 
@@ -31,11 +31,11 @@ public class WordChecker {
         return nonPresentChars;
     }
 
-    public char[] getGreenChars() {
+    public byte[] getGreenChars() {
         return greenChars;
     }
 
-    public Map<Character, CharInfo> getPresentChars() {
+    public Map<Byte, CharInfo> getPresentChars() {
         return presentChars;
     }
 
@@ -48,7 +48,7 @@ public class WordChecker {
     //
 
     public void clear() {
-        Arrays.fill(greenChars, (char) 0);
+        Arrays.fill(greenChars, (byte) 0);
         presentChars = new HashMap<>(WORD_LENGTH);
         nonPresentChars = new BitSet(language.letters());
         wordMaxChars = WORD_LENGTH;
@@ -57,11 +57,11 @@ public class WordChecker {
     public boolean conform(String word) {
         int knownChars = 0, unknownChars = 0, maxUnknownChars = wordMaxChars - presentChars.size();
         BitSet visited = new BitSet(language.letters());
-        Map<Character, AtomicInteger> charCount = new HashMap<>(WORD_LENGTH);
+        Map<Byte, AtomicInteger> charCount = new HashMap<>(WORD_LENGTH);
         for (int i = 0; i < word.length(); i++) {
-            char c = word.charAt(i);
+            byte c = language.idx(word.charAt(i));
             if (greenChars[i] != 0 && greenChars[i] != c) return false;
-            if (nonPresentChars.get(c - language.firstLetter())) return false;
+            if (nonPresentChars.get(c)) return false;
             CharInfo charInfo = presentChars.get(c);
             if (charInfo == null) {
                 if (++unknownChars > maxUnknownChars) {
@@ -72,9 +72,8 @@ public class WordChecker {
                 if (charInfo.wrongPositions.get(i)) return false;
 
                 // Check how many chars were found in this word
-                int chrI = c - language.firstLetter();
-                if (!visited.get(chrI)) {
-                    visited.set(chrI);
+                if (!visited.get(c)) {
+                    visited.set(c);
                     knownChars++;
                 }
 
@@ -87,10 +86,9 @@ public class WordChecker {
                 }
             }
         }
-        for (Iterator<Map.Entry<Character, AtomicInteger>> iter = charCount.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry<Character, AtomicInteger> charCountEntry = iter.next();
+        for (Map.Entry<Byte, AtomicInteger> charCountEntry : charCount.entrySet()) {
             CharInfo charInfo = presentChars.get(charCountEntry.getKey());
-            if (charInfo.count == 2 && charCountEntry.getValue().get() != 2) {
+            if (charInfo.count == 2 && charCountEntry.getValue().get() < 2) {
                 return false;
             }
         }
@@ -100,7 +98,7 @@ public class WordChecker {
     public void guessWordAttempt(String word, WordResult wordResult) {
         BitSet skipChars = new BitSet(WORD_LENGTH);
         for (int i = 0; i < WORD_LENGTH; i++) {
-            char c = word.charAt(i);
+            byte c = language.idx(word.charAt(i));
             CompetitionInterface.CharResult charResult = wordResult.result()[i];
             if (skipChars.get(i)) {
                 continue;
@@ -108,7 +106,7 @@ public class WordChecker {
             int pos2 = findNextChar(word, i, c);
             if (pos2 == -1) {
                 switch (charResult) {
-                    case black -> nonPresentChars.set(c - language.firstLetter());
+                    case black -> nonPresentChars.set(c);
                     case green,yellow -> addCharInfo(c, i, charResult);
                 }
             } else {
@@ -123,7 +121,7 @@ public class WordChecker {
                 CompetitionInterface.CharResult charResult2 = wordResult.result()[pos2];
                 CompetitionInterface.CharResult max = Utils.max(charResult, charResult2);
                 if (max == CompetitionInterface.CharResult.black) {
-                    nonPresentChars.set(c - language.firstLetter());
+                    nonPresentChars.set(c);
                     continue;
                 }
                 CompetitionInterface.CharResult min = Utils.min(charResult, charResult2);
@@ -144,16 +142,16 @@ public class WordChecker {
         }
     }
 
-    private int findNextChar(String word, int pos, char c) {
+    private int findNextChar(String word, int pos, byte c) {
         if (pos == WORD_LENGTH -1) return -1;
         for (int i = pos+1; i < WORD_LENGTH; i++) {
-            if (word.charAt(i) == c) return i;
+            if (language.idx(word.charAt(i)) == c) return i;
         }
         return -1;
     }
 
-    private CharInfo addCharInfo(char chr, int pos, CompetitionInterface.CharResult result) {
-        return presentChars.computeIfAbsent(chr, c -> new CharInfo(chr))
+    private CharInfo addCharInfo(byte c, int pos, CompetitionInterface.CharResult result) {
+        return presentChars.computeIfAbsent(c, c2 -> new CharInfo(c))
                 .set(result, pos);
     }
 
@@ -162,9 +160,9 @@ public class WordChecker {
         private final BitSet correctPositions = new BitSet(WORD_LENGTH);
         private final BitSet wrongPositions = new BitSet(WORD_LENGTH);
         private int count = -1;
-        private char c;
+        private byte c;
 
-        public CharInfo(char c) {
+        public CharInfo(byte c) {
             this.c = c;
         }
 
@@ -204,7 +202,7 @@ public class WordChecker {
             }
         }
 
-        public char getChar() {
+        public byte getChar() {
             return c;
         }
 

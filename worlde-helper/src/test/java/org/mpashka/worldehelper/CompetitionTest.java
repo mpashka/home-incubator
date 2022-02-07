@@ -103,4 +103,63 @@ public class CompetitionTest {
         assertThat(result.score(), closeTo(3, 0.001));
 */
     }
+
+    @Test
+    public void testDoubleChar2() {
+        Competition competition = new Competition(Language.eng);
+        competition.setWordList(new String[]{
+                "abcde",
+                "aabbb",
+        });
+        CompetitionInterface.SessionId sessionId = competition.session();
+        CompetitionInterface.WordResult res;
+        assertThat(competition.nextWord(sessionId), is(true));
+
+        // Word - abcde
+        res = competition.checkWord(sessionId, "zaaqw");
+        assertThat(res.fin(), is(false));
+        assertThat(res.result(), arrayContaining(black, yellow, black, black, black));
+
+        res = competition.checkWord(sessionId, "zccqw");
+        assertThat(res.fin(), is(false));
+        assertThat(res.result(), arrayContaining(black, black, green, black, black));
+
+        res = competition.checkWord(sessionId, "zcxcw");
+        assertThat(res.fin(), is(false));
+        assertThat(res.result(), arrayContaining(black, yellow, black, black, black));
+
+        competition.nextWord(sessionId);
+
+        // Word - aabbb
+        res = competition.checkWord(sessionId, "zaaqw");
+        assertThat(res.fin(), is(false));
+        assertThat(res.result(), arrayContaining(black, green, yellow, black, black));
+
+        res = competition.checkWord(sessionId, "zaaaw");
+        assertThat(res.fin(), is(false));
+        assertThat(res.result(), arrayContaining(black, green, yellow, black, black));
+
+        res = competition.checkWord(sessionId, "aaaaw");
+        assertThat(res.fin(), is(false));
+        assertThat(res.result(), arrayContaining(green, green, black, black, black));
+    }
+
+    @Test
+    public void testDoubleCharProd1() {
+        Competition competition = new Competition(Language.rus);
+        competition.setWordList(new String[]{
+                "вширь",
+                "атаба",
+        });
+        CompetitionInterface.SessionId sessionId = competition.session();
+        assertThat(competition.nextWord(sessionId), is(true));
+
+        // Word - вширь
+        assertThat(competition.checkWord(sessionId, "вирши").result(), arrayContaining(green,yellow,yellow,yellow,black));
+
+        competition.nextWord(sessionId);
+
+        // Word - атаба
+        assertThat(competition.checkWord(sessionId, "аббат").result(), arrayContaining(green,yellow,black,yellow,yellow));
+    }
 }

@@ -19,10 +19,10 @@ public class Utils {
                 .toString();
     }
 
-    public static Map<Character, BitSet> wordChars(String word) {
-        Map<Character, BitSet> wordChars = new HashMap<>(WORD_LENGTH);
+    public static Map<Byte, BitSet> wordChars(Language language, String word) {
+        Map<Byte, BitSet> wordChars = new HashMap<>(WORD_LENGTH);
         for (int i = 0; i < WORD_LENGTH; i++) {
-            wordChars.computeIfAbsent(word.charAt(i), c -> new BitSet(WORD_LENGTH)).set(i);
+            wordChars.computeIfAbsent(language.idx(word.charAt(i)), c -> new BitSet(WORD_LENGTH)).set(i);
         }
         return wordChars;
     }
@@ -43,5 +43,12 @@ public class Utils {
 
     public static CharResult max(CharResult in1, CharResult in2) {
         return in1.ordinal() < in2.ordinal() ? in1 : in2;
+    }
+
+    public static boolean contains(byte idx, byte[] wordChars, int start, int end) {
+        for (int i = start; i < end; i++) {
+            if (wordChars[i] == idx) return true;
+        }
+        return false;
     }
 }
