@@ -6,16 +6,16 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import static org.mpashka.worldehelper.Utils.*;
 
 public class Competition implements CompetitionInterface {
     private static final Logger log = LoggerFactory.getLogger(Competition.class);
-
-    private static final int N_CHARS = 5;
-    private static final int MAX_ANSWERS = 6;
 
     private Language language;
     private int firstLetter;
@@ -48,7 +48,7 @@ public class Competition implements CompetitionInterface {
     }
 
     private boolean checkWordValid(String word) {
-        if (word.length() != N_CHARS) return false;
+        if (word.length() != WORD_LENGTH) return false;
         for (int i = 0; i < word.length(); i++) {
             char c = word.charAt(i);
             if (c < firstLetter || c > lastLetter) return false;
@@ -77,7 +77,8 @@ public class Competition implements CompetitionInterface {
         }
 
         String expectedWord = wordList[session.nextIndex()];
-        Map<Character, BitSet> doubleChars = findChars(expectedWord);
+        log.trace("Expected word: {}", expectedWord);
+        Map<Character, BitSet> doubleChars = wordChars(expectedWord);
         session.setMyWord(new MyWordSession(doubleChars));
         return true;
     }
@@ -93,11 +94,11 @@ public class Competition implements CompetitionInterface {
         }
         MyWordSession expectedWord = session.getMyWord();
 
-        Map<Character, BitSet> wordChars = findChars(word);
+        Map<Character, BitSet> wordChars = wordChars(word);
         Map<Character, BitSet> expectedChars = expectedWord.getChars();
         int found = 0;
-        CharResult[] result = new CharResult[N_CHARS];
-        for (int i = 0; i < N_CHARS; i++) {
+        CharResult[] result = new CharResult[WORD_LENGTH];
+        for (int i = 0; i < WORD_LENGTH; i++) {
             char wordChar = word.charAt(i);
             BitSet expectedCharPos = expectedChars.get(wordChar);
             BitSet charPos = wordChars.get(wordChar);
@@ -118,8 +119,8 @@ public class Competition implements CompetitionInterface {
                     int yellowChars = expectedCharCount - samePosCount;
                     BitSet notSamePos = (BitSet) charPos.clone();
                     notSamePos.andNot(expectedCharPos);
-                    if (i < N_CHARS-1) {
-                        notSamePos.clear(i, N_CHARS-1);
+                    if (i < WORD_LENGTH -1) {
+                        notSamePos.clear(i, WORD_LENGTH -1);
                     }
                     int charNum = notSamePos.cardinality();
                     charResult = charNum <= yellowChars ? CharResult.yellow : CharResult.black;
@@ -128,7 +129,7 @@ public class Competition implements CompetitionInterface {
             if (charResult == CharResult.green) found++;
             result[i] = charResult;
         }
-        boolean fin, allGreen = fin = found == N_CHARS;
+        boolean fin, allGreen = fin = found == WORD_LENGTH;
         expectedWord.addAnswer();
         if (allGreen) {
             session.addResult(expectedWord.getAnswers());
@@ -139,15 +140,8 @@ public class Competition implements CompetitionInterface {
         if (fin) {
             session.setMyWord(null);
         }
+        log.trace("    Attempt: {} -> {}", word, new String(Arrays.stream(result).mapToInt(r -> r.name().charAt(0)).toArray(), 0, WORD_LENGTH));
         return new WordResult(fin, result);
-    }
-
-    private Map<Character, BitSet> findChars(String expectedWord) {
-        Map<Character, BitSet> doubleChars = new HashMap<>();
-        for (int i = 0; i < expectedWord.length(); i++) {
-            doubleChars.computeIfAbsent(expectedWord.charAt(i), c -> new BitSet(N_CHARS)).set(i);
-        }
-        return doubleChars;
     }
 
     @Override
@@ -204,7 +198,7 @@ public class Competition implements CompetitionInterface {
         }
 
         public CompetitionResult result() {
-            return new CompetitionResult((double) sum / count, attempts, notFound);
+            return new CompetitionResult((double) sum / count, count, attempts, notFound);
         }
     }
 

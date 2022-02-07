@@ -7,7 +7,7 @@ public interface CompetitionInterface {
     WordResult checkWord(SessionId sessionId, String word);
     CompetitionResult result(SessionId sessionId);
 
-    record CompetitionResult(double score, int[] attempts, int notFound) {
+    record CompetitionResult(double score, int count, int[] attempts, int notFound) {
     }
 
     record SessionId(String sessionId) {
