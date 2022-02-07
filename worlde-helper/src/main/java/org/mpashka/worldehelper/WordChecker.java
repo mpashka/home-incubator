@@ -60,8 +60,12 @@ public class WordChecker {
         Map<Byte, AtomicInteger> charCount = new HashMap<>(WORD_LENGTH);
         for (int i = 0; i < word.length(); i++) {
             byte c = language.idx(word.charAt(i));
-            if (greenChars[i] != 0 && greenChars[i] != c) return false;
-            if (nonPresentChars.get(c)) return false;
+            if (greenChars[i] != 0 && greenChars[i] != c) {
+                return false;
+            }
+            if (nonPresentChars.get(c)) {
+                return false;
+            }
             CharInfo charInfo = presentChars.get(c);
             if (charInfo == null) {
                 if (++unknownChars > maxUnknownChars) {
@@ -69,7 +73,9 @@ public class WordChecker {
                 }
 
             } else {
-                if (charInfo.wrongPositions.get(i)) return false;
+                if (charInfo.wrongPositions.get(i)) {
+                    return false;
+                }
 
                 // Check how many chars were found in this word
                 if (!visited.get(c)) {
@@ -114,7 +120,7 @@ public class WordChecker {
 
                 int pos3 = findNextChar(word, pos2, c);
                 if (pos3 != -1) {
-                    log.warn("Unexpected same char count {}/{} in word {}", pos3, c, word);
+                    log.warn("Unexpected same char '{}' count in word {}:{}", language.ofIdx(c), word, pos3);
                 }
 
 
@@ -126,10 +132,10 @@ public class WordChecker {
                 }
                 CompetitionInterface.CharResult min = Utils.min(charResult, charResult2);
                 if (min == CompetitionInterface.CharResult.black) {
-                    // One letter
+                    // We have limit - usually one letter
                     int presPos = charResult != CompetitionInterface.CharResult.black ? i : pos2;
                     CharInfo charInfo = addCharInfo(c, presPos, max);
-                    charInfo.setSingle();
+                    charInfo.setCount(1+findCharsCount(word, pos2, c));
                     int blackPos = charResult == CompetitionInterface.CharResult.black ? i : pos2;
                     charInfo.set(CompetitionInterface.CharResult.black, blackPos);
                     continue;
@@ -143,11 +149,18 @@ public class WordChecker {
     }
 
     private int findNextChar(String word, int pos, byte c) {
-        if (pos == WORD_LENGTH -1) return -1;
         for (int i = pos+1; i < WORD_LENGTH; i++) {
             if (language.idx(word.charAt(i)) == c) return i;
         }
         return -1;
+    }
+
+    private int findCharsCount(String word, int fromPos, byte c) {
+        int count = 0;
+        for (int i = fromPos+1; i < WORD_LENGTH; i++) {
+            if (language.idx(word.charAt(i)) == c) count++;
+        }
+        return count;
     }
 
     private CharInfo addCharInfo(byte c, int pos, CompetitionInterface.CharResult result) {
@@ -184,11 +197,18 @@ public class WordChecker {
             return wrongPositions;
         }
 
-        public void setSingle() {
-            if (count == -1) {
-                count = 1;
-            } else if (count == 2) {
-                log.error("Was 2, now set to 1: {}", c);
+        public int getCount() {
+            return count;
+        }
+
+        public void setCount(int count) {
+            if (this.count == -1) {
+                this.count = count;
+                if (count >= 2) {
+                    wordMaxChars -= count-1;
+                }
+            } else if (this.count != count) {
+                log.error("Was {}, now set to {}: {}", this.count, count, language.ofIdx(c));
             }
 
         }

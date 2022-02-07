@@ -17,7 +17,7 @@ import static org.mpashka.worldehelper.CompetitionInterface.WordResult;
 import static org.mpashka.worldehelper.Utils.WORD_LENGTH;
 
 /**
- * Use abracadabra words
+ * Check char frequency, create word from most frequent unknown chars
  */
 public class AlgorithmFrequent {
     private static final Logger log = LoggerFactory.getLogger(AlgorithmFrequent.class);

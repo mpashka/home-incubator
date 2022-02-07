@@ -20,6 +20,10 @@ public record Language(String name, char firstLetter, char lastLetter, String fi
         return (byte) (c - firstLetter);
     }
 
+    char ofIdx(byte c) {
+        return (char) (c + firstLetter);
+    }
+
     String word(byte[] chars) {
         char[] res = new char[chars.length];
         for (int i = 0; i < chars.length; i++) {

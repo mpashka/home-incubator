@@ -45,24 +45,25 @@ public class WordCheckerTest {
     }
 
     @Test
-    public void test2() {
+    public void test3() {
         WordChecker wordChecker = new WordChecker(Language.rus);
         wordChecker.clear();
-        // word - атаба
+        // word - слово
+        byte c = Language.rus.idx('о');
         wordChecker.guessWordAttempt("аоеиу", new WordResult(false, new CharResult[]{
-                green,black,black,black,black,
+                black,yellow,black,black,black,
         }));
-        wordChecker.guessWordAttempt("крлтн", new WordResult(false, new CharResult[]{
-                black,black,black,yellow,black,
+        assertThat(wordChecker.getPresentChars().get(c).getCount(), is(-1));
+        wordChecker.guessWordAttempt("ртвлб", new WordResult(false, new CharResult[]{
+                black,black,yellow,yellow,black,
         }));
-        wordChecker.guessWordAttempt("бгмвп", new WordResult(false, new CharResult[]{
-                yellow,black,black,black,black,
+        assertThat(wordChecker.getPresentChars().get(c).getCount(), is(-1));
+        wordChecker.guessWordAttempt("олово", new WordResult(false, new CharResult[]{
+                black,green,green,green,green,
         }));
-        wordChecker.guessWordAttempt("аббат", new WordResult(false, new CharResult[]{
-                green,yellow,yellow,yellow,yellow,
-        }));
+        assertThat(wordChecker.getPresentChars().get(c).getCount(), is(2));
 
-        assertThat(wordChecker.conform("атаба"), is(true));
+        assertThat(wordChecker.conform("слово"), is(true));
     }
 
 }

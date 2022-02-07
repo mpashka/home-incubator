@@ -11,7 +11,7 @@
 -->
     </Appenders>
     <Loggers>
-        <Logger name="org.mpashka" level="all"/>
+        <Logger name="org.mpashka" level="debug"/>
         <Root level="info">
             <AppenderRef ref="Console"/>
 <!--            <AppenderRef ref="File"/>-->
