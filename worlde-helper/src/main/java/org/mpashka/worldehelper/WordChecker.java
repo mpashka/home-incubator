@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -14,7 +13,7 @@ import static org.mpashka.worldehelper.Utils.WORD_LENGTH;
 import static org.mpashka.worldehelper.CompetitionInterface.*;
 
 public class WordChecker {
-    private static final Logger log = LoggerFactory.getLogger(AlgorithmFrequentSimple.class);
+    private static final Logger log = LoggerFactory.getLogger(WordChecker.class);
 
     private Language language;
     private BitSet nonPresentChars;
@@ -102,70 +101,61 @@ public class WordChecker {
     }
 
     public void guessWordAttempt(String word, WordResult wordResult) {
-        BitSet skipChars = new BitSet(WORD_LENGTH);
+        Map<Byte, AtomicInteger> charCount = new HashMap<>(WORD_LENGTH);
+        for (int i = 0; i < WORD_LENGTH; i++) {
+            byte c = language.idx(word.charAt(i));
+            charCount.computeIfAbsent(c, c_ -> new AtomicInteger()).incrementAndGet();
+        }
+
         for (int i = 0; i < WORD_LENGTH; i++) {
             byte c = language.idx(word.charAt(i));
             CompetitionInterface.CharResult charResult = wordResult.result()[i];
-            if (skipChars.get(i)) {
+            AtomicInteger count = charCount.remove(c);
+            if (count == null) {
+                // Multiple chars were already processed
                 continue;
-            }
-            int pos2 = findNextChar(word, i, c);
-            if (pos2 == -1) {
+            } else if (count.get() == 1) {
                 switch (charResult) {
                     case black -> nonPresentChars.set(c);
-                    case green,yellow -> addCharInfo(c, i, charResult);
+                    case green,yellow -> getCharInfo(c).set(charResult, i);
                 }
             } else {
-                skipChars.set(pos2);
-
-                int pos3 = findNextChar(word, pos2, c);
-                if (pos3 != -1) {
-                    log.warn("Unexpected same char '{}' count in word {}:{}", language.ofIdx(c), word, pos3);
-                }
-
-
-                CompetitionInterface.CharResult charResult2 = wordResult.result()[pos2];
-                CompetitionInterface.CharResult max = Utils.max(charResult, charResult2);
-                if (max == CompetitionInterface.CharResult.black) {
-                    nonPresentChars.set(c);
-                    continue;
-                }
-                CompetitionInterface.CharResult min = Utils.min(charResult, charResult2);
-                if (min == CompetitionInterface.CharResult.black) {
-                    // We have limit - usually one letter
-                    int presPos = charResult != CompetitionInterface.CharResult.black ? i : pos2;
-                    CharInfo charInfo = addCharInfo(c, presPos, max);
-                    charInfo.setCount(1+findCharsCount(word, pos2, c));
-                    int blackPos = charResult == CompetitionInterface.CharResult.black ? i : pos2;
-                    charInfo.set(CompetitionInterface.CharResult.black, blackPos);
-                    continue;
-                }
-                // Two letters
-                CharInfo charInfo = addCharInfo(c, i, charResult)
-                        .set(charResult2, pos2);
-                charInfo.setDouble();
+                processSameChars(word, wordResult.result(), i);
             }
         }
     }
 
-    private int findNextChar(String word, int pos, byte c) {
-        for (int i = pos+1; i < WORD_LENGTH; i++) {
-            if (language.idx(word.charAt(i)) == c) return i;
-        }
-        return -1;
-    }
-
-    private int findCharsCount(String word, int fromPos, byte c) {
-        int count = 0;
+    private void processSameChars(String word, CharResult[] result, int fromPos) {
+        byte c = language.idx(word.charAt(fromPos));
+        CharResult min = result[fromPos];
+        CharResult max = result[fromPos];
+        int count = min == CharResult.black ? 0 : 1;
         for (int i = fromPos+1; i < WORD_LENGTH; i++) {
-            if (language.idx(word.charAt(i)) == c) count++;
+            if (language.idx(word.charAt(i)) != c) continue;
+            min = Utils.min(min, result[i]);
+            max = Utils.max(max, result[i]);
+            if (result[i] != CharResult.black) {
+                count++;
+            }
         }
-        return count;
+
+        if (max == CompetitionInterface.CharResult.black) {
+            nonPresentChars.set(c);
+            return;
+        }
+
+        CharInfo charInfo = getCharInfo(c);
+        charInfo.setCount(count);
+
+        for (int i = fromPos; i < WORD_LENGTH; i++) {
+            if (language.idx(word.charAt(i)) == c) {
+                charInfo.set(result[i], i);
+            }
+        }
     }
 
-    private CharInfo addCharInfo(byte c, int pos, CompetitionInterface.CharResult result) {
-        return presentChars.computeIfAbsent(c, c2 -> new CharInfo(c))
-                .set(result, pos);
+    private CharInfo getCharInfo(byte c) {
+        return presentChars.computeIfAbsent(c, c2 -> new CharInfo(c));
     }
 
 
@@ -207,18 +197,13 @@ public class WordChecker {
                 if (count >= 2) {
                     wordMaxChars -= count-1;
                 }
-            } else if (this.count != count) {
-                log.error("Was {}, now set to {}: {}", this.count, count, language.ofIdx(c));
-            }
-
-        }
-
-        public void setDouble() {
-            if (count == -1) {
-                count = 2;
-                wordMaxChars--;
-            } else if (count == 1) {
-                log.error("Was 1, now set to 2: {}", c);
+            } else if (count > this.count) {
+                wordMaxChars -= count-this.count;
+                this.count = count;
+            } else if (count == this.count) {
+                // Ignore
+            } else {
+                log.error("Char count was {}, now set to {}: {}", this.count, count, language.ofIdx(c));
             }
         }
 

@@ -11,15 +11,14 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.mpashka.worldehelper.CompetitionInterface.WordResult;
 import static org.mpashka.worldehelper.Utils.WORD_LENGTH;
 import static org.mpashka.worldehelper.Utils.contains;
 
 /**
  * Almost same as {@link AlgorithmFrequent} but use any possible abracadabra words
  */
-public class AlgorithmFrequentSimple implements AlgorithmInterface {
-    private static final Logger log = LoggerFactory.getLogger(AlgorithmFrequentSimple.class);
+public class AlgorithmFrequentSimple2 implements AlgorithmInterface {
+    private static final Logger log = LoggerFactory.getLogger(AlgorithmFrequentSimple2.class);
 
     private Language language;
     private String[] words;
@@ -79,50 +78,35 @@ public class AlgorithmFrequentSimple implements AlgorithmInterface {
 
     private void createCharsWordSets(byte[] wordChars) {
         // Some chars are not known
-        BitSet[] freq = IntStream.range(0, language.letters()).mapToObj(i -> new BitSet(conformedWords.size())).toArray(BitSet[]::new);
-        for (ListIterator<String> iter = conformedWords.listIterator(); iter.hasNext(); ) {
-            int wordIdx = iter.nextIndex();
-            String w = iter.next();
+        int[] freq = new int[language.letters()];
+        for (String w : conformedWords) {
             for (int i = 0; i < WORD_LENGTH; i++) {
                 byte c = language.idx(w.charAt(i));
-                freq[c].set(wordIdx);
+                freq[c]++;
             }
         }
-//        int[] freqCount = Arrays.stream(freq).mapToInt(BitSet::cardinality).toArray();
 
         for (int i = 0; i < wordChars.length; i++) {
             int i1 = i;
             byte c = mostFreqCharIdx(freq, idx -> wordChecker.getPresentChars().get(idx) == null && !contains(idx, wordChars, 0, i1));
             wordChars[i] = c;
-            freq = clearChar(freq, c);
         }
     }
 
-    private byte mostFreqCharIdx(BitSet[] charsFreq, Predicate<Byte> filter) {
+    private byte mostFreqCharIdx(int[] charsFreq, Predicate<Byte> filter) {
         byte mostFreqChar = -1;
-        int maxCardinality = -1;
+        int maxFreq = -1;
         for (byte i = 0; i < charsFreq.length; i++) {
-            BitSet freq = charsFreq[i];
-            if (freq == null || !filter.test(i)) {
+            int freq = charsFreq[i];
+            if (!filter.test(i)) {
                 continue;
             }
-            int cardinality = freq.cardinality();
-            if (cardinality > maxCardinality) {
+            if (freq > maxFreq) {
                 mostFreqChar = i;
-                maxCardinality = cardinality;
+                maxFreq = freq;
             }
         }
         return mostFreqChar;
     }
 
-    private BitSet[] clearChar(BitSet[] charsFreq, byte mostFreqChar) {
-        BitSet maxFreq = charsFreq[mostFreqChar];
-        charsFreq[mostFreqChar] = null;
-        for (BitSet bitSet : charsFreq) {
-            if (bitSet != null) {
-                bitSet.andNot(maxFreq);
-            }
-        }
-        return charsFreq;
-    }
 }

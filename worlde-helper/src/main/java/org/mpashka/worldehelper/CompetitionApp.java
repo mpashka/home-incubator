@@ -14,8 +14,11 @@ public class CompetitionApp {
         Competition competition = new Competition(language).initWords();
 
         CompetitionInterface.SessionId session = competition.session();
-        AlgorithmFrequentSimple algorithm = new AlgorithmFrequentSimple();
-        algorithm.run(language, competition, session);
+
+//        AlgorithmInterface algorithm = new AlgorithmMaxExcludeSingle();
+        AlgorithmInterface algorithm = new AlgorithmFrequentSimple2();
+        AlgorithmExecutor executor = new AlgorithmExecutor(language, algorithm, competition, session);
+        executor.run();
         CompetitionInterface.CompetitionResult result = competition.result(session);
         printResult(competition, algorithm, result);
     }

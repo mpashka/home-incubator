@@ -66,4 +66,65 @@ public class WordCheckerTest {
         assertThat(wordChecker.conform("слово"), is(true));
     }
 
+    @Test
+    public void test4() {
+        WordChecker wordChecker = new WordChecker(Language.rus);
+        wordChecker.clear();
+        // word - аргон
+        wordChecker.guessWordAttempt("аллах", new WordResult(false, new CharResult[]{
+                green,black,black,black,black,
+        }));
+        wordChecker.guessWordAttempt("каска", new WordResult(false, new CharResult[]{
+                black,yellow,black,black,black,
+        }));
+        wordChecker.guessWordAttempt("арабы", new WordResult(false, new CharResult[]{
+                green,green,black,black,black,
+        }));
+        wordChecker.guessWordAttempt("анаша", new WordResult(false, new CharResult[]{
+                green,yellow,black,black,black,
+        }));
+
+        assertThat(wordChecker.conform("аргон"), is(true));
+    }
+
+    @Test
+    public void test5() {
+        WordChecker wordChecker = new WordChecker(Language.rus);
+        wordChecker.clear();
+        byte c = Language.rus.idx('о');
+
+        // word - блюдо
+        wordChecker.guessWordAttempt("аллах", new WordResult(false, new CharResult[]{
+                black,green,black,black,black,
+        }));
+        wordChecker.guessWordAttempt("елико", new WordResult(false, new CharResult[]{
+                black,green,black,black,green,
+        }));
+        assertThat(wordChecker.getNonPresentChars().get(c), is(false));
+        wordChecker.guessWordAttempt("олово", new WordResult(false, new CharResult[]{
+                black,green,black,black,green,
+        }));
+        assertThat(wordChecker.getNonPresentChars().get(c), is(false));
+
+        assertThat(wordChecker.conform("блюдо"), is(true));
+    }
+
+    @Test
+    public void test6() {
+        WordChecker wordChecker = new WordChecker(Language.rus);
+        wordChecker.clear();
+        byte c = Language.rus.idx('а');
+        byte[] greenChars = wordChecker.getGreenChars();
+        // word - абзац
+        wordChecker.guessWordAttempt("аллах", new WordResult(false, new CharResult[]{
+                green,black,black,green,black,
+        }));
+        assertThat(wordChecker.getNonPresentChars().get(c), is(false));
+        wordChecker.guessWordAttempt("аббат", new WordResult(false, new CharResult[]{
+                green,green,black,green,black,
+        }));
+
+        assertThat(wordChecker.conform("абзац"), is(true));
+    }
+
 }
