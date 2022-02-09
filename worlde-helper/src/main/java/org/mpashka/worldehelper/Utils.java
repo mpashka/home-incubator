@@ -1,9 +1,13 @@
 package org.mpashka.worldehelper;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.BitSet;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.Stream;
 
 import static org.mpashka.worldehelper.CompetitionInterface.*;
 
@@ -50,5 +54,15 @@ public class Utils {
             if (wordChars[i] == idx) return true;
         }
         return false;
+    }
+
+    public static String[] loadWords(Language language, String wordsFile) throws IOException {
+//        String wordsFile = language.fileName();
+        try (Stream<String> wordsStream = Files.lines(Paths.get(wordsFile))
+                .map(String::toLowerCase)
+                .filter(language::isCorrect)) {
+            return wordsStream.toArray(String[]::new);
+        }
+//        log.info("Lang {}, {} words", language.name(), wordList.length);
     }
 }

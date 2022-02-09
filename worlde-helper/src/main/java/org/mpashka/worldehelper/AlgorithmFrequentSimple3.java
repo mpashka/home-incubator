@@ -13,9 +13,10 @@ import static org.mpashka.worldehelper.Utils.contains;
 
 /**
  * Almost same as {@link AlgorithmFrequent} but use any possible abracadabra words
+ * Take pos into account
  */
-public class AlgorithmFrequentSimple2 implements AlgorithmInterface {
-    private static final Logger log = LoggerFactory.getLogger(AlgorithmFrequentSimple2.class);
+public class AlgorithmFrequentSimple3 implements AlgorithmInterface {
+    private static final Logger log = LoggerFactory.getLogger(AlgorithmFrequentSimple3.class);
 
     private Language language;
     private String[] words;
@@ -76,18 +77,31 @@ public class AlgorithmFrequentSimple2 implements AlgorithmInterface {
     private void createCharsWordSets(byte[] wordChars) {
         // Some chars are not known
         int[] freq = new int[language.letters()];
+        int[][] pos = new int[language.letters()][WORD_LENGTH];
         for (String w : conformedWords) {
             for (int i = 0; i < WORD_LENGTH; i++) {
                 byte c = language.idx(w.charAt(i));
                 freq[c]++;
+                pos[c][i]++;
             }
         }
 
-        for (int i = 0; i < wordChars.length; i++) {
-            int i1 = i;
-            byte c = mostFreqCharIdx(freq, idx -> wordChecker.getPresentChars().get(idx) == null && !contains(idx, wordChars, 0, i1));
-            wordChars[i] = c;
+        for (int i = 0; i < WORD_LENGTH; i++) {
+            byte c = mostFreqCharIdx(freq, idx -> wordChecker.getPresentChars().get(idx) == null && !contains(idx, wordChars, 0, WORD_LENGTH));
+            int idx = findIndex(pos[c], wordChars);
+            wordChars[idx] = c;
         }
+    }
+
+    private int findIndex(int[] pos, byte[] wordChars) {
+        int maxCount = -1, maxPos = -1;
+        for (int i = 0; i < WORD_LENGTH; i++) {
+            if (wordChars[i] == 0 && pos[i] > maxCount) {
+                maxCount = pos[i];
+                maxPos = i;
+            }
+        }
+        return maxPos;
     }
 
     private byte mostFreqCharIdx(int[] charsFreq, Predicate<Byte> filter) {

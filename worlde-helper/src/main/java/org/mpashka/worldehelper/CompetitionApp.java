@@ -9,14 +9,14 @@ public class CompetitionApp {
     private static final Logger log = LoggerFactory.getLogger(App.class);
 
     public static void main(String[] args) throws IOException {
-        Language language = Language.rus;
+        Language language = Language.rus_nodup;
 
         Competition competition = new Competition(language).initWords();
 
         CompetitionInterface.SessionId session = competition.session();
 
 //        AlgorithmInterface algorithm = new AlgorithmMaxExcludeSingle();
-        AlgorithmInterface algorithm = new AlgorithmFrequentSimple2();
+        AlgorithmInterface algorithm = new AlgorithmFrequentSimple3();
         AlgorithmExecutor executor = new AlgorithmExecutor(language, algorithm, competition, session);
         executor.run();
         CompetitionInterface.CompetitionResult result = competition.result(session);

@@ -5,5 +5,5 @@ public interface AlgorithmInterface {
 
     void nextRound();
 
-    String nextWord();
+    String nextWord(int attempt);
 }

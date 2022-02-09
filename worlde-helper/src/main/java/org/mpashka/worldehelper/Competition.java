@@ -33,12 +33,7 @@ public class Competition implements CompetitionInterface {
     }
 
     Competition initWords() throws IOException {
-        String wordsFile = language.fileName();
-        try (Stream<String> wordsStream = Files.lines(Paths.get(wordsFile))
-                .map(String::toLowerCase)
-                .filter(w -> language.isCorrect(w))) {
-            wordList = wordsStream.toArray(String[]::new);
-        }
+        wordList = loadWords(language, language.fileName());
         log.info("Lang {}, {} words", language.name(), wordList.length);
         return this;
     }

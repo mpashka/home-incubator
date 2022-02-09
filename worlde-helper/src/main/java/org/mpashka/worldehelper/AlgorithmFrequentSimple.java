@@ -11,7 +11,6 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.mpashka.worldehelper.CompetitionInterface.WordResult;
 import static org.mpashka.worldehelper.Utils.WORD_LENGTH;
 import static org.mpashka.worldehelper.Utils.contains;
 
@@ -39,7 +38,7 @@ public class AlgorithmFrequentSimple implements AlgorithmInterface {
     }
 
     @Override
-    public String nextWord() {
+    public String nextWord(int attempt) {
         conformedWords = conformedWords.stream()
                 .filter(w -> wordChecker.conform(w))
                 .collect(Collectors.toList());

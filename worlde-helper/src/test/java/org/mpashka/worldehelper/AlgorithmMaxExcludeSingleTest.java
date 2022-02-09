@@ -66,16 +66,11 @@ public class AlgorithmMaxExcludeSingleTest {
         AlgorithmMaxExcludeSingle a = new AlgorithmMaxExcludeSingle();
         Language language = Language.rus;
         WordChecker wordChecker = new WordChecker(language);
-        String wordsFile = language.fileName();
-        BitSet conformedWords;
-        try (Stream<String> wordsStream = Files.lines(Paths.get(wordsFile))
-                .map(String::toLowerCase)
-                .filter(w -> language.isCorrect(w))) {
-            String[] words = wordsStream.toArray(String[]::new);
-            a.init(language, words, wordChecker);
-            conformedWords = new BitSet(words.length);
-            conformedWords.set(0, words.length);
-        }
+        String[] words = Utils.loadWords(language, language.fileName());
+        a.init(language, words, wordChecker);
+        BitSet conformedWords = new BitSet(words.length);
+        conformedWords.set(0, words.length);
+
 
 //        Function<Collection<SelectResult>, Double> prob = col -> col.stream().mapToDouble(SelectResult::probability).sum();
         Function<Collection<SelectResult>, Double> size = col -> col.stream().mapToDouble(r -> r.probability() * r.size()).sum() / col.size();

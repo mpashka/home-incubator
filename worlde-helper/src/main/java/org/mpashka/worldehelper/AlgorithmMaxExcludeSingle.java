@@ -64,7 +64,7 @@ public class AlgorithmMaxExcludeSingle implements AlgorithmInterface {
         conformedWords.set(0, words.length);
     }
 
-    public String nextWord() {
+    public String nextWord(int attempt) {
         for (int i = 0; i < words.length; i++) {
             if (!conformedWords.get(i)) continue;
             String w = words[i];
@@ -89,7 +89,7 @@ public class AlgorithmMaxExcludeSingle implements AlgorithmInterface {
             double size = result.stream()
                     .filter(r -> r.probability() > 0)
                     .mapToDouble(r -> r.probability() * r.size())
-                    .sum() / result.size();
+                    .sum();
             wordResults.add(new WordResult(wordIdx, size));
         }
 
