@@ -82,7 +82,13 @@ class ScreenAbout extends StatelessWidget {
         GestureDetector(child: Icon(MdiIcons.whatsapp),
           // onTap: () => launch('https://wa.me/${config.devPhone()}'),),
           onTap: () => launch('https://api.whatsapp.com/send?phone=${config.devPhone()}&text=TotemFTC_${Platform.operatingSystem}'),),
-      ],)
+      ],),
+
+      Divider(thickness: 3,),
+      Row(children: [
+        SelectableText('Server: ${config.serverString()}'),
+        SelectableText('Client: ${config.buildInfo()}')
+      ],),
     ],),);
   }
 }

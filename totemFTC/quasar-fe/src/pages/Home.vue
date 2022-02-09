@@ -110,16 +110,30 @@
         </q-list>
       </q-card-section>
     </q-card>
+
+    <q-card>
+      <q-card-section>
+        Server {{  }}
+      </q-card-section>
+      <q-card-section>
+        Quasar client {{ clientInfo }}
+      </q-card-section>
+    </q-card>
   </q-page>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import {useStoreClientConfig} from 'src/store/store_config';
 
 export default defineComponent({
   name: 'PageHome',
   setup() {
-    return {};
+    const storeConfig = useStoreClientConfig();
+    return {
+      serverInfo: storeConfig.
+      clientInfo: process.env.BuildInfo
+    };
   },
 });
 </script>

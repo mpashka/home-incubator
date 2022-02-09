@@ -13,7 +13,7 @@ export interface LoginResult {
   userType: LoginUserType;
 }
 
-const client = `quasar-${String(process.env.MODE)}-${String(process.env.NODE_ENV)}`;
+const clientId = `quasar-${String(process.env.MODE)}-${String(process.env.NODE_ENV)}`;
 
 export const useStoreLogin = defineStore('login', {
   state: () => ({
@@ -58,13 +58,13 @@ export const useStoreLogin = defineStore('login', {
     },
 
     async login(loginProvider: LoginProvider, callbackParameters: string): Promise<LoginResult> {
-      const loginResult = (await api.get(`/api/login/loginCallback/${loginProvider.name}?client=${client}&${callbackParameters}`)).data as LoginResult;
+      const loginResult = (await api.get(`/api/login/loginCallback/${loginProvider.name}?clientId=${clientId}&${callbackParameters}`)).data as LoginResult;
       await this.authenticate(loginResult.sessionId);
       return loginResult;
     },
 
     async link(loginProvider: LoginProvider, callbackParameters: string): Promise<LoginResult> {
-      return (await api.get(`/api/login/linkCallback/${loginProvider.name}?client=${client}&${callbackParameters}`)).data as LoginResult;
+      return (await api.get(`/api/login/linkCallback/${loginProvider.name}?clientId=${clientId}&${callbackParameters}`)).data as LoginResult;
     },
 
     async deleteSocialNetwork(name: string) {

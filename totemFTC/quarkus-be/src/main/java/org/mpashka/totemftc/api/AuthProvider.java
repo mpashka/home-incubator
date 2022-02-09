@@ -28,9 +28,9 @@ public abstract class AuthProvider {
         return name;
     }
 
-    public abstract String getAuthorizationEndpoint();
+    public abstract String getAuthorizationEndpoint(WebResourceLogin.ClientId clientId);
 
-    public abstract Uni<WebResourceLogin.LoginState> processCallback(UriInfo uriInfo, WebResourceLogin.LoginState loginState, String client);
+    public abstract Uni<WebResourceLogin.LoginState> processCallback(UriInfo uriInfo, WebResourceLogin.LoginState loginState, WebResourceLogin.ClientId clientId);
 
     public abstract Uni<UserInfo> readUserInfo(WebResourceLogin.LoginState loginState);
 

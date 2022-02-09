@@ -14,15 +14,14 @@ class Initializer {
 
   Configuration _configuration;
   Session _session;
-  final completer = Completer<void>();
-  late final Future<void> future = completer.future;
+  Completer? completer;
   bool isInitialized = false;
 
   Initializer(Injector injector):
         _configuration = injector.get<Configuration>(),
         _session = injector.get<Session>();
 
-  void init() async {
+  void initLogger() {
     Logger.root.level = Level.ALL;
     Logger.root.onRecord.listen((record) {
       developer.log(record.message, time: record.time, sequenceNumber: record.sequenceNumber, level: record.level.value,
@@ -34,7 +33,25 @@ class Initializer {
         print(record.stackTrace);
       }
     });
-    log.info('Logger configured. Application initializing...');
+    log.info('Logger configured.');
+  }
+
+  Future<void> initFuture() {
+    if (isInitialized) {
+      return Future.value(null);
+    }
+
+    Completer? completer = this.completer;
+    if (completer == null) {
+      completer = Completer<void>();
+      init(completer);
+    }
+    return completer.future;
+  }
+
+  void init(Completer completer) async {
+    log.info('Application initializing...');
+    this.completer = completer;
 
     init_helper.initPlatformSpecific();
     
@@ -48,10 +65,13 @@ class Initializer {
       }
       completer.complete();
       isInitialized = true;
+      log.info('Application initialized');
     } catch (e, s) {
       log.severe('Error loading configuration', e, s);
       _configuration.sessionId = '';
       completer.completeError(e, s);
+    } finally {
+      this.completer = null;
     }
   }
 }

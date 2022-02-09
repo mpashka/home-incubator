@@ -24,7 +24,7 @@ class ScreenInitState extends State<ScreenInit> {
     super.initState();
     log.finer('Wait for init ...');
     final initializer = Injector().get<Initializer>();
-    initializer.future.then((value) {
+    initializer.initFuture().then((value) {
       log.finer('Init completed. Redirect to login');
       Navigator.pushReplacementNamed(context, '/login');
     }, onError: (e) {
@@ -50,7 +50,7 @@ class ScreenInitState extends State<ScreenInit> {
         appBar: AppBar(title: const Text('Totem FC'),),
         body: Column(children: const [
           Text('Please wait. Application is initializing...'),
-          Center(child: CircularProgressIndicator()),
+          Expanded(child: Center(child: CircularProgressIndicator()),),
         ])
     );
   }

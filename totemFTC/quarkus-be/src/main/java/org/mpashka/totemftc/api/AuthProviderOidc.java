@@ -10,6 +10,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.UriInfo;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
@@ -18,50 +22,46 @@ public abstract class AuthProviderOidc extends AuthProvider {
 
     private static final Logger log = LoggerFactory.getLogger(AuthProviderOidc.class);
 
-    private String backendUrl;
-    private String clientId;
-    private String secret;
     private String tokenEndpoint;
-    private String redirectUri;
     private String authorizationEndpoint;
+    private String scope;
 
     public AuthProviderOidc(String name, String scope, String authorizationEndpoint, String tokenEndpoint) {
         super(name);
-        this.clientId = ConfigProvider.getConfig().getValue("oidc.provider.<provider>.clientId".replace("<provider>", name), String.class);
-        this.secret = ConfigProvider.getConfig().getValue("oidc.provider.<provider>.secret".replace("<provider>", name), String.class);
-        this.backendUrl = ConfigProvider.getConfig().getValue("app.url.backend", String.class);
-        this.redirectUri = "<backend_url>/api/login/callback/<provider>"
-                .replace("<backend_url>", backendUrl)
-                .replace("<provider>", name);
-
-        this.authorizationEndpoint = authorizationEndpoint
-                .replace("<client_id>", clientId)
-                .replace("<redirect_uri>", redirectUri)
-                .replace("<scope>", scope)
-                .replace("<backend_url>", backendUrl);
+        this.scope = scope;
+        this.authorizationEndpoint = authorizationEndpoint;
         this.tokenEndpoint = tokenEndpoint;
     }
 
-    String getSecret() {
-        return secret;
+    String getClientId(WebResourceLogin.ClientId clientId) {
+        return findConfigValue(clientId, k -> k.isEmpty()
+                ? "oidc.provider.<provider>.clientId".replace("<provider>", getName())
+                : "oidc.provider.<provider>.<clientId>.clientId".replace("<provider>", getName()).replace("<clientId>", String.join("-", k)));
+    }
+
+    String getSecret(WebResourceLogin.ClientId clientId) {
+        return findConfigValue(clientId, k -> k.isEmpty()
+                ? "oidc.provider.<provider>.secret".replace("<provider>", getName())
+                : "oidc.provider.<provider>.<clientId>.secret".replace("<provider>", getName()).replace("<clientId>", String.join("-", k)));
     }
 
     @Override
-    public String getAuthorizationEndpoint() {
-        return authorizationEndpoint;
+    public String getAuthorizationEndpoint(WebResourceLogin.ClientId clientId) {
+        return authorizationEndpoint
+                .replace("<client_id>", getClientId(clientId))
+                .replace("<redirect_uri>", findRedirectUri(clientId))
+                .replace("<scope>", scope);
     }
 
     @Override
-    public Uni<WebResourceLogin.LoginState> processCallback(UriInfo uriInfo, WebResourceLogin.LoginState loginState, String client) {
+    public Uni<WebResourceLogin.LoginState> processCallback(UriInfo uriInfo, WebResourceLogin.LoginState loginState, WebResourceLogin.ClientId clientId) {
         String code = uriInfo.getQueryParameters().getFirst("code");
-        ConfigValue redirectUriConfig = ConfigProvider.getConfig().getConfigValue("oidc.client.<clientId>.redirectUri".replace("<clientId>", client));
-        String redirectUri = redirectUriConfig.getValue() == null
-                ? this.redirectUri
-                : redirectUriConfig.getValue().replace("<provider>", getName());
+
+        String redirectUri = findRedirectUri(clientId);
 
         MultiMap form = MultiMap.caseInsensitiveMultiMap()
-                .set("client_id", clientId)
-                .set("client_secret", secret)
+                .set("client_id", getClientId(clientId))
+                .set("client_secret", getSecret(clientId))
                 .set("redirect_uri", redirectUri)
                 .set("code", code)
                 .set("grant_type", "authorization_code");
@@ -83,10 +83,41 @@ public abstract class AuthProviderOidc extends AuthProvider {
                         throw new RuntimeException("Invalid token response " + tokenJson);
                     }
                     loginState.setToken(accessToken);
-                    processTokenResponse(loginState, tokenJson);
+                    processTokenResponse(loginState, tokenJson, clientId);
                     return loginState;
                 });
     }
 
-    void processTokenResponse(WebResourceLogin.LoginState loginState, JsonObject tokenJson) {}
+    void processTokenResponse(WebResourceLogin.LoginState loginState, JsonObject tokenJson, WebResourceLogin.ClientId clientId) {}
+
+
+    private String findRedirectUri(WebResourceLogin.ClientId clientId) {
+        String configValue = findConfigValue(clientId, k -> "oidc.client.<clientId>.redirectUri".replace("<clientId>", String.join("-", k.toArray(String[]::new))));
+        return configValue.replace("<provider>", getName());
+    }
+
+    private String findConfigValue(WebResourceLogin.ClientId clientId, Function<List<String>, String> keyFunction) {
+        String[] clientIdParts = clientId.getClientId().split("-");
+        int mask = 1 << clientIdParts.length - 1;
+        int maxKeyLength = 0;
+        String value = null;
+        while (mask-- >= 0) {
+            List<String> key = new ArrayList<>();
+            for (int i = 0; i < clientIdParts.length; i++) {
+                boolean isSet = (mask & (1 << i)) != 0;
+                if (isSet) {
+                    key.add(clientIdParts[i]);
+                }
+            }
+            if (maxKeyLength > key.size()) {
+                continue;
+            }
+            ConfigValue redirectUriConfig = ConfigProvider.getConfig().getConfigValue(keyFunction.apply(key));
+            if (redirectUriConfig.getValue() != null) {
+                value = redirectUriConfig.getValue();
+                maxKeyLength = key.size();
+            }
+        }
+        return value;
+    }
 }

@@ -34,7 +34,7 @@ public class AuthProviderOidcVk extends AuthProviderOidc {
     /*
     {"access_token":"...","expires_in":86333,"user_id":91831849,"email":"m_pashka@mail.ru"}
      */
-    void processTokenResponse(WebResourceLogin.LoginState loginState, JsonObject tokenJson) {
+    void processTokenResponse(WebResourceLogin.LoginState loginState, JsonObject tokenJson, WebResourceLogin.ClientId clientId) {
         loginState.setAuthUserInfo(new UserInfo(getName(),
                 tokenJson.getString("user_id"), null, tokenJson.getString("email"), null, null, null, null, null, null
         ));

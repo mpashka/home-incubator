@@ -33,8 +33,8 @@ import static org.hamcrest.Matchers.nullValue;
  * todo move dbtest from quarkus-test1
  * todo use testcontainers
  */
-@QuarkusTest
-@QuarkusTestResource(PostgresResource.class)
+//@QuarkusTest
+//@QuarkusTestResource(PostgresResource.class)
 public class DbTest {
     private static final Logger log = LoggerFactory.getLogger(DbTest.class);
 
@@ -112,6 +112,7 @@ public class DbTest {
     }
 
     @Test
+    @Disabled
     void testVisit() throws JsonProcessingException {
         ObjectMapper m = new ObjectMapper();
         m = m
@@ -147,6 +148,7 @@ public class DbTest {
     }
 
     @Test
+    @Disabled
     void testTicket() {
         DbCrudTicket.EntityTicket[] ticketsByUser = dbTicket.getTicketsByUser(10000).await().indefinitely();
         log.debug("Tickets: {}", ticketsByUser);

@@ -41,10 +41,10 @@ public class AuthProviderOidcOkRu extends AuthProviderOidc {
     }
 
     @Override
-    void processTokenResponse(WebResourceLogin.LoginState loginState, JsonObject tokenJson) {
+    void processTokenResponse(WebResourceLogin.LoginState loginState, JsonObject tokenJson, WebResourceLogin.ClientId clientId) {
         String accessToken = loginState.getToken();
         md5.reset();
-        md5.update((accessToken + getSecret()).getBytes());
+        md5.update((accessToken + getSecret(clientId)).getBytes());
         secretSignKey = Utils.bytesToHex(md5.digest(), false);
     }
 

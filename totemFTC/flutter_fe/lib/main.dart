@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_fe/misc/configuration.dart';
 import 'package:flutter_fe/ui/screen_config.dart';
@@ -23,7 +25,9 @@ import 'ui/screen_trainings.dart';
 void main() {
   var injector = Injector();
   ModuleContainer().initialise(injector);
-  injector.get<Initializer>().init();
+  var initializer = injector.get<Initializer>();
+  initializer.initLogger();
+  initializer.init(Completer());
   runApp(MyApp());
 }
 

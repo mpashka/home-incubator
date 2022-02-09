@@ -9,6 +9,6 @@ void initPlatformSpecific() {
   setUrlStrategy(PathUrlStrategy()); //  HashUrlStrategy
   if (window.location.href.startsWith('https://totemftc.ga/')) {
     Configuration configuration = Injector().get<Configuration>();
-    configuration.prodStr = 'prod';
+    configuration.prodStr = 'production';
   }
 }

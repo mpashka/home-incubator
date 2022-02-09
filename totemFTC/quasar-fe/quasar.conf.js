@@ -9,6 +9,8 @@
 /* eslint-env node */
 /* eslint-disable @typescript-eslint/no-var-requires */
 const { configure } = require('quasar/wrappers');
+const { GitRevisionPlugin } = require('git-revision-webpack-plugin');
+const gitRevisionPlugin = new GitRevisionPlugin();
 
 // See lib/helpers/get-quasar-ctx.js
 module.exports = configure(function (ctx) {
@@ -92,6 +94,7 @@ module.exports = configure(function (ctx) {
         BackendUrl: ctx.dev ? 'http://localhost:8080' : 'https://api.totemftc.ga',
         FrontendUrl: ctx.dev ? 'http://localhost:8081' : 'https://totemftc.ga',
         demo: "true" === process.env.DEMO_BUILD,
+        BuildInfo: `${process.env.USER} ${process.env.HOSTNAME} ${new Date().toISOString()} ${gitRevisionPlugin.branch()} ${gitRevisionPlugin.version()}`,
       }
     },
 

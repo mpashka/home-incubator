@@ -53,14 +53,14 @@ public class WebResourceLogin {
     @Path("init/{providerName}")
     @Produces(MediaType.TEXT_HTML)
     @Deprecated
-    public Response initLogin(@RestPath String providerName) {
+    public Response initLogin(@RestPath String providerName, @RestQuery ClientId clientId) {
         log.debug("Init login {}.", providerName);
         AuthProvider provider = authProviders.get(providerName);
         if (provider == null) {
             throw new RuntimeException("Unknown login provider " + providerName);
         }
         return Response.status(Response.Status.FOUND)
-                .location(URI.create(provider.getAuthorizationEndpoint()
+                .location(URI.create(provider.getAuthorizationEndpoint(clientId)
                         .replace("<nonce>", Utils.generateRandomString(15, Utils.RANDOM_CHARS))
                 ))
                 .build();
@@ -69,15 +69,14 @@ public class WebResourceLogin {
     /**
      * todo proper error handling
      * Response params: state&code&scope
-     * @param client client id used to create appropriate redirectUrl
+     * @param clientId client id used to create appropriate redirectUrl
      */
     @GET
     @Path("loginCallback/{providerName}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<LoginResult> onLoginCallback(UriInfo uriInfo, @RestPath String providerName,
-                                          @RestQuery("client") String client) {
+    public Uni<LoginResult> onLoginCallback(UriInfo uriInfo, @RestPath String providerName, @RestQuery ClientId clientId) {
         try {
-            return processCallback(uriInfo, providerName, ProviderAction.login, client, null);
+            return processCallback(uriInfo, providerName, ProviderAction.login, clientId, null);
         } catch (Exception e) {
             log.error("Login callback error", e);
             throw new RuntimeException(e);
@@ -93,8 +92,7 @@ public class WebResourceLogin {
     @Path("linkCallback/{providerName}")
     @Authenticated
     @Produces(MediaType.APPLICATION_JSON)
-    public Uni<LoginResult> onLinkCallback(UriInfo uriInfo, @RestPath String providerName,
-                                          @RestQuery("client") String client) {
+    public Uni<LoginResult> onLinkCallback(UriInfo uriInfo, @RestPath String providerName, @RestQuery ClientId client) {
         try {
             return processCallback(uriInfo, providerName, ProviderAction.link, client, webSessionService.getSession());
         } catch (Exception e) {
@@ -103,8 +101,8 @@ public class WebResourceLogin {
         }
     }
 
-    private Uni<LoginResult> processCallback(UriInfo uriInfo, String providerName, ProviderAction action, String client, WebSessionService.Session linkSession) {
-        log.info("Callback: {}. Action: {}. Client: {}, LinkSession: {}", uriInfo.getRequestUri(), action, client, linkSession);
+    private Uni<LoginResult> processCallback(UriInfo uriInfo, String providerName, ProviderAction action, ClientId clientId, WebSessionService.Session linkSession) {
+        log.info("Callback: {}. Action: {}. Client: {}, LinkSession: {}", uriInfo.getRequestUri(), action, clientId, linkSession);
 
         /* error_reason, error, error_description */
         String error = uriInfo.getQueryParameters().getFirst("error");
@@ -116,7 +114,7 @@ public class WebResourceLogin {
 
         AuthProvider authProvider = authProviders.get(providerName);
         LoginState loginState = new LoginState();
-        return authProvider.processCallback(uriInfo, loginState, client)
+        return authProvider.processCallback(uriInfo, loginState, clientId)
                 .onFailure().transform(e -> new RuntimeException("Error processing callback", e))
                 .onItem().transformToUni(u -> authProvider.readUserInfo(loginState))
 //                .onFailure().transform(e -> new RuntimeException("Error parsing user info", e))
@@ -273,5 +271,30 @@ public class WebResourceLogin {
 
     public enum ProviderAction {
         login, link
+    }
+
+    /**
+     * See totemFTC/quasar-fe/src/store/store_login.ts
+     * See totemFTC/flutter_fe/lib/blocs/session.dart
+     * See totemFTC/flutter_fe/lib/misc/configuration.dart
+     * flutter-{web|mobile}-{production|development}
+     * quasar-{spa|pwa|electron|cordova|...}-{production|development}
+     *
+     */
+    public static class ClientId {
+        private String clientId;
+
+        public ClientId(String clientId) {
+            this.clientId = clientId;
+        }
+
+        public String getClientId() {
+            return clientId;
+        }
+
+        @Override
+        public String toString() {
+            return "ClientId{" + clientId + '}';
+        }
     }
 }

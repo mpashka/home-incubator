@@ -2,6 +2,9 @@ import {defineStore} from 'pinia';
 import {api} from 'boot/axios';
 
 export interface EntityClientConfig {
+  serverId: string,
+  serverRunProfile: string,
+  serverBuild: string,
   oidcClientIds: Map<string, string>,
 }
 
@@ -10,9 +13,18 @@ export const useStoreClientConfig = defineStore('clientConfig', {
   state: () => ({
     clientConfigLoaded: false,
     clientConfig: {
+      serverId: '',
+      serverRunProfile: '',
+      serverBuild: '',
       oidcClientIds: {}
     } as EntityClientConfig
   }),
+
+  getters: {
+    serverInfo(state) {
+      return `${state.clientConfig.serverId} ${state.clientConfig.serverRunProfile} ${state.clientConfig.serverBuild}`;
+    }
+  },
 
   actions: {
     init() {
