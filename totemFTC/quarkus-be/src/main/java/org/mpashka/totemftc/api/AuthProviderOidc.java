@@ -92,16 +92,20 @@ public abstract class AuthProviderOidc extends AuthProvider {
 
 
     private String findRedirectUri(WebResourceLogin.ClientId clientId) {
-        String configValue = findConfigValue(clientId, k -> "oidc.client.<clientId>.redirectUri".replace("<clientId>", String.join("-", k.toArray(String[]::new))));
+        String configValue = findConfigValue(clientId, k -> k.isEmpty() ? "oidc.client.redirectUri" : ("oidc.client.redirectUri." + String.join("-", k)));
+        if (configValue == null) {
+            log.error("Was not able to find redirectUri for {}", clientId);
+            return ConfigProvider.getConfig().getConfigValue("oidc.client.redirectUri").getValue();
+        }
         return configValue.replace("<provider>", getName());
     }
 
     private String findConfigValue(WebResourceLogin.ClientId clientId, Function<List<String>, String> keyFunction) {
         String[] clientIdParts = clientId.getClientId().split("-");
-        int mask = 1 << clientIdParts.length - 1;
-        int maxKeyLength = 0;
+        int mask = 1 << clientIdParts.length;
+        int maxKeyLength = -1;
         String value = null;
-        while (mask-- >= 0) {
+        while (--mask >= 0) {
             List<String> key = new ArrayList<>();
             for (int i = 0; i < clientIdParts.length; i++) {
                 boolean isSet = (mask & (1 << i)) != 0;
@@ -109,7 +113,7 @@ public abstract class AuthProviderOidc extends AuthProvider {
                     key.add(clientIdParts[i]);
                 }
             }
-            if (maxKeyLength > key.size()) {
+            if (maxKeyLength >= key.size()) {
                 continue;
             }
             ConfigValue redirectUriConfig = ConfigProvider.getConfig().getConfigValue(keyFunction.apply(key));
