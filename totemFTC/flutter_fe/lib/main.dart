@@ -27,7 +27,8 @@ void main() {
   ModuleContainer().initialise(injector);
   var initializer = injector.get<Initializer>();
   initializer.initLogger();
-  initializer.init(Completer());
+  initializer.initSystem();
+  initializer.init();
   runApp(MyApp());
 }
 
@@ -39,6 +40,7 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
+    log.finest('Main app build');
     final injector = Injector();
     var initializer = injector.get<Initializer>();
     var session = injector.get<Session>();

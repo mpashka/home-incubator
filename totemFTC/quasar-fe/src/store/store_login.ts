@@ -3,6 +3,7 @@ import {api} from 'boot/axios';
 import {emptyUser, EntityUser} from 'src/store/store_crud_user';
 import Router from 'src/router';
 import {LoginProvider} from 'pages/login/login';
+import {clientId} from 'src/store/store_utils';
 
 const SESSION_ID_STORAGE_KEY = 'session_id';
 
@@ -12,8 +13,6 @@ export interface LoginResult {
   sessionId: string;
   userType: LoginUserType;
 }
-
-const clientId = `quasar-${String(process.env.MODE)}-${String(process.env.NODE_ENV)}`;
 
 export const useStoreLogin = defineStore('login', {
   state: () => ({

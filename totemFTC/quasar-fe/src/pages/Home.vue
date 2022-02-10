@@ -113,7 +113,7 @@
 
     <q-card>
       <q-card-section>
-        Server {{  }}
+        Server {{ serverInfo }}
       </q-card-section>
       <q-card-section>
         Quasar client {{ clientInfo }}
@@ -130,8 +130,9 @@ export default defineComponent({
   name: 'PageHome',
   setup() {
     const storeConfig = useStoreClientConfig();
+    storeConfig.loadClientConfig().catch(e => console.log('Config load error', e));
     return {
-      serverInfo: storeConfig.
+      serverInfo: storeConfig.serverInfo,
       clientInfo: process.env.BuildInfo
     };
   },

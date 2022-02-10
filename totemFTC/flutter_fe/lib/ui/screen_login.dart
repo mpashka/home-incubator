@@ -6,10 +6,8 @@ import 'package:flutter_fe/blocs/session.dart';
 import 'package:flutter_fe/main.dart';
 import 'package:flutter_fe/misc/configuration.dart';
 import 'package:flutter_simple_dependency_injection/injector.dart';
-import 'package:logging/logging.dart';
 
 import 'widgets/ui_login_warning.dart';
-import 'package:http/http.dart' as http;
 
 
 class ScreenLogin extends StatefulWidget {

@@ -1,5 +1,6 @@
 import {defineStore} from 'pinia';
 import {api} from 'boot/axios';
+import {clientId} from 'src/store/store_utils';
 
 export interface EntityClientConfig {
   serverId: string,
@@ -34,7 +35,7 @@ export const useStoreClientConfig = defineStore('clientConfig', {
 
     async loadClientConfig() {
       if (this.clientConfigLoaded) return;
-      this.clientConfig = (await api.get<EntityClientConfig>('/api/utils/clientConfig')).data;
+      this.clientConfig = (await api.get<EntityClientConfig>(`/api/utils/clientConfig?clientId=${clientId}`)).data;
       this.clientConfig.oidcClientIds = new Map<string, string>(Object.entries(this.clientConfig.oidcClientIds));
       this.clientConfigLoaded = true;
     },

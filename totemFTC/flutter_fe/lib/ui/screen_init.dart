@@ -24,16 +24,21 @@ class ScreenInitState extends State<ScreenInit> {
     super.initState();
     log.finer('Wait for init ...');
     final initializer = Injector().get<Initializer>();
-    initializer.initFuture().then((value) {
+    initializer.init().then((value) {
       log.finer('Init completed. Redirect to login');
       Navigator.pushReplacementNamed(context, '/login');
     }, onError: (e) {
-      showDialog(context: context, builder: (context) => SimpleDialog(
-        title: Text("Application initialization error"),
-        children: [
-          Text(e.toString()),
-          SimpleDialogOption(child: Text('Ok')),
-        ],
+      showDialog(context: context, builder: (context) => AlertDialog(
+          title: Text("Application initialization error"),
+          content: Text(e.toString()),
+          actions: <Widget>[
+            TextButton(
+              child: const Text('Ok'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+          ]
       )).whenComplete(() => Navigator.pushReplacementNamed(context, '/init'));
     });
   }

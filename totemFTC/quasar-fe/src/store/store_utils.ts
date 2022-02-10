@@ -81,3 +81,5 @@ export const useStoreUtils = defineStore('storeUtils', {
     loading: false,
   }),
 });
+
+export const clientId = `quasar-${String(process.env.MODE)}-${String(process.env.NODE_ENV)}`;

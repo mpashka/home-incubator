@@ -15,6 +15,7 @@ import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,6 +23,7 @@ import java.time.LocalTime;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.jar.Manifest;
@@ -72,7 +74,7 @@ public class WebResourceUtils {
     public ClientConfig clientConfig(@RestQuery WebResourceLogin.ClientId clientId) throws IOException {
         String serverId = ConfigProvider.getConfig().getConfigValue("server-id").getValue();
         String profile = ProfileManager.getActiveProfile();
-        String build = "notFound";
+        String build = null;
         Enumeration<URL> resources = getClass().getClassLoader().getResources("META-INF/MANIFEST.MF");
         while (resources.hasMoreElements()) {
             Manifest manifest = new Manifest(resources.nextElement().openStream());
@@ -80,6 +82,20 @@ public class WebResourceUtils {
             if (b != null) {
                 build = b;
             }
+        }
+
+        if (build == null) {
+            try (InputStream propsStream = getClass().getClassLoader().getResourceAsStream("build.properties")) {
+                if (propsStream != null) {
+                    Properties props = new Properties();
+                    props.load(propsStream);
+                    build = props.getProperty("version") + "-" + props.getProperty("revision") + "-" + props.getProperty("build.timestamp");
+                }
+            }
+        }
+
+        if (build == null) {
+            build = "unknown";
         }
 
         Map<String, String> oidcClientIds = new HashMap<>();

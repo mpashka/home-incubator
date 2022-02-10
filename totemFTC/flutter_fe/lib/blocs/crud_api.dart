@@ -53,7 +53,7 @@ class CrudApi {
       } if (response.statusCode != 200 && response.statusCode != 204) {
         log.info('Backend error $method $apiUri ${response.statusCode}');
         log.finer(response.body);
-        throw ApiException('Server error ${response.statusCode}', response.body);
+        throw ApiException('Backend error ${response.statusCode}', response.body);
       }
       log.fine('Response received $apiUri ${response.statusCode}');
       log.finer(response.body);

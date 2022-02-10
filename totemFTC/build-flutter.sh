@@ -5,6 +5,7 @@ root=`pwd`
 mkdir -p target
 
 cd $root/flutter_fe
+./pre-build.sh
 flutter pub run build_runner build
 flutter build web --profile --dart-define=Dart2jsOptimization=O0
 flutter build apk

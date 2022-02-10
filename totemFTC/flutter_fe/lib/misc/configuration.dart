@@ -1,18 +1,17 @@
+import 'dart:async' show Future;
 import 'dart:convert';
+import 'dart:io' show Platform;
 
+import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
 import 'package:flutter/material.dart';
-import 'package:flutter_fe/blocs/crud_api.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_fe/blocs/session.dart';
 import 'package:flutter_fe/misc/utils.dart';
+import 'package:http/http.dart' as http;
 import 'package:json_annotation/json_annotation.dart';
 import 'package:logging/logging.dart';
-import 'package:yaml/yaml.dart';
-import 'dart:async' show Future;
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, kReleaseMode;
-import 'dart:io' show Platform;
-import 'package:http/http.dart' as http;
+import 'package:yaml/yaml.dart';
 
 part 'configuration.g.dart';
 
@@ -25,47 +24,63 @@ class Configuration {
 
   static const sessionIdParam = 'sessionId';
 
-  late final dynamic _doc;
-  late final dynamic _buildInfo;
-  late SharedPreferences _prefs;
-  late ServerConfiguration _serverConfiguration;
+  dynamic _doc;
+  dynamic _buildInfo;
+  SharedPreferences? _prefs;
+  BackendConfiguration? _serverConfiguration;
 
   /// Note: configuration is not proper place for sessionId. But. Just to avoid
   /// circular dependency between crud_api and session
   String _sessionId = '';
 
-  Future<List> load() {
+  Future<void> load() async {
     try {
-      WidgetsFlutterBinding.ensureInitialized();
-      return Future.wait([
-        SharedPreferences.getInstance().then((value) => _prefs = value),
-        rootBundle.loadString('assets/config/config.yaml').then((value) => _doc = loadYaml(value)),
-        rootBundle.loadString('assets/config/build-info.yaml').then((value) => _buildInfo = loadYaml(value)),
-        loadServerConfiguration(),
-      ]).then((value) {
-        _sessionId = _prefs.getString(sessionIdParam) ?? '';
-        return value;
-      }).catchError((e,s) {
-        log.severe('Configuration load error', e, s);
-        throw e;
-      });
-    } catch (e) {
-      log.warning('Error loading asset', e);
+      if (_doc == null) {
+        await _loadInternalPrefs();
+        log.fine('Internal configuration loaded');
+      }
+      await _loadBackendConfiguration();
+      log.finest('Backend configuration loaded');
+    } catch (e,s) {
+      log.warning('Configuration load error', e, s);
       rethrow;
     }
   }
 
-  Future<void> loadServerConfiguration() async {
-    var url = Uri.parse('${backendUrl()}/clientConfig?${Uri.encodeComponent(clientId())}');
-    var response = await http.get(url);
-    if (response.statusCode != 200) throw ServerNotReadyException();
-    _serverConfiguration = ServerConfiguration.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
+  Future<void> _loadInternalPrefs() {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    List<Future> tasks = [
+      if (_prefs == null) SharedPreferences.getInstance().then((value) {
+        _sessionId = value.getString(sessionIdParam) ?? '';
+        _prefs = value;
+      }),
+      if (_doc == null) rootBundle.loadString('assets/config/config.yaml').then((value) => _doc = loadYaml(value)),
+      if (_buildInfo == null) rootBundle.loadString('assets/config/build-info.yaml').then((value) => _buildInfo = loadYaml(value)),
+    ];
+
+    return Future.wait(tasks).catchError((e,s) {
+      log.severe('Internal configuration load task error', e, s);
+      throw e;
+    });
+  }
+
+  Future<void> _loadBackendConfiguration() async {
+    try {
+      var url = Uri.parse('${backendUrl()}/api/utils/clientConfig?clientId=${Uri.encodeComponent(clientId())}');
+      var response = await http.get(url);
+      log.finest('Backend config response $response');
+      if (response.statusCode != 200) throw Exception('Backend internal error ${response.statusCode}');
+      _serverConfiguration = BackendConfiguration.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
+    } on http.ClientException {
+      throw Exception('Backend not ready');
+    }
   }
 
   String get sessionId => _sessionId;
 
   set sessionId(String sessionId) {
-    _prefs.setString(sessionIdParam, sessionId);
+    _prefs?.setString(sessionIdParam, sessionId);
     _sessionId = sessionId;
   }
 
@@ -86,10 +101,9 @@ class Configuration {
   /// OIDC provider config - client id + warning
   ConfigurationLoginProvider loginProviderConfig(LoginProvider loginProvider) {
     var name = loginProvider.name;
-    final config = _doc['oidc']['providers'][name];
-    // if (config == null) throw ApiException('Internal error', 'Login provider ${loginProvider.name} config not found');
+    final config = _getDoc(['oidc', 'providers', name]);
     if (config == null) return ConfigurationLoginProvider(clientId: '', error: 'Provider ${name} config not found');
-    return ConfigurationLoginProvider(clientId: _serverConfiguration.oidcClientIds[name]!,
+    return ConfigurationLoginProvider(clientId: _serverConfiguration!.oidcClientIds[name]!,
       error: loginProviderErrorText(_getDoc(['oidc', 'providers', name, 'error']), loginProvider),
       warning: loginProviderErrorText(_getDoc(['oidc', 'providers', name, 'warning']), loginProvider),
     );
@@ -136,15 +150,15 @@ class Configuration {
   }
 
   String serverString() {
-    return '${_serverConfiguration.serverId} ${_serverConfiguration.serverRunProfile} ${_serverConfiguration.serverBuild}';
+    return '${_serverConfiguration!.serverId} ${_serverConfiguration!.serverRunProfile} ${_serverConfiguration!.serverBuild}';
   }
 
   String serverRunProfile() {
-    return _serverConfiguration.serverRunProfile;
+    return _serverConfiguration!.serverRunProfile;
   }
 
   String serverBuild() {
-    return _serverConfiguration.serverBuild;
+    return _serverConfiguration!.serverBuild;
   }
 
   String buildInfo() {
@@ -160,16 +174,15 @@ class Configuration {
 
   dynamic _docPlain(List<String> path) {
     var part = _doc;
+    if (part == null) return null;
     for (var p in path) {
       part = part[p];
       if (part == null) return null;
     }
     return part;
   }
-
-
-
 }
+
 
 class ConfigurationLoginProvider {
   String clientId;
@@ -179,18 +192,16 @@ class ConfigurationLoginProvider {
   ConfigurationLoginProvider({required this.clientId, this.error, this.warning});
 }
 
-class ServerNotReadyException implements Exception {
-}
 
 @JsonSerializable(explicitToJson: true)
-class ServerConfiguration {
+class BackendConfiguration {
   String serverId;
   String serverRunProfile;
   String serverBuild;
   Map<String, String> oidcClientIds;
 
-  ServerConfiguration({required this.serverId, required this.serverRunProfile, required this.serverBuild, required this.oidcClientIds});
+  BackendConfiguration({required this.serverId, required this.serverRunProfile, required this.serverBuild, required this.oidcClientIds});
 
-  factory ServerConfiguration.fromJson(Map<String, dynamic> json) => _$ServerConfigurationFromJson(json);
-  Map<String, dynamic> toJson() => _$ServerConfigurationToJson(this);
+  factory BackendConfiguration.fromJson(Map<String, dynamic> json) => _$BackendConfigurationFromJson(json);
+  Map<String, dynamic> toJson() => _$BackendConfigurationToJson(this);
 }
