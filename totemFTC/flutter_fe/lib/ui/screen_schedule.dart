@@ -210,7 +210,7 @@ class DayScheduleUiAnimateState extends DayScheduleUiState with TickerProviderSt
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(duration: Duration(milliseconds: 300), vsync: this);
+    _animationController = AnimationController(duration: Duration(milliseconds: 100), vsync: this);
     _angle = Tween<double>(begin: 0, end: -0.25).animate(_animationController);
   }
 

@@ -101,9 +101,9 @@ class Configuration {
   /// OIDC provider config - client id + warning
   ConfigurationLoginProvider loginProviderConfig(LoginProvider loginProvider) {
     var name = loginProvider.name;
-    final config = _getDoc(['oidc', 'providers', name]);
-    if (config == null) return ConfigurationLoginProvider(clientId: '', error: 'Provider ${name} config not found');
-    return ConfigurationLoginProvider(clientId: _serverConfiguration!.oidcClientIds[name]!,
+    var oidcClientId = _serverConfiguration!.oidcClientIds[name];
+    if (oidcClientId == null) return ConfigurationLoginProvider(clientId: '', error: 'Provider ${name} config not found');
+    return ConfigurationLoginProvider(clientId: oidcClientId,
       error: loginProviderErrorText(_getDoc(['oidc', 'providers', name, 'error']), loginProvider),
       warning: loginProviderErrorText(_getDoc(['oidc', 'providers', name, 'warning']), loginProvider),
     );

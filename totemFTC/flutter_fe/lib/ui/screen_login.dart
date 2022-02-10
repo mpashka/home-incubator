@@ -30,7 +30,7 @@ class ScreenLoginState extends BlocProvider<ScreenLogin> {
   @override
   Widget build(BuildContext context) {
     ThemeData theme = Theme.of(context);
-    double iconSize = theme.iconTheme.size ?? 24;
+    double iconSize = theme.iconTheme.size ?? 16;
     double warningIconSize = iconSize / 2;
     double screenWidth = MediaQuery.of(context).size.width;
     double padding = 8;
@@ -39,7 +39,7 @@ class ScreenLoginState extends BlocProvider<ScreenLogin> {
     final loginButtonColumns = <Widget>[];
     List<Widget> loginButtons = [];
 
-    // log.finer('build login screen(). Width $screenWidth, icon size: $iconSize');
+    // log.finer('build login screen(). Width $screenWidth, icon size: $iconSize (${theme.iconTheme.size})');
     for (var provider in loginProviders) {
       final loginProviderConfig = configuration.loginProviderConfig(provider);
 
@@ -63,7 +63,7 @@ class ScreenLoginState extends BlocProvider<ScreenLogin> {
             });
           }
         },
-      ));
+      ),);
       if (loginButtons.length >= (screenWidth / (iconSize + 3*padding) - 1).ceil() || provider == loginProviders.last) {
         loginButtonColumns.add(Row(children: loginButtons,));
         loginButtons = [];
