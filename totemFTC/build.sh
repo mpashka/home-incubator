@@ -1,6 +1,6 @@
 #!/bin/bash
 
-file_bin=0t0hab6flpav3eet
+file_bin=5d7m0ryfmsnbhcjs
 root=`pwd`
 # For testing
 #rm -rf $root/target

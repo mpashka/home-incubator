@@ -7,6 +7,13 @@ DROP FUNCTION mark_visit_calc_count;
 DROP PROCEDURE mark_visit_update_ticket;
 DROP PROCEDURE mark_visit_find_ticket;
 
+DROP VIEW user_info_full;
+DROP VIEW ticket_type_full;
+DROP VIEW ticket_view;
+DROP VIEW training_view;
+DROP VIEW visit_view;
+
+
 DROP TABLE training_visit;
 DROP TABLE training_ticket;
 DROP TABLE ticket_type;
