@@ -1,7 +1,7 @@
 #!/bin/bash
 
 file_bin=5d7m0ryfmsnbhcjs
-root=`pwd`
+root=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 # For testing
 #rm -rf $root/target
 target="$root/target/web"
