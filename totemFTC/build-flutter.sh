@@ -1,17 +1,38 @@
 #!/bin/bash
 
-file_bin=5d7m0ryfmsnbhcjs
 root=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-mkdir -p $root/target
+flutter="$root/flutter_fe"
+. "$root/file_bin.sh"
+mkdir -p "$root/target"
 
-cd $root/flutter_fe
-$root/flutter_fe/pre-build.sh
-flutter pub run build_runner build
-flutter build web --profile --dart-define=Dart2jsOptimization=O0
-flutter build apk
+deploy() { flavor=$1;
+  echo "Deploy flutter flavor $flavor"
 
-cd $root/flutter_fe/build/web
-mv $root/flutter_fe/build/web/index.html $root/flutter_fe/build/web/pwa.html
-zip -r $root/target/flutter.zip *
-curl --header "Content-Type: application/zip" --data-binary @$root/target/flutter.zip https://filebin.net/$file_bin/flutter.zip
-curl --header "Content-Type: application/vnd.android.package-archive" --data-binary @$root/flutter_fe/build/app/outputs/flutter-apk/app-release.apk https://filebin.net/$file_bin/totemftc-release.apk
+  [ -d "$root/target/flutter/$flavor" ] && rm -rf "$flutter/build/app" && mv "$root/target/flutter/$flavor" "$flutter/build/app"
+  cd "$flutter"
+  export RUN_PROFILE=$flavor
+  "$flutter/pre-build.sh"
+  flutter build apk --flavor $flavor || die "generate android $flavor"
+  rm -rf "$root/target/flutter/$flavor"
+  mkdir -p "$root/target/flutter"
+  mv "$flutter/target/app" "$root/target/flutter/$flavor"
+  curl --header "Content-Type: application/vnd.android.package-archive" --data-binary "@$root/flutter_fe/build/app/outputs/flutter-apk/app-$flavor-release.apk" "https://filebin.net/$file_bin/android-$flavor.apk"
+
+  cd "$flutter/build/web"
+  cp "$flutter/assets/config/build-info.yaml" "$flutter/build/web/assets/assets/config/"
+  tar -czf "$root/target/flutter-$flavor.tar.gz" \
+      --exclude assets/assets/config/build-info.yaml \
+      --transform 's/^.\///' \
+      --transform 's/^index.html$/pwa.html/' \
+      --transform "s/^build-info.yaml$/assets\/assets\/config\/build-info.yaml/" \
+      -C "$flutter/build/web/" . -C "$flutter/assets/config/" "build-info.yaml"
+  curl --header "Content-Type: application/tar+gzip" --data-binary "@$root/target/flutter-$flavor.tar.gz" "https://filebin.net/$file_bin/flutter-$flavor.tar.gz"
+}
+
+cd "$flutter"
+#flutter clean
+flutter pub run build_runner build --delete-conflicting-outputs || die "generate json serializer"
+flutter build web --profile --dart-define=Dart2jsOptimization=O0 || die "generate web"
+
+deploy demo
+deploy totem

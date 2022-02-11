@@ -26,6 +26,7 @@ class Configuration {
 
   dynamic _doc;
   dynamic _buildInfo;
+  String runProfile = '';
   SharedPreferences? _prefs;
   BackendConfiguration? _serverConfiguration;
 
@@ -56,7 +57,10 @@ class Configuration {
         _prefs = value;
       }),
       if (_doc == null) rootBundle.loadString('assets/config/config.yaml').then((value) => _doc = loadYaml(value)),
-      if (_buildInfo == null) rootBundle.loadString('assets/config/build-info.yaml').then((value) => _buildInfo = loadYaml(value)),
+      if (_buildInfo == null) rootBundle.loadString('assets/config/build-info.yaml').then((value) {
+        _buildInfo = loadYaml(value);
+        runProfile = _buildInfo['run_profile'];
+      }),
     ];
 
     return Future.wait(tasks).catchError((e,s) {
@@ -121,52 +125,25 @@ class Configuration {
         .replaceAll('\${provider}', provider.name);
   }
 
-  String loginCallbackRoute() {
-    return (_getDoc(['oidc', 'loginCallbackRoute']) as String);
-  }
-
-  String devTelegram() {
-    return _getDoc(['contacts', 'dev', 'telegram']);
-  }
-
-  String devPhone() {
-    return _getDoc(['contacts', 'dev', 'phone']);
-  }
-
-  String masterTelegram() {
-    return _getDoc(['contacts', 'master', 'telegram']);
-  }
-
-  String masterPhone() {
-    return _getDoc(['contacts', 'master', 'phone']);
-  }
-
-  String masterPhoneUi() {
-    return _getDoc(['contacts', 'master', 'phoneUi']);
-  }
-
-  String masterEmail() {
-    return _getDoc(['contacts', 'master', 'email']);
-  }
-
-  String serverString() {
-    return '${_serverConfiguration!.serverId} ${_serverConfiguration!.serverRunProfile} ${_serverConfiguration!.serverBuild}';
-  }
-
-  String serverRunProfile() {
-    return _serverConfiguration!.serverRunProfile;
-  }
-
-  String serverBuild() {
-    return _serverConfiguration!.serverBuild;
-  }
-
-  String buildInfo() {
-    return _buildInfo['build_info'];
-  }
+  String get loginCallbackRoute => _getDoc(['oidc', 'loginCallbackRoute']);
+  String get uiTitle =>_getDoc(['ui', 'title']);
+  String get devTelegram => _getDoc(['ui', 'contacts', 'dev', 'telegram']);
+  String get devPhone => _getDoc(['ui', 'contacts', 'dev', 'phone']);
+  String get masterTelegram => _getDoc(['ui', 'contacts', 'master', 'telegram']);
+  String get masterPhone => _getDoc(['ui', 'contacts', 'master', 'phone']);
+  String get masterPhoneUi => _getDoc(['ui', 'contacts', 'master', 'phoneUi']);
+  String get masterEmail => _getDoc(['ui', 'contacts', 'master', 'email']);
+  String get serverString => '${_serverConfiguration!.serverId} ${_serverConfiguration!.serverRunProfile} ${_serverConfiguration!.serverBuild}';
+  String get serverRunProfile => _serverConfiguration!.serverRunProfile;
+  String get serverBuild => _serverConfiguration!.serverBuild;
+  String get buildInfo => _buildInfo['build_info'];
 
   dynamic _getDoc(List<String> path) {
-    return _docPlain(['_${prodStr}_$nativeStr' ,...path])
+    return _docPlain(['_${runProfile}_${prodStr}_$nativeStr' ,...path])
+        ?? _docPlain(['_${runProfile}_$prodStr' ,...path])
+        ?? _docPlain(['_${runProfile}_$nativeStr' ,...path])
+        ?? _docPlain(['_$runProfile' ,...path])
+        ?? _docPlain(['_${prodStr}_$nativeStr' ,...path])
         ?? _docPlain(['_$prodStr' ,...path])
         ?? _docPlain(['_$nativeStr' ,...path])
         ?? _docPlain(path);

@@ -60,16 +60,13 @@ class ScreenMasterFinanceState extends BlocProvider<ScreenMasterFinance> {
 
     return DefaultTabController(
         length: 2,
-        child: Scaffold(
-          appBar: AppBar(
-            title: const Text('Totem FC'),
-            bottom: const TabBar(
-              tabs: [
-                Tab(text: 'Неделя'),
-                Tab(text: 'Месяц'),
-              ],
-            ),),
-          drawer: MyDrawer(),
+        child: UiScreen(
+          appBarBottom: const TabBar(
+            tabs: [
+              Tab(text: 'Неделя'),
+              Tab(text: 'Месяц'),
+            ],
+          ),
           body: TabBarView(
             children: [
               BlocProvider.streamBuilder<List<CrudEntityIncome>, CrudIncomeBloc>(blocName: 'IncomeByWeek',

@@ -31,13 +31,13 @@ class ScreenAbout extends StatelessWidget {
         GestureDetector(child: Icon(MdiIcons.instagram),
           onTap: () => launch('https://www.instagram.com/totemftc/'),),
         GestureDetector(child: Icon(Icons.phone),
-          onTap: () => launch('tel://+${config.masterPhone()}'),),
+          onTap: () => launch('tel://+${config.masterPhone}'),),
         GestureDetector(child: FaIcon(FontAwesomeIcons.telegram),
-          onTap: () => launch('https://t.me/${config.masterTelegram()}'),),
+          onTap: () => launch('https://t.me/${config.masterTelegram}'),),
         GestureDetector(child: Icon(MdiIcons.whatsapp),
-          onTap: () => launch('https://wa.me/${config.masterPhone()}'),),
+          onTap: () => launch('https://wa.me/${config.masterPhone}'),),
         GestureDetector(child: Icon(Icons.alternate_email),
-          onTap: () => launch('mailto:${config.masterEmail()}'),),
+          onTap: () => launch('mailto:${config.masterEmail}'),),
         GestureDetector(child: FaIcon(FontAwesomeIcons.vk),
           onTap: () => launch('https://vk.com/rino77'),),
       ],),
@@ -45,11 +45,11 @@ class ScreenAbout extends StatelessWidget {
       Divider(thickness: 3,),
 
       GestureDetector(child: Row(
-        children: [Icon(Icons.phone), SelectableText(config.masterPhoneUi()),],),
-        onTap: () => launch('tel://+${config.masterPhone()}'),),
+        children: [Icon(Icons.phone), SelectableText(config.masterPhoneUi),],),
+        onTap: () => launch('tel://+${config.masterPhone}'),),
       GestureDetector(child: Row(
-        children: [Icon(Icons.email), SelectableText(config.masterEmail()),],),
-        onTap: () => launch('mailto:${config.masterEmail()}'),),
+        children: [Icon(Icons.email), SelectableText(config.masterEmail),],),
+        onTap: () => launch('mailto:${config.masterEmail}'),),
       GestureDetector(child: Column(children: [
         Row(children: const [Icon(Icons.maps_home_work), SelectableText('МО, г.Химки, ул.Академика Грушина, д.8'),],),
       ]),
@@ -78,16 +78,16 @@ class ScreenAbout extends StatelessWidget {
         GestureDetector(child: Icon(MdiIcons.github),
             onTap: () => launch('https://github.com/mpashka/home-incubator/issues')),
         GestureDetector(child: FaIcon(FontAwesomeIcons.telegram),
-          onTap: () => launch('https://t.me/${config.devTelegram()}'),),
+          onTap: () => launch('https://t.me/${config.devTelegram}'),),
         GestureDetector(child: Icon(MdiIcons.whatsapp),
           // onTap: () => launch('https://wa.me/${config.devPhone()}'),),
-          onTap: () => launch('https://api.whatsapp.com/send?phone=${config.devPhone()}&text=TotemFTC_${Platform.operatingSystem}'),),
+          onTap: () => launch('https://api.whatsapp.com/send?phone=${config.devPhone}&text=TotemFTC_${Platform.operatingSystem}'),),
       ],),
 
       Divider(thickness: 3,),
       Row(children: [
-        SelectableText('Server: ${config.serverString()}'),
-        SelectableText('Client: ${config.buildInfo()}')
+        SelectableText('Server: ${config.serverString}'),
+        SelectableText('Client: ${config.buildInfo}')
       ],),
     ],),);
   }

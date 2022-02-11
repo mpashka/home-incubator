@@ -72,7 +72,7 @@ class MyApp extends StatelessWidget {
         }
 
         var routeName = settings.name;
-        if (configuration.isMobile && routeName != null && routeName.startsWith(configuration.loginCallbackRoute())) {
+        if (configuration.isMobile && routeName != null && routeName.startsWith(configuration.loginCallbackRoute)) {
           var start = routeName.indexOf('?');
           var loginParams = routeName.substring(start >= 0 ? start : 0).replaceAll('#', '&');
           session.onLoginCallback(loginParams);

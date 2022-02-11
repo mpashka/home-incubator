@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
 
     <application
-            android:label="TotemFTC"
+            android:label="@string/app_name"
             android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
@@ -45,7 +45,9 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="https" android:host="totemftc.ga" />
+                <data android:scheme="https"/>
+                <data android:host="totemftc.ga" />
+                <data android:host="ticket-demo.ml" />
                 <!--data android:scheme="https" /-->
             </intent-filter>
         </activity>

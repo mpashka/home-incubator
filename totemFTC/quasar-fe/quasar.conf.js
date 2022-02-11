@@ -14,6 +14,21 @@ const gitRevisionPlugin = new GitRevisionPlugin();
 
 // See lib/helpers/get-quasar-ctx.js
 module.exports = configure(function (ctx) {
+  const envObj = {
+    BuildInfo: `${process.env.USER} ${process.env.HOSTNAME} ${process.env.RUN_PROFILE} ${new Date().toISOString()} ${gitRevisionPlugin.branch()} ${gitRevisionPlugin.version()}`,
+  };
+
+  if (ctx.dev) {
+    envObj.BackendUrl = 'http://localhost:8080';
+    envObj.FrontendUrl = 'http://localhost:8081';
+  } else if (process.env.RUN_PROFILE === 'demo') {
+    envObj.BackendUrl = 'https://api.ticket-demo.ml';
+    envObj.FrontendUrl = 'https://ticket-demo.ml';
+  } else if (process.env.RUN_PROFILE === 'totem' || ctx.prod) {
+    envObj.BackendUrl = 'https://api.totemftc.ga';
+    envObj.FrontendUrl = 'https://totemftc.ga';
+  }
+
   return {
     // https://v2.quasar.dev/quasar-cli/supporting-ts
     supportTS: {
@@ -90,6 +105,10 @@ module.exports = configure(function (ctx) {
       // distDir: ctx.modeName === 'spa' && ctx.prod ? 'target/classes/META-INF/resources' : `dist/${ctx.modeName}`,
       // distDir: "true" === process.env.DEMO_BUILD ? '../target/web' : `dist/${ctx.modeName}`,
 
+      distDir: ctx.modeName === 'spa' ? `dist/${ctx.modeName}-${process.env.RUN_PROFILE}` : `dist/${ctx.modeName}`,
+
+      env: envObj,
+/*
       env: {
         // Used to make backend api calls. See axios.ts
         BackendUrl: ctx.dev ? 'http://localhost:8080' : 'https://api.totemftc.ga',
@@ -97,6 +116,7 @@ module.exports = configure(function (ctx) {
         demo: "true" === process.env.DEMO_BUILD,
         BuildInfo: `${process.env.USER} ${process.env.HOSTNAME} ${new Date().toISOString()} ${gitRevisionPlugin.branch()} ${gitRevisionPlugin.version()}`,
       }
+*/
     },
 
     // Full list of options: https://v2.quasar.dev/quasar-cli/quasar-conf-js#Property%3A-devServer
