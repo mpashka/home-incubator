@@ -2,5 +2,5 @@
 # https://docs.netlify.com/configure-builds/file-based-configuration/
 [build]
     base = "totemFTC"
-    publish = "totemFTC/target/web"
+    publish = "target/web"
     command = "./build.sh"
