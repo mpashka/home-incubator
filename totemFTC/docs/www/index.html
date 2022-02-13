@@ -16,6 +16,72 @@
     <link rel="icon" type="image/ico" href="favicon.ico"-->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-1BmE4kWBq78iYhFldvKuhfTAU6auU8tT94WrHftjDbrCEXSU1oBoqyl2QvZ6jIW3" crossorigin="anonymous">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/e73d2ef479.js" crossorigin="anonymous"></script>
+    <link href="https://cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css" rel="stylesheet">
+    <style>
+        .mdi::before {
+            font-size: 24px;
+            line-height: 14px;
+        }
+        .btn .mdi::before {
+            position: relative;
+            top: 4px;
+        }
+        .btn-xs .mdi::before {
+            font-size: 18px;
+            top: 3px;
+        }
+        .btn-sm .mdi::before {
+            font-size: 18px;
+            top: 3px;
+        }
+        .dropdown-menu .mdi {
+            width: 18px;
+        }
+        .dropdown-menu .mdi::before {
+            position: relative;
+            top: 4px;
+            left: -8px;
+        }
+        .nav .mdi::before {
+            position: relative;
+            top: 4px;
+        }
+        .navbar .navbar-toggle .mdi::before {
+            position: relative;
+            top: 4px;
+            color: #FFF;
+        }
+        .breadcrumb .mdi::before {
+            position: relative;
+            top: 4px;
+        }
+        .breadcrumb a:hover {
+            text-decoration: none;
+        }
+        .breadcrumb a:hover span {
+            text-decoration: underline;
+        }
+        .alert .mdi::before {
+            position: relative;
+            top: 4px;
+            margin-right: 2px;
+        }
+        .input-group-addon .mdi::before {
+            position: relative;
+            top: 3px;
+        }
+        .navbar-brand .mdi::before {
+            position: relative;
+            top: 2px;
+            margin-right: 2px;
+        }
+        .list-group-item .mdi::before {
+            position: relative;
+            top: 3px;
+            left: -3px
+        }
+    </style>
 </head>
 <body>
 <div class="container">
@@ -25,7 +91,25 @@
     </p>
 
     <p>
-        <a href="pwa.html">Мобильная версия</a> приложения предназначена для посетителей и для отметки тренировок.
+        <a href="pwa.html">Мобильная версия</a> приложения предназначена записи и для отметки тренировок.
+        Она предназначена для запуска на смартфоне либо из браузера, либо как мобильное приложение.
+        В настоящее время существует только приложение для Android.
+        Если для тестовых целей вы запускаете мобильное приложение на компьютере, то необходимо проделать несложные
+        манипуляции, чтобы эмулировать мобильное приложение и получить возможность использовать тактильные жесты
+        мобильного приложения с помощью обычной мышки - т.н. swipes (свайпы - это когда пальцем водишь по экрану).
+        Для этого в <i class="fa-brands fa-chrome"></i> google chrome надо нажать F12, а потом в
+        окне Chrome Tool Window нажать 'Toggle Device Toolbar'
+        или Ctrl + Shift + M и задать размеры мобильного устройства ползунками. Вот
+        <a href="https://bnar.ru/kak-vkljuchit-prosmotr-mobilnogo-sajta-na-kompjutere-chrome/"
+           target="_blank">
+            чуть более подробные инструкции
+        </a>.
+    </p>
+
+    <p>
+        <span class="mdi mdi-apple"></span> Примечание: Мобильное приложение для iOS тоже можно собрать, но
+        Apple просит за это $100 в год. Без этих денег приложение для iOS
+        будет работать всего неделю.
     </p>
 
     <p>
@@ -36,15 +120,15 @@
 
     <p>Для того, чтобы начать пользоваться, необходимо запустить одну из версий. Войти. Изменить свое имя в настройках при необходимости
     (в настоящее время редактирование своего имени работает только в мобильной версии). Затем необходимо написать мне в
-        <a href="https://t.me/M_pashka" target="_blank">тележеньку</a>
-    или в чатик, чтобы вам добавили права. После этого можно пользоваться.</p>
+        <a href="https://t.me/M_pashka" target="_blank"><i class="fa-brands fa-telegram"></i> тележеньку</a>
+    или в <i class="fa-brands fa-telegram"></i> чатик, чтобы вам добавили права. После этого можно пользоваться.</p>
 
 
     <p>Пожелания и найденные ошибки направляйте:</p>
     <ul>
         <li><a href="https://github.com/mpashka/home-incubator/issues" target="_blank">Ошибки и предложения</a></li>
         <li><a href="https://trello.com/b/dQ9YlBoq/todo" target="_blank">Планы</a></li>
-        <li>Чатик в тележеньке с обсуждением - TBD</li>
+        <li><i class="fa-brands fa-telegram"></i> Чатик в тележеньке с обсуждением - TBD</li>
     </ul>
 
     <p><a href="https://github.com/mpashka/home-incubator/tree/totemFTC_pinia/totemFTC" target="_blank">Исходный код</a></p>

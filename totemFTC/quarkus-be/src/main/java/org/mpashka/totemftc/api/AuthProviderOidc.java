@@ -1,5 +1,6 @@
 package org.mpashka.totemftc.api;
 
+import io.quarkus.runtime.configuration.ProfileManager;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
@@ -34,13 +35,15 @@ public abstract class AuthProviderOidc extends AuthProvider {
     }
 
     String getClientId(WebResourceLogin.ClientId clientId) {
-        return findConfigValue(clientId, k -> k.isEmpty()
+        return findConfigValue(clientId,
+                k -> k.isEmpty()
                 ? "oidc.provider.<provider>.clientId".replace("<provider>", getName())
                 : "oidc.provider.<provider>.<clientId>.clientId".replace("<provider>", getName()).replace("<clientId>", String.join("-", k)));
     }
 
     String getSecret(WebResourceLogin.ClientId clientId) {
-        return findConfigValue(clientId, k -> k.isEmpty()
+        return findConfigValue(clientId,
+                k -> k.isEmpty()
                 ? "oidc.provider.<provider>.secret".replace("<provider>", getName())
                 : "oidc.provider.<provider>.<clientId>.secret".replace("<provider>", getName()).replace("<clientId>", String.join("-", k)));
     }
@@ -80,6 +83,7 @@ public abstract class AuthProviderOidc extends AuthProvider {
                     // expires_in,id_token,scope,token_type,refresh_token
                     String accessToken = tokenJson.getString("access_token");
                     if (accessToken == null || accessToken.isEmpty()) {
+                        log.debug("Auth info. ClientId: {}. Form: {}", clientId, form);
                         throw new RuntimeException("Invalid token response " + tokenJson);
                     }
                     loginState.setToken(accessToken);
@@ -102,15 +106,18 @@ public abstract class AuthProviderOidc extends AuthProvider {
 
     private String findConfigValue(WebResourceLogin.ClientId clientId, Function<List<String>, String> keyFunction) {
         String[] clientIdParts = clientId.getClientId().split("-");
-        int mask = 1 << clientIdParts.length;
+        String[] idParts = new String[clientIdParts.length + 1];
+        idParts[0] = ProfileManager.getActiveProfile();
+        System.arraycopy(clientIdParts, 0, idParts, 1, clientIdParts.length);
+        int mask = 1 << idParts.length;
         int maxKeyLength = -1;
         String value = null;
         while (--mask >= 0) {
             List<String> key = new ArrayList<>();
-            for (int i = 0; i < clientIdParts.length; i++) {
+            for (int i = 0; i < idParts.length; i++) {
                 boolean isSet = (mask & (1 << i)) != 0;
                 if (isSet) {
-                    key.add(clientIdParts[i]);
+                    key.add(idParts[i]);
                 }
             }
             if (maxKeyLength >= key.size()) {

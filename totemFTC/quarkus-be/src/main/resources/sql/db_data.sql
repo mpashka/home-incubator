@@ -1,15 +1,14 @@
 ALTER SEQUENCE IF EXISTS user_info_user_id_seq
     RESTART 10000;
 
-INSERT INTO user_type_description(user_type, name)
+INSERT INTO user_type_description(user_type, user_type_name)
 VALUES
-    ('guest',   'Гость'),
     ('user',    'Посетитель'),  -- Allow payments through app
     ('trainer', 'Тренер'),
     ('admin',   'Администратор')
 ;
 
-INSERT INTO training_type (training_type, name)
+INSERT INTO training_type (training_type, training_name, default_cost)
 VALUES
     ('func',    'Кросcфит', 500),
     ('stretch', 'Растяжка', 500),

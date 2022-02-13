@@ -13,7 +13,7 @@ import java.security.NoSuchAlgorithmException;
 
 /**
  * https://developer.amazon.com/docs/login-with-amazon/authorization-code-grant.html#server-apps
- * https://developer.amazon.com/settings/console/securityprofile/web-settings/update.html
+ * https://developer.amazon.com/loginwithamazon/console/site/lwa/overview.html
  *
  * todo [5] code_challenge=<nonce>&code_challenge_method=S256
  * todo [5] scope: postal_code

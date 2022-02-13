@@ -8,7 +8,7 @@ CREATE TYPE mark_type_enum AS ENUM ('on', 'off', 'unmark');
 
 CREATE TABLE IF NOT EXISTS user_type_description (
     user_type user_type_enum NOT NULL PRIMARY KEY,
-    name VARCHAR(20)
+    user_type_name VARCHAR(20)
 );
 
 CREATE TABLE IF NOT EXISTS user_info (

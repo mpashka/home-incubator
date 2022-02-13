@@ -128,7 +128,7 @@ export default defineComponent({
     }
 
     return {
-      storeUser,
+      storeUser, storeLogin,
       uiSocialNetworks,
       disconnectingNetwork,
       isDisconnectingNetwork: computed({get:() => disconnectingNetwork.value !== null, set: () => disconnectingNetwork.value = null}),

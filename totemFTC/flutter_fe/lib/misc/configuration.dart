@@ -38,7 +38,7 @@ class Configuration {
     try {
       if (_doc == null) {
         await _loadInternalPrefs();
-        log.fine('Internal configuration loaded');
+        log.fine('Internal configuration loaded. ClientId: $clientId');
       }
       await _loadBackendConfiguration();
       log.finest('Backend configuration loaded');
@@ -70,14 +70,16 @@ class Configuration {
   }
 
   Future<void> _loadBackendConfiguration() async {
+    var backend = backendUrl();
+    var url = Uri.parse('$backend/api/utils/clientConfig?clientId=${Uri.encodeComponent(clientId)}');
     try {
-      var url = Uri.parse('${backendUrl()}/api/utils/clientConfig?clientId=${Uri.encodeComponent(clientId())}');
       var response = await http.get(url);
       log.finest('Backend config response $response');
       if (response.statusCode != 200) throw Exception('Backend internal error ${response.statusCode}');
       _serverConfiguration = BackendConfiguration.fromJson(jsonDecode(utf8.decode(response.bodyBytes)));
-    } on http.ClientException {
-      throw Exception('Backend not ready');
+    } on http.ClientException catch(e, s) {
+      log.warning('Backend \'$url\' not ready', e, s);
+      throw Exception('Backend \'$backend\' not ready');
     }
   }
 
@@ -94,9 +96,7 @@ class Configuration {
   String prodStr = kReleaseMode ? "production" : "development";
 
   /// Client id used to select appropriate configuration on backend
-  String clientId() {
-    return 'flutter-$nativeStr-$prodStr';
-  }
+  String get clientId => 'flutter-$nativeStr-$prodStr-$runProfile';
 
   String backendUrl() {
     return _getDoc(['backendUrl']);
@@ -106,7 +106,7 @@ class Configuration {
   ConfigurationLoginProvider loginProviderConfig(LoginProvider loginProvider) {
     var name = loginProvider.name;
     var oidcClientId = _serverConfiguration!.oidcClientIds[name];
-    if (oidcClientId == null) return ConfigurationLoginProvider(clientId: '', error: 'Provider ${name} config not found');
+    if (oidcClientId == null) return ConfigurationLoginProvider(clientId: '', error: 'Provider $name config not found');
     return ConfigurationLoginProvider(clientId: oidcClientId,
       error: loginProviderErrorText(_getDoc(['oidc', 'providers', name, 'error']), loginProvider),
       warning: loginProviderErrorText(_getDoc(['oidc', 'providers', name, 'warning']), loginProvider),
@@ -136,7 +136,7 @@ class Configuration {
   String get serverString => '${_serverConfiguration!.serverId} ${_serverConfiguration!.serverRunProfile} ${_serverConfiguration!.serverBuild}';
   String get serverRunProfile => _serverConfiguration!.serverRunProfile;
   String get serverBuild => _serverConfiguration!.serverBuild;
-  String get buildInfo => _buildInfo['build_info'];
+  String get buildInfo => _buildInfo['build_info'] + ' ' + runProfile;
 
   dynamic _getDoc(List<String> path) {
     return _docPlain(['_${runProfile}_${prodStr}_$nativeStr' ,...path])
@@ -150,12 +150,13 @@ class Configuration {
   }
 
   dynamic _docPlain(List<String> path) {
+    if (_doc == null) return null;
     var part = _doc;
-    if (part == null) return null;
     for (var p in path) {
       part = part[p];
       if (part == null) return null;
     }
+    // log.finest('Config. Path: $path. Result: $part');
     return part;
   }
 }
