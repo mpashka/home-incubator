@@ -12,11 +12,12 @@ deploy() { flavor=$1;
   cd "$flutter"
   export RUN_PROFILE=$flavor
   "$flutter/pre-build.sh"
-  flutter build apk --flavor $flavor || die "generate android $flavor"
+  flutter build apk --flavor "$flavor" || die "generate android $flavor"
+  # We also have app-$flavor-debug.apk
+  curl --header "Content-Type: application/vnd.android.package-archive" --data-binary "@$flutter/build/app/outputs/flutter-apk/app-$flavor-release.apk" "https://filebin.net/$file_bin/android-$flavor.apk"
   rm -rf "$root/target/flutter/$flavor"
   mkdir -p "$root/target/flutter"
   mv "$flutter/build/app" "$root/target/flutter/$flavor"
-  curl --header "Content-Type: application/vnd.android.package-archive" --data-binary "@$root/flutter_fe/build/app/outputs/flutter-apk/app-$flavor-release.apk" "https://filebin.net/$file_bin/android-$flavor.apk"
 
   cd "$flutter/build/web"
   cp "$flutter/assets/config/build-info.yaml" "$flutter/build/web/assets/assets/config/"
