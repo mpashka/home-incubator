@@ -450,7 +450,10 @@ public class DbUser {
                 log.warn("Unknown user type {}", userTypes, e);
                 this.types = EnumSet.noneOf(UserType.class);
             }
-            this.trainingTypes = row.getJsonArray("user_training_types").stream().toArray(String[]::new);
+            JsonArray user_training_types = row.getJsonArray("user_training_types");
+            if (user_training_types != null) {
+                this.trainingTypes = user_training_types.stream().toArray(String[]::new);
+            }
             return this;
         }
 
