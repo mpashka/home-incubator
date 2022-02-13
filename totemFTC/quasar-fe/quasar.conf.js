@@ -30,7 +30,7 @@ module.exports = configure(function (ctx) {
     envObj.FrontendUrl = 'https://totemftc.ga';
   }
   envObj.ClientId = `quasar-${process.env.MODE}-${process.env.NODE_ENV}-${envObj.RunProfile}`;
-  envObj.BuildInfo = `${process.env.USER} ${process.env.HOSTNAME} ${envObj.RunProfile} ${new Date().toISOString()} ${gitRevisionPlugin.branch()} ${gitRevisionPlugin.version()}`;
+  envObj.BuildInfo = `${process.env.USER} ${process.env.HOSTNAME} ${envObj.RunProfile} ${new Date().toISOString()} ${gitRevisionPlugin.branch()} ${gitRevisionPlugin.version()} ${gitRevisionPlugin.commithash()}`;
 
   return {
     // https://v2.quasar.dev/quasar-cli/supporting-ts
