@@ -155,11 +155,12 @@
       </div>
   </q-page>
 
+
   <q-dialog v-model="isConfirmDelete">
     <q-card>
       <q-card-section class="row items-center">
         <q-avatar icon="delete_forever"/>
-        <span class="q-ml-sm">Удалить тренировку {{ date.formatDate(deleteRowObj.time, 'HH:mm D, MMM') }} {{deleteRowObj.trainingType.trainingName}} {{deleteRowObj.trainer.nickName}}</span>
+        <span class="q-ml-sm">Удалить тренировку {{ date.formatDate(deleteRowObj.time, 'HH:mm D, MMM') }} {{deleteRowObj.trainingType.trainingName}} {{storeUser.trainerNameString(deleteRowObj.trainer)}}</span>
       </q-card-section>
 
       <q-card-actions align="right">
@@ -168,6 +169,7 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+
 
   <q-dialog v-model="isConfirmAdd" persistent>
     <q-card class="q-gutter-md" style="width: 60%; max-width: 60%">
@@ -203,7 +205,7 @@
           </q-select>
 
           <q-select class="col-4" filled v-model="editRowObj.trainer" label="Тренер"
-                    :options="trainers" option-label="nickName">
+                    :options="trainers" :option-label="storeUser.trainerNameString">
             <template v-slot:no-option>
               <q-item>
                 <q-item-section class="text-grey">
@@ -223,6 +225,7 @@
   </q-dialog>
 
 </template>
+
 
 <script lang="ts">
 import {computed, defineComponent, Ref, ref} from 'vue';

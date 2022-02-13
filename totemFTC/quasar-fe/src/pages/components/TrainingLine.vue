@@ -4,7 +4,7 @@
       {{date.formatDate(training.time, 'HH:mm')}}
     </div>
     <div class="col-3" style="min-width: 3em;">
-      {{training.trainer.nickName}}
+      {{storeUser.trainerNameString(training.trainer)}}
     </div>
     <div class="col-4" style="min-width: 3em;">
       {{training.trainingType.trainingName}}
@@ -19,6 +19,7 @@
 import {EntityCrudTraining} from "src/store/store_crud_training";
 import {defineComponent, PropType} from "vue";
 import {date} from "quasar";
+import {useStoreCrudUser} from 'src/store/store_crud_user';
 
 export default defineComponent({
   name: "TrainingLine",
@@ -26,7 +27,9 @@ export default defineComponent({
     training: Object as PropType<EntityCrudTraining>,
   },
   setup() {
+    const storeUser = useStoreCrudUser();
     return {
+      storeUser,
       date,
     }
   }

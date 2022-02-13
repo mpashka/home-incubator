@@ -68,7 +68,7 @@
           </q-select>
 
           <q-select class="col-4" filled v-model="editRowObj.trainer" label="Тренер"
-                    :options="trainers" option-label="nickName">
+                    :options="trainers" :option-label="storeUser.trainerNameString">
             <template v-slot:no-option>
               <q-item>
                 <q-item-section class="text-grey">
@@ -114,7 +114,7 @@ export default defineComponent({
     const columns = [
       { name: 'time', required: true, label: 'Время', align: 'left', field: 'time' },
       { name: 'type', required: true, label: 'Тренировка', align: 'left', field: 'trainingType', format: (val: EntityCrudTrainingType) => `${val.trainingName}`,},
-      { name: 'trainer', required: true, label: 'Тренер', align: 'left', field: 'trainer', format: (val: EntityUser) => `${val.nickName}`},
+      { name: 'trainer', required: true, label: 'Тренер', align: 'left', field: 'trainer', format: (val: EntityUser) => storeUser.trainerNameString(val)},
       { name: 'actions', label: 'Actions'}
     ]
 

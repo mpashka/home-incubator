@@ -111,7 +111,10 @@ export const useStoreCrudUser = defineStore('crudUser', {
       return result;
     }},
 
-    trainerNameString(): (user: EntityUser) => string {return (user: EntityUser) => {
+    trainerNameString(): (user?: EntityUser) => string {return (user?: EntityUser) => {
+      if (!user) {
+        return '';
+      }
       return user.nickName ? user.nickName : user.firstName;
     }},
 

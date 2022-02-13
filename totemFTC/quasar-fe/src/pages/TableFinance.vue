@@ -100,9 +100,13 @@ export default defineComponent({
   name: 'TableFinance',
   setup () {
 
+    const storeUser = useStoreCrudUser();
+    const storeLogin = useStoreLogin();
+    const storeFinance = useStoreFinance();
+
     const incomeColumns = [
       { name: 'date', required: true, label: 'Дата', align: 'left', field: 'date', sortable: true, format: displayDate },
-      { name: 'trainer', required: false, label: 'Тренер', align: 'left', field: 'trainer', format: (val?: EntityUser) => val?.nickName, sortable: true },
+      { name: 'trainer', required: false, label: 'Тренер', align: 'left', field: 'trainer', format: (val?: EntityUser) => storeUser.trainerNameString(val), sortable: true },
       { name: 'trainings', required: true, label: 'Тренировки', align: 'left', field: 'trainings', sortable: true },
       { name: 'visits', required: true, label: 'Посещения', align: 'left', field: 'visits', sortable: true },
       { name: 'income', required: true, label: 'Доход', align: 'left', field: 'income', sortable: true },
@@ -124,10 +128,6 @@ export default defineComponent({
     const now = new Date();
     const start = date.subtractFromDate(weekStart(now), {days: 7});
     const end = date.addToDate(date.startOfDate(now, 'day'), {days: 1});
-
-    const storeUser = useStoreCrudUser();
-    const storeLogin = useStoreLogin();
-    const storeFinance = useStoreFinance();
 
     incomeType.value = incomeTypeOptions[storeUser.isAdmin(storeLogin.user) ? 2 : 0];
     storeFinance.incomeType = incomeType.value.value;

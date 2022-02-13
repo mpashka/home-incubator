@@ -15,12 +15,13 @@ const gitRevisionPlugin = new GitRevisionPlugin();
 // See lib/helpers/get-quasar-ctx.js
 module.exports = configure(function (ctx) {
   const envObj = {
-    BuildInfo: `${process.env.USER} ${process.env.HOSTNAME} ${process.env.RUN_PROFILE} ${new Date().toISOString()} ${gitRevisionPlugin.branch()} ${gitRevisionPlugin.version()}`,
+    RunProfile: process.env.RUN_PROFILE ? process.env.RUN_PROFILE : 'unknown',
   };
 
   if (ctx.dev) {
     envObj.BackendUrl = 'http://localhost:8080';
     envObj.FrontendUrl = 'http://localhost:8081';
+    if (!process.env.RUN_PROFILE) envObj.RunProfile = 'dev';
   } else if (process.env.RUN_PROFILE === 'demo') {
     envObj.BackendUrl = 'https://api.ticket-demo.ml';
     envObj.FrontendUrl = 'https://ticket-demo.ml';
@@ -28,6 +29,8 @@ module.exports = configure(function (ctx) {
     envObj.BackendUrl = 'https://api.totemftc.ga';
     envObj.FrontendUrl = 'https://totemftc.ga';
   }
+  envObj.ClientId = `quasar-${process.env.MODE}-${process.env.NODE_ENV}-${envObj.RunProfile}`;
+  envObj.BuildInfo = `${process.env.USER} ${process.env.HOSTNAME} ${envObj.RunProfile} ${new Date().toISOString()} ${gitRevisionPlugin.branch()} ${gitRevisionPlugin.version()}`;
 
   return {
     // https://v2.quasar.dev/quasar-cli/supporting-ts

@@ -43,8 +43,6 @@ export interface DateTraining {
   trainings: EntityCrudTraining[],
 }
 
-const emptyDateTraining: DateTraining = {date: '', dateTrainings: [], trainings: []};
-
 async function loadTrainingsByDate(interval: DateInterval): Promise<EntityCrudTraining[]> {
   return (await api.get<EntityCrudTraining[]>(`/api/userTraining/byDateInterval?from=${date.formatDate(interval.from, dateFormat)}+00:00&to=${date.formatDate(interval.to, dateFormat)}+00:00`)).data;
 }
@@ -59,38 +57,25 @@ export const useStoreCrudTraining = defineStore('crudTraining', {
 
   getters: {
     trainingsByWeek(state) {
-      const trainingsByWeek = [];
-      let weekTrainings: DateTraining = emptyDateTraining;
-      let dayTrainings: DateTraining = emptyDateTraining;
-      state.trainings.forEach(t => {
-        const dayDate = date.formatDate(date.startOfDate(t.time, 'day'), dateFormat);
-        if (dayTrainings.date != dayDate) {
-          if (dayTrainings.date === emptyDateTraining.date) {
-            // First day, first week
-            weekTrainings = {date: dayDate, dateTrainings: [], trainings: []};
-
-          } else {
-            // New day
-            weekTrainings.dateTrainings.push(dayTrainings);
-
-            const weekDate = date.formatDate(weekStart(t.time), dateFormat);
-            if (weekTrainings.date !== weekDate) {
-              trainingsByWeek.push(weekTrainings);
-              weekTrainings = {date: weekDate, dateTrainings: [], trainings: []};
+      const result = [];
+      // const
+      const weeksBegin = weekStart(state.trainingsInterval.from);
+      const weeksEnd = weekStart(state.trainingsInterval.to);
+      for (let weekDate = weeksBegin; weekDate <= weeksEnd; weekDate = date.addToDate(weekDate, {days: 7})) {
+        const weekTrainings: DateTraining = {date: date.formatDate(weekDate, dateFormat), dateTrainings: [], trainings: []};
+        result.push(weekTrainings);
+        for (let day = 0; day < 7; day++) {
+          const dayDate = date.addToDate(weekDate, {days: day});
+          const dayTrainings: DateTraining = {date: date.formatDate(dayDate, dateFormat), dateTrainings: [], trainings: []};
+          weekTrainings.dateTrainings.push(dayTrainings);
+          state.trainings.forEach(t => {
+            if (date.startOfDate(t.time, 'day') === dayDate) {
+              dayTrainings.trainings.push(t);
             }
-          }
-          dayTrainings = {date: dayDate, dateTrainings: [], trainings: []};
-        }
-        dayTrainings.trainings.push(t);
-      });
-      if (dayTrainings.trainings.length > 0) {
-        weekTrainings.dateTrainings.push(dayTrainings);
-        if (weekTrainings.dateTrainings.length > 0) {
-          trainingsByWeek.push(weekTrainings);
+          });
         }
       }
-      console.log('Weeks: ', trainingsByWeek);
-      return trainingsByWeek;
+      return result;
     },
   },
 
