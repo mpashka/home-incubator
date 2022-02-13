@@ -59,8 +59,8 @@ public class DbCrudTraining {
                 "ORDER BY training_time"
         );
         selectTrainingTypes = client.preparedQuery("SELECT * FROM training_type ORDER BY training_type");
-        insertTrainingType = client.preparedQuery("INSERT INTO training_type (training_type, name, default_cost) VALUES ($1, $2, $3)");
-        updateTrainingType = client.preparedQuery("UPDATE training_type SET name=$2, default_cost=$3 WHERE training_type=$1");
+        insertTrainingType = client.preparedQuery("INSERT INTO training_type (training_type, training_name, default_cost) VALUES ($1, $2, $3)");
+        updateTrainingType = client.preparedQuery("UPDATE training_type SET training_name=$2, default_cost=$3 WHERE training_type=$1");
         deleteTrainingType = client.preparedQuery("DELETE FROM training_type WHERE training_type=$1");
         insert = client.preparedQuery("INSERT INTO training (training_time, trainer_id, training_type) VALUES ($1, $2, $3) RETURNING training_id");
         updateForAdmin = client.preparedQuery("UPDATE training SET trainer_id=$2, training_time=$3, training_type=$4 WHERE training_id=$1");
@@ -113,6 +113,7 @@ public class DbCrudTraining {
     }
 
     public Uni<Entity[]> getByDateIntervalForUser(LocalDateTime from, LocalDateTime to) {
+        log.debug("Select all trainings from {} to {}", from, to);
         return selectByDateIntervalForUser
                 .execute(Tuple.of(from, to))
                 .onItem().transform(set ->

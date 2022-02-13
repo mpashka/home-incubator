@@ -1,6 +1,7 @@
 package org.mpashka.totemftc.api;
 
 import io.quarkus.runtime.configuration.ProfileManager;
+import io.smallrye.common.constraint.NotNull;
 import io.smallrye.mutiny.Uni;
 import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonObject;
@@ -35,14 +36,14 @@ public abstract class AuthProviderOidc extends AuthProvider {
     }
 
     String getClientId(WebResourceLogin.ClientId clientId) {
-        return findConfigValue(clientId,
+        return findConfigValue("oidcClientId", clientId,
                 k -> k.isEmpty()
                 ? "oidc.provider.<provider>.clientId".replace("<provider>", getName())
                 : "oidc.provider.<provider>.<clientId>.clientId".replace("<provider>", getName()).replace("<clientId>", String.join("-", k)));
     }
 
     String getSecret(WebResourceLogin.ClientId clientId) {
-        return findConfigValue(clientId,
+        return findConfigValue("oidcSecret", clientId,
                 k -> k.isEmpty()
                 ? "oidc.provider.<provider>.secret".replace("<provider>", getName())
                 : "oidc.provider.<provider>.<clientId>.secret".replace("<provider>", getName()).replace("<clientId>", String.join("-", k)));
@@ -96,15 +97,12 @@ public abstract class AuthProviderOidc extends AuthProvider {
 
 
     private String findRedirectUri(WebResourceLogin.ClientId clientId) {
-        String configValue = findConfigValue(clientId, k -> k.isEmpty() ? "oidc.client.redirectUri" : ("oidc.client.redirectUri." + String.join("-", k)));
-        if (configValue == null) {
-            log.error("Was not able to find redirectUri for {}", clientId);
-            return ConfigProvider.getConfig().getConfigValue("oidc.client.redirectUri").getValue();
-        }
-        return configValue.replace("<provider>", getName());
+        return findConfigValue("redirectUri", clientId, k -> k.isEmpty() ? "oidc.client.redirectUri" : ("oidc.client.redirectUri." + String.join("-", k)))
+                .replace("<provider>", getName());
     }
 
-    private String findConfigValue(WebResourceLogin.ClientId clientId, Function<List<String>, String> keyFunction) {
+    @NotNull
+    private String findConfigValue(String paramName, WebResourceLogin.ClientId clientId, Function<List<String>, String> keyFunction) {
         String[] clientIdParts = clientId.getClientId().split("-");
         String[] idParts = new String[clientIdParts.length + 1];
         idParts[0] = ProfileManager.getActiveProfile();
@@ -128,6 +126,10 @@ public abstract class AuthProviderOidc extends AuthProvider {
                 value = redirectUriConfig.getValue();
                 maxKeyLength = key.size();
             }
+        }
+        if (value == null) {
+            log.error("Was not able to find {} {} for {}", getName(), paramName, clientId);
+            throw new IllegalArgumentException("Not able to find " + getName() + " " + paramName + " for " + clientId);
         }
         return value;
     }

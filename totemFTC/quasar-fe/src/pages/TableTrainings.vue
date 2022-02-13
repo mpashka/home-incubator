@@ -109,7 +109,7 @@
           <q-card-section>
             <div class="row no-wrap">
               <div class="col text-h6">{{ weekDateName(week.date) }}</div>
-              <dev class="col-auto" v-if="week.dateTrainings.length < 7">
+              <dev class="col-auto">
                 <q-btn icon="mdi-table-arrow-down" @click="schedulePropagate(week.date)">
                   <q-tooltip>Заполнить расписание на неделю</q-tooltip>
                 </q-btn>
@@ -248,7 +248,7 @@ export default defineComponent({
 
     const now = new Date();
     const start = date.subtractFromDate(weekStart(now), {days: 7});
-    const end = date.addToDate(start, {days: 21});
+    const end = date.addToDate(start, {days: 20});
     const interval: Ref<{from: string, to: string}> = ref({from: date.formatDate(start, dateFormat), to: date.formatDate(end, dateFormat)});
 
     const storeTraining = useStoreCrudTraining();

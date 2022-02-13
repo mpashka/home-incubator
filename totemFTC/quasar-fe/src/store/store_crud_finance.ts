@@ -30,10 +30,10 @@ export const useStoreFinance = defineStore('crudFinance', {
     },
 
     async loadIncome(interval: DateInterval) {
-      console.log('Loading income', interval);
+      // console.log('Loading income', interval);
       this.income = await this.loadIncomeByDate(interval);
       this.interval = interval;
-      console.log('Income: ', this.income);
+      // console.log('Income: ', this.income);
     },
 
     async loadIncomePrev(from: DateValue) {

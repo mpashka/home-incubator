@@ -29,7 +29,7 @@ export const useStoreLogin = defineStore('login', {
   },
 
   actions: {
-    async authenticate (sessionId?: string) {
+    async authenticate(sessionId?: string) {
       if (sessionId === undefined) {
         console.log('Authenticate from local storage')
         const newSessionId = localStorage.getItem(SESSION_ID_STORAGE_KEY);

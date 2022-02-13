@@ -4,6 +4,7 @@ root=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 . "$root/file_bin.sh"
 mkdir -p "$root/target"
 
+export BUILD_HOSTNAME="$HOSTNAME"
 deploy() { flavor=$1;
   cd "$root/quasar-fe"
   export RUN_PROFILE="$flavor"

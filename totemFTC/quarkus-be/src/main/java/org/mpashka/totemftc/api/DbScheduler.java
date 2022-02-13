@@ -92,14 +92,14 @@ public class DbScheduler {
                         LocalDate date = weekStart.plusDays(day);
                         List<EntityTraining> trainings = e.trainings.get(date);
                         List<EntitySchedule> schedules = e.schedule.get(date.getDayOfWeek().getValue());
-                        log.debug("Day {}. Date:{}", day, date);
+                        log.debug("Day {}. Date:{}. Schedule: {}. Trainings: {}", day, date, schedules != null ? schedules.size() : -1, trainings != null ? trainings.size() : -1);
                         if (trainings == null && schedules != null) {
                             for (EntitySchedule schedule : schedules) {
                                 log.debug("    {}", schedule);
                                 insertTrainingParams.add(Tuple.of(schedule.id, LocalDateTime.of(date, schedule.time.toLocalTime()), schedule.trainerId, schedule.trainingType));
                             }
                         } else if (trainings != null && schedules != null) {
-                            log.debug("    Day already has some schedule {}. Schedule propagate aborted", date);
+                            log.debug("    Day already has some schedule {}/{}. Schedule propagate aborted", date, trainings.size());
                         }
                     }
                     return insertTrainingParams.isEmpty() ? Uni.createFrom().item((RowSet<Row>) null) :

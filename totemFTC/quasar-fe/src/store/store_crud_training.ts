@@ -1,7 +1,7 @@
 import {emptyUser, EntityUser} from "src/store/store_crud_user";
 import {defineStore} from "pinia";
 import {api} from "boot/axios";
-import {dateFormat, DateInterval, DateValue, EditType, weekStart} from 'src/store/store_utils';
+import {dateFormat, DateInterval, DateValue, EditType, sameDate, weekStart} from 'src/store/store_utils';
 import {date} from 'quasar';
 
 export interface EntityCrudTrainingType {
@@ -44,7 +44,8 @@ export interface DateTraining {
 }
 
 async function loadTrainingsByDate(interval: DateInterval): Promise<EntityCrudTraining[]> {
-  return (await api.get<EntityCrudTraining[]>(`/api/userTraining/byDateInterval?from=${date.formatDate(interval.from, dateFormat)}+00:00&to=${date.formatDate(interval.to, dateFormat)}+00:00`)).data;
+  // console.log('loadTrainingsByDate. From', interval.from, 'to', interval.to);
+  return (await api.get<EntityCrudTraining[]>(`/api/userTraining/byDateInterval?from=${date.formatDate(interval.from, dateFormat)}+00:00&to=${date.formatDate(interval.to, dateFormat)}+24:00`)).data;
 }
 
 export const useStoreCrudTraining = defineStore('crudTraining', {
@@ -69,7 +70,7 @@ export const useStoreCrudTraining = defineStore('crudTraining', {
           const dayTrainings: DateTraining = {date: date.formatDate(dayDate, dateFormat), dateTrainings: [], trainings: []};
           weekTrainings.dateTrainings.push(dayTrainings);
           state.trainings.forEach(t => {
-            if (date.startOfDate(t.time, 'day') === dayDate) {
+            if (sameDate(t.time, dayDate)) {
               dayTrainings.trainings.push(t);
             }
           });

@@ -21,16 +21,17 @@ module.exports = configure(function (ctx) {
   if (ctx.dev) {
     envObj.BackendUrl = 'http://localhost:8080';
     envObj.FrontendUrl = 'http://localhost:8081';
-    if (!process.env.RUN_PROFILE) envObj.RunProfile = 'dev';
+    if (!process.env.RUN_PROFILE) envObj.RunProfile = 'local';
   } else if (process.env.RUN_PROFILE === 'demo') {
     envObj.BackendUrl = 'https://api.ticket-demo.ml';
     envObj.FrontendUrl = 'https://ticket-demo.ml';
   } else if (process.env.RUN_PROFILE === 'totem' || ctx.prod) {
     envObj.BackendUrl = 'https://api.totemftc.ga';
     envObj.FrontendUrl = 'https://totemftc.ga';
+    if (!process.env.RUN_PROFILE) envObj.RunProfile = 'totem';
   }
-  envObj.ClientId = `quasar-${process.env.MODE}-${process.env.NODE_ENV}-${envObj.RunProfile}`;
-  envObj.BuildInfo = `${process.env.USER} ${process.env.HOSTNAME} ${envObj.RunProfile} ${new Date().toISOString()} ${gitRevisionPlugin.branch()} ${gitRevisionPlugin.version()} ${gitRevisionPlugin.commithash()}`;
+  envObj.ClientId = `quasar-${ctx.modeName}-${process.env.NODE_ENV}-${envObj.RunProfile}`;
+  envObj.BuildInfo = `${process.env.USER} ${process.env.BUILD_HOSTNAME} ${ctx.modeName} ${process.env.NODE_ENV} ${envObj.RunProfile} ${new Date().toISOString()} ${gitRevisionPlugin.branch()} ${gitRevisionPlugin.version()} ${gitRevisionPlugin.commithash()}`;
 
   return {
     // https://v2.quasar.dev/quasar-cli/supporting-ts
@@ -108,7 +109,7 @@ module.exports = configure(function (ctx) {
       // distDir: ctx.modeName === 'spa' && ctx.prod ? 'target/classes/META-INF/resources' : `dist/${ctx.modeName}`,
       // distDir: "true" === process.env.DEMO_BUILD ? '../target/web' : `dist/${ctx.modeName}`,
 
-      distDir: ctx.modeName === 'spa' ? `dist/${ctx.modeName}-${process.env.RUN_PROFILE}` : `dist/${ctx.modeName}`,
+      distDir: ctx.modeName === 'spa' ? `dist/${ctx.modeName}-${envObj.RunProfile}` : `dist/${ctx.modeName}`,
 
       env: envObj,
 /*

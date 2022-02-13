@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS user_info (
     nick_name VARCHAR(30) NULL,
     primary_image INTEGER NULL,
     user_types user_type_enum[],
-    user_training_types VARCHAR(10)[]        -- this is for user_types=='trainer'
+    user_training_types VARCHAR(20)[]        -- this is for user_types=='trainer'
 );
 -- FOREIGN KEY (EACH ELEMENT OF training_types) REFERENCES training_type,
 CREATE TABLE IF NOT EXISTS user_email (
@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS user_session (
 
 --
 CREATE TABLE IF NOT EXISTS training_type (
-    training_type VARCHAR(10) NOT NULL PRIMARY KEY,
-    training_name VARCHAR(20),
+    training_type VARCHAR(20) NOT NULL PRIMARY KEY,
+    training_name VARCHAR(40),
     default_cost INTEGER NOT NULL
 );
 
@@ -64,7 +64,7 @@ CREATE TABLE IF NOT EXISTS training_schedule (
     training_schedule_id SERIAL PRIMARY KEY,
     training_time TIMESTAMP NOT NULL,
     trainer_id INTEGER NOT NULL REFERENCES user_info (user_id),
-    training_type VARCHAR(10) NOT NULL REFERENCES training_type (training_type)
+    training_type VARCHAR(20) NOT NULL REFERENCES training_type (training_type)
 );
 
 CREATE TABLE IF NOT EXISTS training (
@@ -72,13 +72,13 @@ CREATE TABLE IF NOT EXISTS training (
     training_schedule_id INTEGER NULL REFERENCES training_schedule (training_schedule_id),
     training_time TIMESTAMP NOT NULL,
     trainer_id INTEGER NOT NULL REFERENCES user_info (user_id),
-    training_type VARCHAR(10) NOT NULL REFERENCES training_type (training_type),
+    training_type VARCHAR(20) NOT NULL REFERENCES training_type (training_type),
     training_comment VARCHAR(100) NULL
 );
 
 CREATE TABLE IF NOT EXISTS ticket_type (
     ticket_type_id SERIAL PRIMARY KEY,
-    ticket_training_types VARCHAR(10)[] NOT NULL,
+    ticket_training_types VARCHAR(20)[] NOT NULL,
     ticket_name VARCHAR(20)  NOT NULL,
     ticket_cost INTEGER NOT NULL,
     ticket_visits INTEGER NOT NULL,

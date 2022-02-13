@@ -116,20 +116,24 @@ export default defineComponent({
       { label: 'Неделя', value: 'week' },
       { label: 'Месяц', value: 'month' },
     ];
-    const incomeTypeOptions: {label: string, value: IncomeType}[] = [
-      { label: 'Твой доход', value: 'currentTrainerIncome' },
-      { label: 'Все тренеры', value: 'trainerIncome' },
-      { label: 'Общий доход', value: 'totalIncome' }
-    ];
-
     const incomeInterval = ref(incomeIntervalOptions[0]);
-    const incomeType = ref(incomeTypeOptions[0]);
+
+    const incomeTypeOptions: {label: string, value: IncomeType}[] = [];
+    if (storeUser.isTrainer(storeLogin.user)) {
+      incomeTypeOptions.push({ label: 'Твой доход', value: 'currentTrainerIncome' });
+    }
+    if (storeUser.isAdmin(storeLogin.user)) {
+      incomeTypeOptions.push({ label: 'Все тренеры', value: 'trainerIncome' });
+      incomeTypeOptions.push({ label: 'Общий доход', value: 'totalIncome' });
+    }
+    console.log('User', storeLogin.user, storeLogin.user.types, 'isTrainer', storeUser.isTrainer(storeLogin.user));
+    const incomeType = ref(incomeTypeOptions[incomeTypeOptions.length-1]);
+
 
     const now = new Date();
     const start = date.subtractFromDate(weekStart(now), {days: 7});
     const end = date.addToDate(date.startOfDate(now, 'day'), {days: 1});
 
-    incomeType.value = incomeTypeOptions[storeUser.isAdmin(storeLogin.user) ? 2 : 0];
     storeFinance.incomeType = incomeType.value.value;
 
     storeFinance.loadIncome({from: start, to: end}).catch(e => console.log('Load error', e));

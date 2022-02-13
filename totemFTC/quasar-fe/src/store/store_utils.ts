@@ -55,11 +55,21 @@ export function contains(objStrings: string[], filters: string[]): boolean {
 
 const weekStartDay = 1;  // Monday
 
-export function weekStart(inDate: Date | number | string) {
+export function weekStart(inDate: DateValue) {
   const day = date.startOfDate(inDate, 'day');
   const weekMinus = (date.getDayOfWeek(day) - weekStartDay) % 7;
   return date.subtractFromDate(day, {days: weekMinus});
 }
+
+export function sameDate(date1: DateValue, date2: DateValue) {
+  return date.startOfDate(date1, 'day').getTime() === date.startOfDate(date2, 'day').getTime();
+}
+
+/*
+function div(a: number, b: number): number {
+  return (a - a%b) / b;
+}
+*/
 
 export function dateLabel(d: DateValue): string {
   switch (date.getDateDiff(d, Date.now(), 'days')) {
@@ -82,4 +92,4 @@ export const useStoreUtils = defineStore('storeUtils', {
   }),
 });
 
-export const clientId = ``;
+export const clientId: string = process.env.ClientId || 'quasar-unknown';
