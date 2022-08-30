@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+    <Appenders>
+        <Console name="Console" target="SYSTEM_OUT" follow="true">
+            <!--PatternLayout pattern="${sys:CONSOLE_LOG_PATTERN}" charset="${sys:CONSOLE_LOG_CHARSET}"/-->
+            <PatternLayout pattern="%d{mm:ss.SSS} %5p [%5.5t] %-40.40c{1.} : %m%n"/>
+        </Console>
+    </Appenders>
+    <Loggers>
+        <Logger name="org.test.mpashka" level="all"/>
+        <Root level="info">
+            <AppenderRef ref="Console" />
+        </Root>
+    </Loggers>
+</Configuration>

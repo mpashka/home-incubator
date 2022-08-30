@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:c="http://www.springframework.org/schema/c"
+       xmlns:p="http://www.springframework.org/schema/p"
+
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd
+  http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms.xsd
+">
+
+    <bean id="geps.jms.queue.out.read.notify" class="org.apache.activemq.artemis.jms.client.ActiveMQQueue"
+          c:name="jms.queue.geps.out.read.notify" />
+
+    <!-- JmsTemplate Definition -->
+    <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+        <property name="connectionFactory" ref="jmsConnectionFactory" />
+        <property name="defaultDestination" ref="destinationQueue" />
+<!--        <property name="messageConverter" ref="myMessageConverter" />-->
+    </bean>
+
+<!--    <bean id="amqConnectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">-->
+    <bean id="amqJmsConnectionFactory" class="org.apache.activemq.artemis.jms.client.ActiveMQJMSConnectionFactory">
+        <constructor-arg name="uri" value="tcp://localhost:61616" />
+        <property name="user" value="local"/>
+        <property name="password" value="local"/>
+    </bean>
+
+    <!-- ConnectionFactory Definition -->
+    <bean id="jmsConnectionFactory" class="org.springframework.jms.connection.SingleConnectionFactory">
+        <property name="targetConnectionFactory" ref="amqJmsConnectionFactory" />
+    </bean>
+
+<!--    <bean id="destinationQueue" class="org.apache.activemq.command.ActiveMQQueue">-->
+    <bean id="destinationQueue" class="org.apache.activemq.artemis.jms.client.ActiveMQQueue" c:name="jms.queue.geps.out.read.notify"/>
+
+    <bean id="destinationResolver" class="org.springframework.jms.support.destination.BeanFactoryDestinationResolver"/>
+
+<!--
+    <bean id="SampleJmsMessageSender" class="com.baeldung.spring.jms.SampleJmsMessageSender">
+        <p:queue ref="destinationQueue" />
+        <p:jmsTemplate ref="jmsTemplate" />
+    </bean>
+-->
+
+<!--
+    <bean id="myMessageConverter" class="com.baeldung.spring.jms.SampleMessageConverter" />
+-->
+
+    <!-- this is the Message-Driven POJO (MDP) -->
+<!--
+    <bean id="messageListener" class="com.baeldung.spring.jms.SampleListener">
+        <property name="jmsTemplate" ref="jmsTemplate" />
+        <property name="queue" ref="destinationQueue" />
+    </bean>
+-->
+
+    <bean id="errorHandler" class="org.test.mpashka.spring.jms.SampleJmsErrorHandler" />
+
+    <!-- and this is the message listener container -->
+<!--
+    <bean id="jmsContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="connectionFactory" />
+        <property name="destinationName" value="IN_QUEUE" />
+        <property name="messageListener" ref="messageListener" />
+        <property name="errorHandler" ref="errorHandler" />
+    </bean>
+-->
+
+<!--
+    p:messageConverter-ref="jmsMessageConverter"
+-->
+
+    <bean abstract="true" id="abstract.jmsListenerContainerFactory" class="org.springframework.jms.config.DefaultJmsListenerContainerFactory"
+          p:connectionFactory-ref="jmsConnectionFactory"
+          p:destinationResolver-ref="destinationResolver"
+          p:errorHandler-ref="errorHandler"
+          p:sessionTransacted="true" />
+
+    <bean id="myContainerFactory" parent="abstract.jmsListenerContainerFactory" p:concurrency="20" />
+
+</beans>

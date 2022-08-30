@@ -1,0 +1,19 @@
+spring:
+  artemis:
+    mode: native
+#    broker-url: "tcp://127.0.0.1:9876"
+    broker-url: "tcp://127.0.0.1:61616"
+    user: "local"
+    password: "local"
+    pool:
+      enabled: true
+      max-connections: 50
+jms:
+  cache:
+    session-cache-size: 5
+
+geps:
+  jms:
+    instance:
+      code:
+        selector: 'GepsInstanceCode = geps'

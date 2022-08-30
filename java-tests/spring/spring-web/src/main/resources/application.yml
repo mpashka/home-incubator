@@ -1,0 +1,6 @@
+spring:
+  profiles:
+    include: cache
+my:
+  prop1: my-prop-1
+  prop2: 200
