@@ -1,0 +1,12 @@
+            if (nameParts.length == 1) {
+                nameParts = name.split("\\.");
+                nameParts[2] += "." + nameParts[3];
+                nameParts[3] = nameParts[4];
+                String[] np2 = new String[4];
+                System.arraycopy(nameParts, 0, np2, 0, 4);
+                nameParts = np2;
+            }
+
+            if (nameParts.length == 2) {
+                String dateStr = properties.getProperty("site_date." + number);
+                this.updateTime = Instant.from(DateTimeFormatter.ISO_INSTANT.parse(dateStr));
