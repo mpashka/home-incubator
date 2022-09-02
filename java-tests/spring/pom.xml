@@ -11,7 +11,6 @@
     </parent>
     <groupId>org.mpashka.tests.spring</groupId>
     <artifactId>spring</artifactId>
-    <version>1.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
 	<!--name>demo</name>
 	<description>Demo project for Spring Boot</description-->
@@ -19,6 +18,7 @@
 	<modules>
 		<module>spring-web</module>
 		<module>spring-jms</module>
+		<module>spring-data</module>
 	</modules>
 
 	<properties>
@@ -45,16 +45,33 @@
 
 	<dependencyManagement>
 		<dependencies>
+			<!--
+            geps: 2.5.4
+            latest stable: 2.7.3
+            latest preview: 3.0.0-M5
+            -->
 			<dependency>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-dependencies</artifactId>
-				<version>2.5.4</version>
+				<version>3.0.0-M4</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
+	<repositories>
+		<repository>
+			<id>spring-repo</id>
+			<name>Spring Repository</name>
+			<url>https://repo.spring.io/release</url>
+		</repository>
+		<repository>
+			<id>spring-milestone</id>
+			<name>Spring Milestone Repository</name>
+			<url>https://repo.spring.io/milestone</url>
+		</repository>
+	</repositories>
 
 	<build>
 		<plugins>

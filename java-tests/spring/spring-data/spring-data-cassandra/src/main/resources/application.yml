@@ -1,0 +1,15 @@
+spring:
+  data:
+    cassandra:
+      # NONE, CREATE, CREATE_IF_NOT_EXISTS
+      schema-action: NONE
+      request.timeout: 10s
+      connection.connect-timeout: 10s
+      connection.init-query-timeout: 10s
+
+      local-datacenter: datacenter1
+#      contactPoints: kuber.gosuslugi.local:12167
+      contactPoints: kuber-pgu-dev.gosuslugi.local:12167
+      keyspace-name: geps
+      username: cassandra
+      password: cassandra
