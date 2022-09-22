@@ -10,54 +10,22 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
     <groupId>org.mpashka.tests.spring</groupId>
-    <artifactId>spring</artifactId>
+    <artifactId>spring-parent</artifactId>
 	<packaging>pom</packaging>
 	<!--name>demo</name>
 	<description>Demo project for Spring Boot</description-->
 
 	<modules>
-		<module>spring-web</module>
-		<module>spring-jms</module>
-		<module>spring-data</module>
+		<module>spring-boot</module>
 	</modules>
 
 	<properties>
 	</properties>
 
     <dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-starter-logging</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
     </dependencies>
 
 	<dependencyManagement>
-		<dependencies>
-			<!--
-            geps: 2.5.4
-            latest stable: 2.7.3
-            latest preview: 3.0.0-M5
-            -->
-			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-dependencies</artifactId>
-				<version>3.0.0-M4</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
 	</dependencyManagement>
 
 	<repositories>
@@ -72,14 +40,5 @@
 			<url>https://repo.spring.io/milestone</url>
 		</repository>
 	</repositories>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
 
 </project>
