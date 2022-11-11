@@ -1,0 +1,18 @@
+#-Dlogging.level.org.springframework=TRACE
+#-Dlogging.level.com.baeldung=TRACE
+
+server.port: 8080
+
+management:
+  endpoint.shutdown.enabled: true
+#  endpoint.auditevents.enabled: true
+#  endpoint.beans.enabled: true
+#  endpoint.caches.enabled: true
+#  endpoint.conditions.enabled: true
+#  endpoint.configprops.enabled: true
+  endpoints:
+#    endpoints.enabled-by-default: false
+    web.exposure:
+      include: "*"
+#      exclude: "*"
+  server.port: 9090

@@ -9,8 +9,12 @@ import javax.jms.MessageListener;
 import javax.jms.TextMessage;
 import java.util.Enumeration;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class ConsumerMessageListener implements MessageListener {
-    private static final Logger log = LoggerFactory.getLogger(ConsumerMessageListener.class);
+    public static final String RETRY = "Important Task retry";
+    private int retry;
 
     private String consumerName;
     public ConsumerMessageListener(String consumerName) {
@@ -20,14 +24,22 @@ public class ConsumerMessageListener implements MessageListener {
     public void onMessage(Message message) {
         TextMessage textMessage = (TextMessage) message;
         try {
-            log.info("{} received {}", consumerName,textMessage.getText());
-            Enumeration propertyNames = textMessage.getPropertyNames();
+            String text = textMessage.getText();
+            log.info("{} received {}", consumerName, text);
+            Enumeration<?> propertyNames = textMessage.getPropertyNames();
             while (propertyNames.hasMoreElements()) {
                 String name = propertyNames.nextElement().toString();
                 log.info("    {}={}", name, textMessage.getObjectProperty(name));
             }
+            if (text.startsWith(RETRY)) {
+                int msgRetry = Integer.parseInt(text.substring(RETRY.length()).trim());
+                log.info("Retry {} -> {}", retry, msgRetry);
+                if (retry < msgRetry) {
+                    throw new RuntimeException("Retry " + retry++);
+                }
+            }
         } catch (JMSException e) {
-            e.printStackTrace();
+            log.error("Unexpected error", e);
         }
     }
 }

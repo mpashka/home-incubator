@@ -1,0 +1,19 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <ns2:listParametersResponse xmlns:ns2="http://idecs.atc.ru/config/ws/">
+            <error>
+                <code>0</code>
+                <message>operation completed</message>
+            </error>
+            <list>
+                <param>
+                    <name>geps.RP_CLIENT_TYPE</name>
+                    <type>S</type>
+                    <description>Тип клиента для запросов к ИС ПР. Допустимые варианты: SMEV2, SMEV3</description>
+                    <strVal>SMEV2</strVal>
+                    <intVal>0</intVal>
+                </param>
+            </list>
+        </ns2:listParametersResponse>
+    </soap:Body>
+</soap:Envelope>

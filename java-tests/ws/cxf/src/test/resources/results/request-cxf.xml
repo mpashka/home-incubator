@@ -1,0 +1,8 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <ns2:listParametersRequest xmlns:ns2="http://idecs.atc.ru/config/ws/">
+            <filter>my-filt</filter>
+            <location>my-loc</location>
+        </ns2:listParametersRequest>
+    </soap:Body>
+</soap:Envelope>

@@ -1,0 +1,12 @@
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    <soap:Body>
+        <ns2:listParametersResponse xmlns:ns2="http://idecs.atc.ru/config/ws/">
+            <list>
+                <param>
+                    <description>my-descr</description>
+                    <intVal>0</intVal>
+                </param>
+            </list>
+        </ns2:listParametersResponse>
+    </soap:Body>
+</soap:Envelope>

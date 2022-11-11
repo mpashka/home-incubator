@@ -6,6 +6,9 @@ import javax.jms.*;
 import java.net.URISyntaxException;
 import java.util.Scanner;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 public class TopicApp {
     public static void main(String[] args) throws URISyntaxException, Exception {
         Connection connection = null;
@@ -13,7 +16,8 @@ public class TopicApp {
             // Producer
             ConnectionFactory connectionFactory = new ActiveMQConnectionFactory("tcp://localhost:61616", "local", "local");
             connection = connectionFactory.createConnection();
-            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+//            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Topic topic = session.createTopic("customerTopic");
 
             // Consumer1 subscribes to customerTopic
@@ -28,16 +32,21 @@ public class TopicApp {
 
             boolean a = true;
 
+            log.info("Enter message to send. Enter 'done' for the end.");
             Scanner scanner = new Scanner(System.in);
             while (a) {
+                String s = scanner.nextLine();
+                if ("done".equals(s)) {
+                    a = false;
+                }
+
                 // Publish
-                String payload = "Important Task";
+                String payload = "Important Task " + s;
                 Message msg = session.createTextMessage(payload);
                 MessageProducer producer = session.createProducer(topic);
-                System.out.println("Sending text '" + payload + "'");
+                log.info("Sending text '{}'", payload);
                 producer.send(msg);
-
-                scanner.nextLine();
+                session.commit();
             }
 
             Thread.sleep(3000);

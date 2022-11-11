@@ -1,0 +1,4 @@
+mine:
+  enable:
+    aaa: true
+    bbb: false

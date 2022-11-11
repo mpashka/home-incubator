@@ -20,6 +20,8 @@
 		<module>spring-jms</module>
 		<module>spring-data</module>
 		<module>spring-general</module>
+		<module>spring-actuator</module>
+		<module>spring-ws</module>
 	</modules>
 
 	<properties>

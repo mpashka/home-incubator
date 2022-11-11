@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
+    <S:Body>
+        <ns2:listParametersRequest xmlns:ns2="http://idecs.atc.ru/config/ws/">
+<!--            <filter>geps.RP_STATE_PUSH_TRUST</filter>-->
+<!--            <filter>geps.RP_CLIENT_TYPE</filter>-->
+<!--            <filter>geps.EVENT_RETRY_MULT</filter>-->
+<!--            <filter>geps.ALLOWED_EXTENSIONS</filter>-->
+<!--            <filter>geps.SC_START_DATE</filter>-->
+            <filter>geps.FEED_UPDATE_MESSAGES</filter>
+        </ns2:listParametersRequest>
+    </S:Body>
+</S:Envelope>

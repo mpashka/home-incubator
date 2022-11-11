@@ -14,13 +14,12 @@
         <java.version>17</java.version>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.compiler.source>${java.version}</maven.compiler.source>
-<!--
-        <maven.compiler.release>17</maven.compiler.release>
--->
+        <maven.compiler.release>${java.version}</maven.compiler.release>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <lombok.version>1.18.24</lombok.version>
+        <build-helper-maven-plugin.version>3.3.0</build-helper-maven-plugin.version>
     </properties>
 
 
@@ -116,6 +115,11 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.10.1</version>
                 </plugin>
+                <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${build-helper-maven-plugin.version}</version>
+                </plugin>
             </plugins>
         </pluginManagement>
 
@@ -140,6 +144,7 @@
         <module>misc</module>
         <module>spring</module>
         <module>jms</module>
+        <module>ws</module>
     </modules>
 
 </project>

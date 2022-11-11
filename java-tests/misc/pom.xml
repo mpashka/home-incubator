@@ -17,6 +17,8 @@
     <modules>
         <module>core</module>
         <module>jackson</module>
+        <module>telegram</module>
+        <module>kafka</module>
     </modules>
 
 </project>

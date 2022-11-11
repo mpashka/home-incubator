@@ -51,8 +51,8 @@ public class RestTemplateTest {
                                 .bbb(10)
                                 .build()))
                         .contentType(MediaType.APPLICATION_JSON)
-                ).andExpect(status().is2xxSuccessful())
-                .andExpect(content().string("Ok"));
+                ).andExpect(status().is4xxClientError())
+                .andExpect(content().string(""));
     }
 
     @Test
