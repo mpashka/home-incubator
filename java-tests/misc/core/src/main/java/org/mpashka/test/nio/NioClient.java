@@ -14,27 +14,34 @@ import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public class NioServer {
+public class NioClient {
 
     private static final String POISON_PILL = "POISON_PILL";
 
     public void start() throws IOException {
-        Selector selector = Selector.open();
-        ServerSocketChannel serverSocket = ServerSocketChannel.open(StandardProtocolFamily.INET);
-        serverSocket.bind(new InetSocketAddress(5454));
-        serverSocket.configureBlocking(false);
-        serverSocket.register(selector, SelectionKey.OP_ACCEPT);
         ByteBuffer buffer = ByteBuffer.allocate(256);
+
+//        fillBufferRandom(buffer);
+        Selector selector = Selector.open();
+        SocketChannel serverChannel = SocketChannel.open(StandardProtocolFamily.INET);
+        serverChannel.configureBlocking(false);
+        serverChannel.connect(new InetSocketAddress("localhost", 5454));
+//        serverChannel.write(buffer);
+        serverChannel.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ | SelectionKey.OP_WRITE);
 
         while (true) {
             int count = selector.select();
-            log.info("Selected: {}", count);
+            if (count > 0) {
+                log.info("Selected: {}", count);
+            }
             Set<SelectionKey> selectedKeys = selector.selectedKeys();
             Iterator<SelectionKey> iter = selectedKeys.iterator();
             while (iter.hasNext()) {
                 SelectionKey key = iter.next();
-                if (key.isAcceptable()) {
-                    register(selector, serverSocket);
+                log.info("    {}", key.readyOps());
+                if (key.isConnectable()) {
+                    log.info("Connection is ready");
+                    key.interestOps(SelectionKey.OP_READ);
                 }
 
                 if (key.isReadable()) {
@@ -44,6 +51,17 @@ public class NioServer {
             }
         }
 
+    }
+
+    private static final String chars = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
+    private static void fillBufferRandom(ByteBuffer buffer) {
+        byte[] array = buffer.array();
+        for (int i = 0; i < array.length; i++) {
+            array[i] = (byte) chars.charAt((int) (Math.random() * chars.length()));
+        }
+        buffer.limit(array.length);
+        buffer.position(0);
     }
 
     private static void answerWithEcho(ByteBuffer buffer, SelectionKey key) throws IOException {
@@ -73,6 +91,6 @@ public class NioServer {
     }
 
     public static void main(String[] args) throws IOException {
-        new NioServer().start();
+        new NioClient().start();
     }
 }

@@ -99,4 +99,11 @@ public class JavaTest {
         ZonedDateTime instant = Instant.ofEpochMilli(time).atZone(ZoneId.systemDefault());
         log.info("Time: {} = {}", uuid, instant);
     }
+
+    @Test
+    public void testSysArgs() {
+        String key = "uddi:gosuslugi.ru:services:internal/smeva-api";
+        String val = System.getProperty(key);
+        log.info("{} = {}", key, val);
+    }
 }
