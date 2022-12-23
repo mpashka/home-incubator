@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 
-public class TestBase64 {
+public class Base64Test {
 
 
     @Test
