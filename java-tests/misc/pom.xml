@@ -16,6 +16,8 @@
 
     <modules>
         <module>core</module>
+        <module>hsqldb</module>
+        <module>version</module>
         <module>jackson</module>
         <module>telegram</module>
         <module>kafka</module>
