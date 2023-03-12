@@ -1,0 +1,4 @@
+# Interface wan
+nameserver 10.10.250.250
+nameserver 10.10.140.250
+search himki.net

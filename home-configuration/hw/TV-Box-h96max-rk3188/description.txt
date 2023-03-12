@@ -1,0 +1,72 @@
+file multitool.img
+binwalk multitool.img
+multitool.img: DOS/MBR boot sector; partition 1 : ID=0xc, active, start-CHS (0x1d,13,1), end-CHS (0x3ff,254,2), startsector 137216, 4057088 sectors; partition 2 : ID=0x83, start-CHS (0x40,64,1), end-CHS (0x1d,12,2), startsector 32768, 104448 sectors
+
+https://askubuntu.com/questions/69363/mount-single-partition-from-image-of-entire-disk-device
+
+fdisk -lu multitool.img
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+Device         Boot  Start     End Sectors  Size Id Type
+multitool.img1 *    137216 4194303 4057088  1,9G  c W95 FAT32 (LBA)
+multitool.img2       32768  137215  104448   51M 83 Linux
+
+sudo losetup -o 16777216 /dev/loop0 multitool.img
+sudo losetup -o 70254592 /dev/loop1 multitool.img
+sudo mount /dev/loop0 multitool0
+sudo mount /dev/loop1 multitool1
+
+---
+fdisk -lu Armbian_23.02.0-trunk_Rk3318-box_sid_edge_6.1.11.img
+Units: sectors of 1 * 512 = 512 bytes
+Armbian_23.02.0-trunk_Rk3318-box_sid_edge_6.1.11.img1      32768 5431295 5398528  2,6G 83 Linux
+
+sudo losetup -o 16777216 /dev/loop3 Armbian_23.02.0-trunk_Rk3318-box_sid_edge_6.1.11.img
+sudo mount /dev/loop3 Armbian_sid_6
+
+---
+backup
+fdisk -lu  tvbox-backup
+Units: sectors of 1 * 512 = 512 bytes
+tvbox-backup1     8192     16383      8192    4M unknown
+tvbox-backup2    16384     24575      8192    4M unknown
+tvbox-backup3    24576     32767      8192    4M unknown
+tvbox-backup4    32768     40959      8192    4M unknown
+tvbox-backup5    40960     49151      8192    4M unknown
+tvbox-backup6    49152     51199      2048    1M unknown
+tvbox-backup7    51200    133119     81920   40M unknown
+tvbox-backup8   133120    329727    196608   96M unknown
+tvbox-backup9   329728   1116159    786432  384M unknown
+tvbox-backup10 1116160   2000894    884735  432M unknown
+tvbox-backup11 2000895   2033662     32768   16M unknown
+tvbox-backup12 2033663   2034686      1024  512K unknown
+tvbox-backup13 2034687   2036734      2048    1M unknown
+tvbox-backup14 2036735   2069502     32768   16M unknown
+tvbox-backup15 2069503   9114622   7045120  3,4G unknown
+tvbox-backup16 9114623 122142655 113028033 53,9G unknown
+sudo losetup -o 4194304 /dev/loop11 tvbox-backup
+
+binwalk tvbox-backup
+9100215       0x8ADBB7        Android bootimg, kernel size: 1919249152 bytes, kernel addr: 0x5F6C656E, ramdisk size: 1919181921 bytes, ramdisk addr: 0x5700635F, product name: ""
+9318144       0x8E2F00        Flattened device tree, size: 6418 bytes, version: 17
+
+   8192 4194304
+  16384 8388608
+  24576 12582912
+  32768 16777216
+  40960 20971520
+  49152 25165824
+  51200 26214400
+ 133120 68157440
+ 329728 168820736
+1116160 571473920
+2000895 1024458240
+2033663 1041235456
+2034687 1041759744
+2036735 1042808320
+2069503 1059585536
+9114623 4666686976
+
+tvbox-backup7    40960 26214400      0x1900000       Android bootimg, kernel size: 31846408 bytes, kernel addr: 0x10008000, ramdisk size: 837703 bytes, ramdisk addr: 0x11000000, product name: ""
+tvbox-backup8   133120 68157440      0x4100000       Android bootimg, kernel size: 31846408 bytes, kernel addr: 0x10008000, ramdisk size: 39466351 bytes, ramdisk addr: 0x11000000, product name: ""
+tvbox-backup10 1116160 571473920     0x22100000      Linux EXT filesystem, blocks count: 110591, image size: 113245184, rev 1.0, ext4 filesystem data, UUID=3493a705-acef-4caf-b379-1ddc694b694b
