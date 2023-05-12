@@ -21,6 +21,30 @@ import org.slf4j.LoggerFactory;
 public class JavaTest {
     private static final Logger log = LoggerFactory.getLogger(JavaTest.class);
 
+    public static class MyThrowable extends Throwable {}
+    public void myMethod() throws MyThrowable {
+        throw new MyThrowable();
+    }
+
+    @Test
+    public void testPP() {
+        int i = 5;
+        i = ++i + ++i;
+        log.info("++I = {}", i);
+
+        i = 5;
+        i = ++i + ++i + ++i;
+        log.info("++I3 = {}", i);
+
+        i = 5;
+        i = i++ + i++;
+        log.info("I++ = {}", i);
+
+        i = 5;
+        i = i++ + i++ + i++;
+        log.info("I++3 = {}", i);
+    }
+
     @Test
     public void testDiv() {
         log.info("{}", 999/1000);
@@ -105,5 +129,18 @@ public class JavaTest {
         String key = "uddi:gosuslugi.ru:services:internal/smeva-api";
         String val = System.getProperty(key);
         log.info("{} = {}", key, val);
+    }
+
+    @Test
+    public void testMinus() {
+        int i = Integer.MIN_VALUE;
+        log.info("-i: {}", -i);
+    }
+
+    @Test
+    public void testSplit() {
+        String token = "eyJ0eXAiOiJKV1QifQ==.eyJ1c2VyT2lkIjoxMDIwNywic2NvcGUiOiJodHRwOi8vZXNpYS5nb3N1c2x1Z2kucnUvdXNyX2luZj9vaWQ9MTAyMDciLCJpc3MiOiJ0ZXN0LWlzc3VlciIsInVybjplc2lhOnNpZCI6InRlc3Qtc2lkIiwidXJuOmVzaWE6c2JqX2lkIjozLCJleHAiOjEsImlhdCI6MiwiY2xpZW50X2lkIjoidGVzdC1jbGllbnQifQ==.sign";
+        String[] tokenParts = token.split("\\.", 3);
+        log.info("L: {}", tokenParts.length);
     }
 }

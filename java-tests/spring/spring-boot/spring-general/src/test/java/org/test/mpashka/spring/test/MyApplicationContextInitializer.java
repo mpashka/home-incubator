@@ -1,16 +1,27 @@
 package org.test.mpashka.spring.test;
 
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.annotation.AnnotatedGenericBeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.ApplicationContextInitializer;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.EnumerablePropertySource;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.core.env.MutablePropertySources;
+import org.springframework.core.env.PropertySource;
 import org.springframework.test.context.TestContext;
 import org.springframework.test.context.event.PrepareTestInstanceEvent;
 import org.springframework.test.context.event.TestContextEvent;
+import org.springframework.test.context.support.TestPropertySourceUtils;
 
 import lombok.extern.slf4j.Slf4j;
+
+import static org.springframework.test.context.support.TestPropertySourceUtils.INLINED_PROPERTIES_PROPERTY_SOURCE_NAME;
 
 @Slf4j
 public class MyApplicationContextInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
@@ -41,6 +52,40 @@ public class MyApplicationContextInitializer implements ApplicationContextInitia
         AnnotatedGenericBeanDefinition beanDefinition = new AnnotatedGenericBeanDefinition(MyFactoryBean.class);
         beanDefinition.setScope(ConfigurableBeanFactory.SCOPE_PROTOTYPE);
         ((BeanDefinitionRegistry) applicationContext.getBeanFactory()).registerBeanDefinition("myBean", beanDefinition);
+
+
+        TestPropertySourceUtils.addInlinedPropertiesToEnvironment(applicationContext, "my.test-props.array-of-objects[0].int-prop=1");
+        TestPropertySourceUtils.addInlinedPropertiesToEnvironment(applicationContext, "my.test-props.single-object.str-prop=replaced_first");
+        TestPropertySourceUtils.addInlinedPropertiesToEnvironment(applicationContext, "my.test-props.int-prop=1");
+
+//        extracted(applicationContext, "application.yml");
+    }
+
+    private static void extracted(ConfigurableApplicationContext applicationContext, String prefix) {
+        MutablePropertySources propertySources = applicationContext.getEnvironment().getPropertySources();
+/*
+        propertySources.stream().filter(p -> p.getName().contains("'class path resource [" + name + "]'"))
+                .map(PropertySource::getSource)
+                .filter(s -> s instanceof Map)
+                .map(s -> (Map) s)
+                .forEach();
+        PropertySource<?> propertySource = propertySources.get("Config resource 'class path resource [application.yml]' via location 'optional:classpath:/'");
+*/
+        MapPropertySource ps0 = (MapPropertySource) applicationContext.getEnvironment().getPropertySources().get(INLINED_PROPERTIES_PROPERTY_SOURCE_NAME);
+        if (ps0 == null) {
+            ps0 = new MapPropertySource(INLINED_PROPERTIES_PROPERTY_SOURCE_NAME, new LinkedHashMap<>());
+            applicationContext.getEnvironment().getPropertySources().addFirst(ps0);
+        }
+        MapPropertySource ps = ps0;
+        propertySources.stream().filter(p -> p instanceof EnumerablePropertySource)
+                .map(p -> (EnumerablePropertySource<?>) p)
+                .flatMap(p ->
+                    Arrays.stream(p.getPropertyNames())
+                            .filter(n -> n.startsWith(prefix))
+                            .map(n -> Map.entry(n, p.getProperty(n)))
+                ).forEach(e -> ps.getSource().put(e.getKey(), e.getValue()));
+//        PropertySource<?> propertySource = propertySources.get("Config resource 'class path resource [application.yml]' via location 'optional:classpath:/'");
+//        propertySource.getSource()
     }
 
     public static class MyFactoryBeanData {

@@ -3,12 +3,18 @@ package org.test.mpashka.spring.test;
 import javax.annotation.PostConstruct;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 @Configuration
+@EnableConfigurationProperties(value = {
+        MyConfiguration.MyConfigurationProperties.class
+})
 @Slf4j
 public class MyConfiguration {
     public MyConfiguration() {
@@ -45,5 +51,24 @@ public class MyConfiguration {
 
     public enum MyEnum {
         on, off, unknown
+    }
+
+    @ConfigurationProperties(prefix = "my.test-props")
+    @Data
+    public static class MyConfigurationProperties {
+        private MyConfigurationObject[] arrayOfObjects;
+        private MyConfigurationObject singleObject;
+        private String strProp;
+        private int intProp;
+        private String strProp2;
+        private String strProp3;
+    }
+
+    @Data
+    public static class MyConfigurationObject {
+        private String strProp;
+        private int intProp;
+        private String strProp2;
+        private String strProp3;
     }
 }

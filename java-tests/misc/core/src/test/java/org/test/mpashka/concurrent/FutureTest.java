@@ -44,7 +44,7 @@ public class FutureTest {
 
     @Test
     public void testExecuteAllTimeout() throws Exception {
-        ExecutorService executorService = Executors.newFixedThreadPool(1);
+        ExecutorService executorService = Executors.newFixedThreadPool(2);
         List<Callable<String>> tasks = List.of(() -> {
             log.info("Start task...");
             for (int i = 0; i < 3; i++) {
@@ -53,8 +53,7 @@ public class FutureTest {
                     Thread.sleep(10_1000L);
                     return "hello";
                 } catch (InterruptedException e) {
-                    log.info("Interrupted", e);
-//                return "interrupt";
+                    log.info("Interrupted {}", i, e);
                 }
             }
             return "finish";
@@ -72,6 +71,15 @@ public class FutureTest {
                 log.info("Other: {}", future, e);
             }
         }
+
+        log.info("Stop executor");
+        List<Runnable> runnables = executorService.shutdownNow();
+        log.info("Executor has {} runnables: {}", runnables.size(), runnables);
+        log.info("Executor isShutdown: {}, isTerminated: {}", executorService.isShutdown(), executorService.isTerminated());
+        executorService.awaitTermination(11, TimeUnit.SECONDS);
+        log.info("Executor has {} runnables: {}", runnables.size(), runnables);
+        log.info("Executor isShutdown: {}, isTerminated: {}", executorService.isShutdown(), executorService.isTerminated());
+        log.info("Done");
     }
 
     @Test

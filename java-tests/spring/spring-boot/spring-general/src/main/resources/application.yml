@@ -1,0 +1,16 @@
+my:
+  test-props:
+    array-of-objects:
+      - str-prop: my-str1-1
+        str-prop2: my-str1-2
+        str-prop3: my-str1-3
+      - str-prop: my-str0-1
+        int-prop: 1
+        str-prop2: my-str0-2
+    single-object:
+      str-prop: sstr1-1
+      str-prop2: sstr1-2
+      str-prop3: sstr1-3
+    str-prop: r1-1
+    str-prop2: r1-2
+    str-prop3: r1-3
