@@ -1,0 +1,88 @@
+blocked by tube4, used by google play
+elements = { 64.233.164.139 counter packets 1 bytes 1278, 87.255.30.206 counter packets 2 bytes 2556 }
+
+C:\>nslookup google.com 
+╤хЁтхЁ:  UnKnown 
+Address:  fde1:87a:f246::1 
+ 
+Не заслуживающий доверия ответ: 
+╚ь :     google.com 
+Addresses:  2a00:1450:4010:c03::8a 
+          2a00:1450:4010:c03::8b 
+          2a00:1450:4010:c03::66 
+          2a00:1450:4010:c03::65 
+          209.85.233.139 
+          209.85.233.113 
+          209.85.233.138 
+          209.85.233.101 
+          209.85.233.102 
+          209.85.233.100
+C:\>curl -v "https://google.com/" 
+*   Trying 209.85.233.101:443... 
+*   Trying 2a00:1450:4010:c03::66:443...
+
+	elements = { 64.233.163.100 counter packets 5 bytes 3470, 64.233.163.102 counter packets 2 bytes 1383,
+	         64.233.163.139 counter packets 2 bytes 1381, 64.233.164.100 counter packets 1 bytes 1278,
+	         64.233.164.139 counter packets 3 bytes 1398, 74.125.205.102 counter packets 1 bytes 60,
+	         87.255.30.141 counter packets 5 bytes 4588, 87.255.30.204 counter packets 1 bytes 1278,
+	         87.255.30.206 counter packets 2 bytes 2556, 173.194.73.102 counter packets 4 bytes 255,
+	         173.194.73.139 counter packets 6 bytes 375, 173.194.222.138 counter packets 2 bytes 120 }
+
+
+list domain 'youtube.com'
+list domain 'youtu.be'
+list domain 'youtube.ru'
+list domain 'youtube.tv'
+list domain 'googlevideo.com'
+list domain 'video.google.com'
+list domain 'rutube.ru'
+list domain 'vimeo.com'
+list domain 'vimeocdn.com'
+
+youtube.com
+64.233.165.190
+64.233.165.136
+64.233.165.93
+64.233.165.91
+youtu.be
+64.233.164.93
+64.233.164.190
+64.233.164.136
+64.233.164.91
+youtube.ru
+64.233.165.190
+64.233.165.136
+64.233.165.91
+64.233.165.93
+youtube.tv
+173.194.221.113
+173.194.221.139
+173.194.221.138
+173.194.221.101
+173.194.221.102
+173.194.221.100
+googlevideo.com
+173.194.220.105
+173.194.220.103
+173.194.220.147
+173.194.220.106
+173.194.220.99
+173.194.220.104
+video.google.com
+video.l.google.com.
+173.194.222.138
+173.194.222.101
+173.194.222.102
+173.194.222.113
+173.194.222.139
+173.194.222.100
+rutube.ru
+178.248.233.148
+vimeo.com
+162.159.128.61
+162.159.138.60
+vimeocdn.com
+151.101.130.109
+151.101.194.109
+151.101.2.109
+151.101.66.109

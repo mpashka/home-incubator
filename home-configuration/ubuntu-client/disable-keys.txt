@@ -1,0 +1,29 @@
+Disable idea shortcuts:
+https://askubuntu.com/questions/126817/how-can-i-disable-the-alt-f1-and-alt-f2-shortcuts
+list:
+for k in `gsettings list-keys org.gnome.desktop.wm.keybindings`; do echo $k = `gsettings get org.gnome.desktop.wm.keybindings $k`; done|grep '<Alt>F'
+
+disable:
+gsettings set org.gnome.desktop.wm.keybindings panel-main-menu "[]" # disable Alt+F1
+
+
+begin-move = ['<Alt>F7']
+begin-resize = ['<Alt>F8']
+close = ['<Alt>F4']
+cycle-group = ['<Alt>F6']
+cycle-group-backward = ['<Shift><Alt>F6']
+panel-main-menu = ['<Alt>F1']
+panel-run-dialog = ['<Alt>F2']
+toggle-maximized = ['<Alt>F10']
+unmaximize = ['<Super>Down', '<Alt>F5']
+
+m_pashka@usetech-rtc-pmukhataev:~$ gsettings set org.gnome.desktop.wm.keybindings panel-main-menu "[]"
+m_pashka@usetech-rtc-pmukhataev:~$ gsettings set org.gnome.desktop.wm.keybindings begin-move "[]"
+m_pashka@usetech-rtc-pmukhataev:~$ gsettings set org.gnome.desktop.wm.keybindings begin-resize "[]"
+m_pashka@usetech-rtc-pmukhataev:~$ gsettings set org.gnome.desktop.wm.keybindings cycle-group "[]"
+m_pashka@usetech-rtc-pmukhataev:~$ gsettings set org.gnome.desktop.wm.keybindings cycle-group-backward "[]"
+m_pashka@usetech-rtc-pmukhataev:~$ gsettings set org.gnome.desktop.wm.keybindings panel-main-menu "[]"
+m_pashka@usetech-rtc-pmukhataev:~$ gsettings set org.gnome.desktop.wm.keybindings panel-run-dialog "[]"
+m_pashka@usetech-rtc-pmukhataev:~$ gsettings set org.gnome.desktop.wm.keybindings toggle-maximized "[]"
+m_pashka@usetech-rtc-pmukhataev:~$ gsettings set org.gnome.desktop.wm.keybindings unmaximize "['<Super>Down']"
+
