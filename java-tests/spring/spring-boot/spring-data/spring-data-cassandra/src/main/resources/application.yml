@@ -8,8 +8,7 @@ spring:
       connection.init-query-timeout: 10s
 
       local-datacenter: datacenter1
-#      contactPoints: kuber.gosuslugi.local:12167
-      contactPoints: kuber-pgu-dev.gosuslugi.local:12167
+      contactPoints: localhost:9042
       keyspace-name: geps
       username: cassandra
       password: cassandra

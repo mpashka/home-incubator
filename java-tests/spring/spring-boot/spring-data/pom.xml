@@ -12,9 +12,20 @@
     <artifactId>spring-data</artifactId>
     <packaging>pom</packaging>
 
-
     <modules>
         <module>spring-data-cassandra</module>
     </modules>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.data</groupId>
+                <artifactId>spring-data-bom</artifactId>
+                <version>2021.0.4</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
 </project>

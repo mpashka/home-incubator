@@ -26,20 +26,6 @@
         </dependency>
     </dependencies>
 
-    <dependencyManagement>
-        <dependencies>
-            <!--
-                latest: 3.4.2
-                latest milestone: 4.0.0-M5
-            -->
-            <dependency>
-                <groupId>org.springframework.data</groupId>
-                <artifactId>spring-data-cassandra</artifactId>
-                <version>3.4.2</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <!--
         <build>
             <plugins>
