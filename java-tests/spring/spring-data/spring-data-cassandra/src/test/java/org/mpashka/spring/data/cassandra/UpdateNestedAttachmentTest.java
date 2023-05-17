@@ -2,7 +2,6 @@ package org.mpashka.spring.data.cassandra;
 
 import java.nio.ByteBuffer;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,18 +19,16 @@ import com.datastax.oss.driver.api.core.cql.ResultSet;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
-import com.datastax.oss.driver.api.core.type.codec.registry.CodecRegistry;
 import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
-import com.datastax.oss.driver.internal.core.type.PrimitiveType;
 import com.datastax.oss.driver.internal.core.type.codec.BigIntCodec;
-import com.datastax.oss.protocol.internal.ProtocolConstants;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import lombok.extern.slf4j.Slf4j;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 
 @SpringBootTest
 @Slf4j
@@ -109,6 +106,24 @@ public class UpdateNestedAttachmentTest {
                 Criteria.where(Attachment.Key.MESSAGE_ID).is(5),
                 Criteria.where(Attachment.Key.ATTACHMENT_ID).is(6)
         ), Update.update(Attachment.DATA + '.' + Attachment.AttachmentData.DT_STATUS, Attachment.AttachmentData.builder()
+                .status("Hello5")
+                .build()
+        ), Attachment.class);
+
+        Attachment msg5 = cql.selectOneById(key, Attachment.class);
+        assertThat(msg5.getData().getStatus(), is("Hello5"));
+    }
+
+    /**
+     * Reports:
+     * org.springframework.data.cassandra.CassandraInvalidQueryException: Query; CQL [UPDATE attachment SET "data.status"=? WHERE message_id=? AND attachment_id=?]; Undefined column name "data.status" in table geps.attachment; nested exception is com.datastax.oss.driver.api.core.servererrors.InvalidQueryException: Undefined column name "data.status" in table geps.attachment
+     */
+    @Test
+    public void testUpdateNestedFieldQuotes() {
+        cql.update(Query.query(
+                Criteria.where(Attachment.Key.MESSAGE_ID).is(5),
+                Criteria.where(Attachment.Key.ATTACHMENT_ID).is(6)
+        ), Update.update('"' + Attachment.DATA + '.' + Attachment.AttachmentData.DT_STATUS + '"', Attachment.AttachmentData.builder()
                 .status("Hello5")
                 .build()
         ), Attachment.class);
