@@ -10,22 +10,45 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
     <groupId>org.mpashka.tests.spring</groupId>
-    <artifactId>spring-parent</artifactId>
+    <artifactId>spring</artifactId>
 	<packaging>pom</packaging>
 	<!--name>demo</name>
 	<description>Demo project for Spring Boot</description-->
 
 	<modules>
-		<module>spring-boot</module>
+		<module>spring-boot-parent</module>
+		<module>spring-data</module>
 	</modules>
 
 	<properties>
+		<!--
+        geps: 2.6.6
+        latest stable: 2.7.3
+        latest preview: 3.0.0-M5
+        -->
+		<spring.boot.version>2.6.6</spring.boot.version>
 	</properties>
 
-    <dependencies>
+	<dependencies>
     </dependencies>
 
 	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-dependencies</artifactId>
+				<version>${spring.boot.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-starter-parent</artifactId>
+				<version>${spring.boot.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
 	</dependencyManagement>
 
 	<repositories>

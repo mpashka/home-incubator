@@ -6,7 +6,7 @@
 
     <parent>
         <groupId>org.mpashka.tests.spring</groupId>
-        <artifactId>spring-parent</artifactId>
+        <artifactId>spring</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
 	<groupId>org.mpashka.tests.spring.boot</groupId>
@@ -18,20 +18,10 @@
 	<modules>
 		<module>spring-web</module>
 		<module>spring-jms</module>
-		<module>spring-data</module>
 		<module>spring-general</module>
 		<module>spring-actuator</module>
 		<module>spring-ws</module>
 	</modules>
-
-	<properties>
-		<!--
-        geps: 2.6.6
-        latest stable: 2.7.3
-        latest preview: 3.0.0-M5
-        -->
-		<spring.boot.version>2.6.6</spring.boot.version>
-	</properties>
 
     <dependencies>
 		<dependency>
@@ -51,36 +41,7 @@
 			<scope>test</scope>
 		</dependency>
 
-		<dependency>
-			<groupId>org.easymock</groupId>
-			<artifactId>easymock</artifactId>
-		</dependency>
     </dependencies>
-
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-dependencies</artifactId>
-				<version>${spring.boot.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-starter-parent</artifactId>
-				<version>${spring.boot.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.easymock</groupId>
-				<artifactId>easymock</artifactId>
-				<version>4.3</version>
-				<scope>test</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 
 	<build>
 		<plugins>
