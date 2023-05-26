@@ -27,6 +27,12 @@ public class JavaTest {
     }
 
     @Test
+    public void testJavaAdd() {
+        String a = "1", b = "1", c = a + b;
+        log.info("{} + {} = {}", a, b, c);
+    }
+
+    @Test
     public void testPP() {
         int i = 5;
         i = ++i + ++i;

@@ -4,11 +4,14 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.Period;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Locale;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,6 +53,12 @@ No duration for Weeks: Unit must not have an estimated duration
                 log.info("Can't parse {}: {}", t, e.getMessage());
             }
         });
+    }
+
+    @Test
+    public void testParse() throws ParseException {
+        SimpleDateFormat fmt = new SimpleDateFormat("EEE MMM d HH:mm:ss Z yyyy", Locale.US);
+        log.info("D: {}", fmt.parse("Fri Jan 13 09:36:03 MSK 2023"));
     }
 
 }

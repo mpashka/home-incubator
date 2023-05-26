@@ -2,20 +2,16 @@ package org.test.mpashka;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-public class LuxoftTest {
+public class SimpleTest {
 
     public List<Integer> top3(List<Integer> in) {
         SortedList out = new SortedList(3);

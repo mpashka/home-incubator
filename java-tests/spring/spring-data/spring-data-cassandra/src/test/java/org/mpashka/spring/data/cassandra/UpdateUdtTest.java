@@ -17,10 +17,8 @@ import com.datastax.oss.driver.api.core.ProtocolVersion;
 import com.datastax.oss.driver.api.core.cql.BoundStatement;
 import com.datastax.oss.driver.api.core.cql.PreparedStatement;
 import com.datastax.oss.driver.api.core.cql.ResultSet;
-import com.datastax.oss.driver.api.core.data.UdtValue;
 import com.datastax.oss.driver.api.core.type.DataType;
 import com.datastax.oss.driver.api.core.type.DataTypes;
-import com.datastax.oss.driver.api.core.type.UserDefinedType;
 import com.datastax.oss.driver.api.core.type.codec.TypeCodec;
 import com.datastax.oss.driver.api.core.type.codec.registry.MutableCodecRegistry;
 import com.datastax.oss.driver.api.core.type.reflect.GenericType;
@@ -35,7 +33,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 @SpringBootTest
 @Slf4j
-public class UpdateNestedAttachmentTest {
+public class UpdateUdtTest {
     @Autowired
     private CassandraOperations cql;
 
@@ -57,12 +55,7 @@ public class UpdateNestedAttachmentTest {
     }
 
     @Test
-    public void testUpdateNestedObjectSpring() {
-        ((MutableCodecRegistry) cql.getConverter().getCodecRegistry()).register(new BigintIntegerCodec());
-        /*
-        Produces com.datastax.oss.driver.api.core.type.codec.CodecNotFoundException: Codec not found for requested operation: [BIGINT <-> java.lang.Integer]
-        without codec
-         */
+    public void testUpdateUdtObjectSpring() {
         cql.update(Query.query(
                 Criteria.where(Attachment.Key.MESSAGE_ID).is(5),
                 Criteria.where(Attachment.Key.ATTACHMENT_ID).is(6)
@@ -107,10 +100,7 @@ public class UpdateNestedAttachmentTest {
         cql.update(Query.query(
                 Criteria.where(Attachment.Key.MESSAGE_ID).is(5),
                 Criteria.where(Attachment.Key.ATTACHMENT_ID).is(6)
-        ), Update.update(Attachment.DATA + '.' + Attachment.AttachmentData.DT_STATUS, Attachment.AttachmentData.builder()
-                .status("Hello5")
-                .build()
-        ), Attachment.class);
+        ), Update.update(Attachment.DATA + '.' + Attachment.AttachmentData.DT_STATUS, "Hello5"), Attachment.class);
 
         Attachment msg5 = cql.selectOneById(key, Attachment.class);
         assertThat(msg5.getData().getStatus(), is("Hello5"));
@@ -135,62 +125,6 @@ public class UpdateNestedAttachmentTest {
     }
 
     @Test
-    public void testUpdateNestedObjectNativeDriverUdt() {
-        cql.getCqlOperations().execute((SessionCallback<Object>) s -> {
-            PreparedStatement prepared = s.prepare("UPDATE attachment SET data=:status_data WHERE message_id=:messageId and attachment_id=:attachmentId");
-            UserDefinedType udt = s.getMetadata().getKeyspace("geps").get().getUserDefinedType("attachment_data").get();
-            UdtValue udtValue = udt.newValue().setString("status", "hello from native driver");
-            BoundStatement bound = prepared.bind()
-                    .setUdtValue("status_data", udtValue)
-                    .setLong("messageId", 5)
-                    .setLong("attachmentId", 6);
-            ResultSet result = s.execute(bound);
-            log.info("Applied: {}", result.wasApplied());
-            result.forEach(r -> log.info("Result: {}", r));
-            return result;
-        });
-
-        Attachment attachment = cql.selectOneById(key, Attachment.class);
-        log.info("After update: {}", attachment);
-    }
-
-    @Test
-    public void testUpdateNestedObjectNativeDriverObject() {
-//        AttachmentDataItemCodec codec = new AttachmentDataItemCodec();
-//        ((MutableCodecRegistry) cql.getConverter().getCodecRegistry()).register(codec);
-
-        cql.getCqlOperations().execute((SessionCallback<Object>) s -> {
-            PreparedStatement prepared = s.prepare("UPDATE attachment SET data=:status_data WHERE message_id=:messageId and attachment_id=:attachmentId");
-            UserDefinedType udt = s.getMetadata().getKeyspace("geps").get().getUserDefinedType(Attachment.AttachmentData.TYPE_NAME).get();
-//            log.info("UDT types: {}", codec.getCqlType().equals(udt));
-            TypeCodec<Attachment.AttachmentData> attachmentDataTypeCodec = cql.getConverter().getCodecRegistry().codecFor(udt, Attachment.AttachmentData.class);
-            BoundStatement bound = prepared.bind()
-                    .set("status_data", Attachment.AttachmentData.builder()
-                            .status("hello from object")
-                            .build(), attachmentDataTypeCodec)
-//                            .build(), codec)
-                    .setLong("messageId", 5)
-                    .setLong("attachmentId", 6);
-            ResultSet result = s.execute(bound);
-            log.info("Applied: {}", result.wasApplied());
-            result.forEach(r -> log.info("Result: {}", r));
-            return result;
-        });
-
-        Attachment attachment = cql.selectOneById(key, Attachment.class);
-        log.info("After update: {}", attachment);
-
-        cql.update(Query.query(
-                Criteria.where(Attachment.Key.MESSAGE_ID).is(5),
-                Criteria.where(Attachment.Key.ATTACHMENT_ID).is(6)
-        ), Update.update(Attachment.DATA, Attachment.AttachmentData.builder()
-                .status("Hello from spring")
-                .build()
-        ), Attachment.class);
-
-    }
-
-    @Test
     public void testUpdateIn() {
         Attachment msg1 = cql.selectOneById(key, Attachment.class);
         assertThat(msg1, notNullValue());
@@ -206,7 +140,6 @@ public class UpdateNestedAttachmentTest {
             result.forEach(r -> log.info("Result: {}", r));
             return result;
         });
-
     }
 
     /**
