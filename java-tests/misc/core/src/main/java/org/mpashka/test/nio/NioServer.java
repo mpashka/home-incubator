@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 public class NioServer {
 
     private static final String POISON_PILL = "POISON_PILL";
+    private int clients = 0;
 
     public void start() throws IOException {
         Selector selector = Selector.open();
@@ -25,29 +26,43 @@ public class NioServer {
         serverSocket.configureBlocking(false);
         serverSocket.register(selector, SelectionKey.OP_ACCEPT);
         ByteBuffer buffer = ByteBuffer.allocate(256);
+        log.info("Started server on {}", serverSocket.getLocalAddress());
 
         while (true) {
             int count = selector.select();
 //            log.info("Selected: {}", count);
-            for (SelectionKey key : selector.selectedKeys()) {
+            for (var iter = selector.selectedKeys().iterator(); iter.hasNext();) {
+                SelectionKey key = iter.next();
+                iter.remove();
                 if (key.isAcceptable()) {
                     register(selector, serverSocket);
                 }
 
                 if (key.isReadable()) {
-                    answerWithEcho(buffer, key);
+                    try {
+                        answerWithEcho(buffer, key);
+                    } catch (IOException e) {
+//                        log.info("IO error", e);
+                        clients--;
+                        if (clients % 100 == 0) {
+                            log.info("IO error: {}", clients);
+                        }
+                    }
                 }
             }
         }
 
     }
 
-    private static void answerWithEcho(ByteBuffer buffer, SelectionKey key) throws IOException {
+    private void answerWithEcho(ByteBuffer buffer, SelectionKey key) throws IOException {
         SocketChannel client = (SocketChannel) key.channel();
         int read = client.read(buffer);
         if (read == -1) {
-            log.info("Channel was closed");
             client.close();
+            clients--;
+            if (clients % 100 == 0) {
+                log.info("Channel [{}] was closed: {}", clients, client.getRemoteAddress());
+            }
             return;
         }
         String inLine = new String(buffer.array(), 0, buffer.position()).trim();
@@ -62,11 +77,16 @@ public class NioServer {
         }
     }
 
-    private static void register(Selector selector, ServerSocketChannel serverSocket) throws IOException {
+    private void register(Selector selector, ServerSocketChannel serverSocket) throws IOException {
+//        log.info("Client is about to connect");
         SocketChannel client = serverSocket.accept();
-        log.info("Client connected: {}", client.getRemoteAddress());
+//        log.info("Client connected: {}", client.getRemoteAddress());
         client.configureBlocking(false);
         client.register(selector, SelectionKey.OP_CONNECT | SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+        clients++;
+        if (clients % 100 == 0) {
+            log.info("Client [{}]: {}", clients, client.getRemoteAddress());
+        }
     }
 
     public static void main(String[] args) throws IOException {

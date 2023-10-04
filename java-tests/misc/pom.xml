@@ -21,6 +21,16 @@
         <module>jackson</module>
         <module>telegram</module>
         <module>kafka</module>
+        <module>kotlin</module>
+        <module>ext</module>
+        <module>proto</module>
     </modules>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.mpashka.tests.helpers</groupId>
+            <artifactId>my-log4j-config</artifactId>
+        </dependency>
+    </dependencies>
 
 </project>

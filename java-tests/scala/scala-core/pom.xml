@@ -1,0 +1,13 @@
+<project>
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.mpashka.test.scala</groupId>
+        <artifactId>scala</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>scala-core</artifactId>
+    <packaging>jar</packaging>
+
+</project>

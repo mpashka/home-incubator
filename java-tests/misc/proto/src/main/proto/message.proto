@@ -1,0 +1,39 @@
+package protobuf;
+
+option java_package = "org.mpashka.test.protobuf";
+option java_outer_classname = "AddressBookProtos";
+
+message Person {
+  required string name = 1;
+  required int32 id = 2;
+  optional string email = 3;
+
+  repeated string numbers = 4;
+
+
+/*
+  // 0
+  optional string optional_old10 = 10;
+  required string required_old11 = 11;
+
+  // rename
+  optional string optional_new10 = 10;
+  required string required_new11 = 11;
+
+  // error
+  required string required_new12 = 12;
+*/
+
+  optional string optional_new10 = 10;
+  optional string required_new11 = 11;
+
+  optional string optional_new14 = 14;
+  optional string required_new15 = 15;
+
+
+
+}
+
+message AddressBook {
+  repeated Person people = 1;
+}

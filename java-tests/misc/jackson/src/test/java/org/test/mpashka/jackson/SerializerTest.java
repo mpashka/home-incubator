@@ -1,5 +1,7 @@
 package org.test.mpashka.jackson;
 
+import java.util.Objects;
+
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,5 +29,16 @@ public class SerializerTest {
 
         MyData myData1 = mapper.readValue(s, MyData.class);
         log.info("{}", myData1);
+    }
+
+    @Test
+    public void testSerializeRecord() throws JsonProcessingException {
+        MyRecord record1 = new MyRecord(1, "s1");
+        ObjectMapper objectMapper = new ObjectMapper();
+        String ser1 = objectMapper.writeValueAsString(record1);
+        log.info("Ser1: {}", ser1);
+
+        MyRecord record2 = objectMapper.readValue(ser1, MyRecord.class);
+        log.info("Deser1: {}", record2);
     }
 }
