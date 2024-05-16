@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.mpashka.tests</groupId>
+        <artifactId>java-tests</artifactId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+    <artifactId>java8</artifactId>
+    <groupId>org.mpashka.tests.java8</groupId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>core8</module>
+        <module>jfr</module>
+    </modules>
+
+    <properties>
+        <java.version>8</java.version>
+        <maven.compiler.target>${java.version}</maven.compiler.target>
+        <maven.compiler.source>${java.version}</maven.compiler.source>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.mpashka.tests.helpers</groupId>
+            <artifactId>my-log4j-config</artifactId>
+        </dependency>
+    </dependencies>
+
+</project>

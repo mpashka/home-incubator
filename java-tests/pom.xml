@@ -11,8 +11,7 @@
 
 
     <properties>
-<!--        <java.version>17</java.version>-->
-        <java.version>8</java.version>
+        <java.version>17</java.version>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.compiler.source>${java.version}</maven.compiler.source>
 
@@ -93,6 +92,12 @@
                 <scope>provided</scope>
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-csv</artifactId>
+                <version>1.9.0</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.junit</groupId>
                 <artifactId>junit-bom</artifactId>
                 <version>5.8.2</version>
@@ -116,6 +121,56 @@
 
 
     <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.1.2</version>
+                <configuration combine.self="append">
+                    <testFailureIgnore>false</testFailureIgnore>
+                    <rerunFailingTestsCount>6</rerunFailingTestsCount>
+                    <threadCount>2</threadCount>
+
+                    <systemPropertyVariables>
+                        <logback.level>INFO</logback.level>
+                        <logback.root.level>INFO</logback.root.level>
+                    </systemPropertyVariables>
+
+                    <includes>
+                        <include>**/*Test.*</include>
+                    </includes>
+                    <excludes>
+                        <exclude>**/*IT.*</exclude>
+                    </excludes>
+                    <excludedGroups>cassandra_service</excludedGroups>
+                    <printSummary>true</printSummary>
+                    <properties>
+                        <property>
+                            <name>configfailurepolicy</name>
+                            <value>continue</value>
+                        </property>
+                        <property>
+                            <name>listener</name>
+                            <value>ru.yandex.iss.test.TestListener</value>
+                        </property>
+                    </properties>
+                </configuration>
+
+                <executions>
+                    <execution>
+                        <id>jUnit runner</id>
+                        <phase>test</phase>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                        <configuration>
+                            <skip>true</skip>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -137,6 +192,17 @@
                     </configuration>
                 </plugin>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.1.2</version>
+                    <configuration>
+                        <testFailureIgnore>false</testFailureIgnore>
+                        <rerunFailingTestsCount>6</rerunFailingTestsCount>
+                        <threadCount>2</threadCount>
+                        <printSummary>true</printSummary>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
                     <version>${build-helper-maven-plugin.version}</version>
@@ -148,6 +214,7 @@
 
 
     <modules>
+        <module>java8</module>
         <module>misc</module>
         <module>spring</module>
         <module>jms</module>

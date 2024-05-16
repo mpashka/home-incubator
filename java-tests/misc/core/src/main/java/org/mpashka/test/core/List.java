@@ -30,6 +30,6 @@ public class List<E> {
     }
 
     public void searchIdentityMethod() {
-        Stream.of("aaa").map(i -> Function.identity())
+        Stream.of("aaa").map(i -> Function.identity());
     }
 }

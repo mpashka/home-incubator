@@ -3,8 +3,6 @@ import os
 import pwd
 import stat
 
-import requests
-
 
 def check_kill():
     os.kill(112657, 0)
@@ -41,4 +39,6 @@ def check_chown():
 if __name__ == '__main__':
     # check_kill()
     # check_url()
-    check_chown()
+    # check_chown()
+    print('aaa')
+    os.system('portoctl list')

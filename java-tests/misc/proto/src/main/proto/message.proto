@@ -30,10 +30,15 @@ message Person {
   optional string optional_new14 = 14;
   optional string required_new15 = 15;
 
-
-
+  optional Name full_name = 16;
 }
 
 message AddressBook {
   repeated Person people = 1;
+}
+
+message Name {
+  required string first = 1;
+  required string second = 2;
+  required string middle = 3;
 }

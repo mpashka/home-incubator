@@ -1,0 +1,42 @@
+---
+# tasks file for imbicile.wireguard
+- name: Update
+  ansible.builtin.apt:
+    pkg:
+      - wireguard
+      - wireguard-tools
+#      - iptables
+    state: latest
+    update_cache: true
+
+- name: Add modules
+  community.general.modprobe:
+    name: "{{ item }}"
+    state: present
+  loop:
+#    - nf_conntrack
+    - wireguard
+
+- name: Set kernel params net.ipv4.ip_forward
+  ansible.posix.sysctl:
+    name: "{{ item }}"
+    value: "1"
+    sysctl_set: true
+    state: present
+    reload: true
+  loop:
+    - net.ipv4.ip_forward
+    - net.ipv4.conf.all.forwarding
+    - net.ipv6.conf.all.forwarding
+
+#- name: Set net.netfilter.nf_conntrack_max
+#  ansible.posix.sysctl:
+#    name: "{{ item }}"
+#    value: "1048576"
+#    sysctl_set: true
+#    state: present
+#    reload: true
+#  loop:
+#    - net.netfilter.nf_conntrack_max
+#    - net.nf_conntrack_max
+

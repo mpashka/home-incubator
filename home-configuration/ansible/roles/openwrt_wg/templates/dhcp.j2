@@ -1,0 +1,62 @@
+# https://openwrt.org/docs/guide-user/dhcp/dhcp_configuration
+
+config dnsmasq
+	option domainneeded '1'
+	option boguspriv '1'
+	option filterwin2k '0'
+	option localise_queries '1'
+	option rebind_protection '1'
+	option rebind_localhost '1'
+	option local '/lan/'
+	option domain 'lan'
+	option expandhosts '1'
+	option nonegcache '0'
+	option authoritative '1'
+	option readethers '1'
+	option leasefile '/tmp/dhcp.leases'
+	option resolvfile '/tmp/resolv.conf.d/resolv.conf.auto'
+	option nonwildcard '1'
+	option localservice '1'
+	option ednspacket_max '1232'
+# freenom.com/freenom.world/
+{% cycle through wg_peers %}
+{% if wg_peer.dns %}
+{% domans %}/{{wg_peer.ip}}#{{wg_peer.dns_port}}
+	list server '/ua/facebook.com/fbcdn.net/instagram.com/openai.com/meduza.io/oculus.com/oculuscdn.com/meta.com/airbnb.ru/airbnb.com/microsoft.com/microsoftonline.com/msecnd.net/gfx.ms/live.com/msftauth.net/192.168.9.1#5353'
+#	list server '192.168.9.1#5353'
+#	option logdhcp '1'
+#	option logqueries '1'
+	option logfacility '/tmp/dnsmasq.log'
+
+includes
+
+config dhcp 'lan'
+	option interface 'lan'
+	option start '200'
+	option limit '30'
+	option leasetime '12h'
+	option dhcpv4 'server'
+	option dhcpv6 'server'
+	option ra 'server'
+	list ra_flags 'managed-config'
+	list ra_flags 'other-config'
+	# 0: Disable non-listed (static) clients
+	option dynamicdhcp '1'
+	list 'dhcp_option' 'option:ntp-server,192.168.4.1'
+#	list 'dhcp_option' 'option:static-route,192.168.4.1'
+#	list 'dhcp_option' 'option:classless-static-route,0.0.0.0/0,192.168.4.1'
+#	list 'dhcp_option' '249,0.0.0.0/0,192.168.4.1'
+#	list 'dhcp_option' '252,"\n"'
+
+config dhcp 'wan'
+	option interface 'wan'
+	option ignore '1'
+	option start '200'
+	option limit '30'
+	option leasetime '12h'
+
+config odhcpd 'odhcpd'
+	option maindhcp '0'
+	option leasefile '/tmp/hosts/odhcpd'
+	option leasetrigger '/usr/sbin/odhcpd-update'
+	option loglevel '4'

@@ -138,6 +138,11 @@ public class JavaTest {
     }
 
     @Test
+    public void listAllProperties() {
+        System.getProperties().forEach((k, v) -> log.info("{}={}", k, v));
+    }
+
+    @Test
     public void testMinus() {
         int i = Integer.MIN_VALUE;
         log.info("-i: {}", -i);
@@ -148,5 +153,23 @@ public class JavaTest {
         String token = "eyJ0eXAiOiJKV1QifQ==.eyJ1c2VyT2lkIjoxMDIwNywic2NvcGUiOiJodHRwOi8vZXNpYS5nb3N1c2x1Z2kucnUvdXNyX2luZj9vaWQ9MTAyMDciLCJpc3MiOiJ0ZXN0LWlzc3VlciIsInVybjplc2lhOnNpZCI6InRlc3Qtc2lkIiwidXJuOmVzaWE6c2JqX2lkIjozLCJleHAiOjEsImlhdCI6MiwiY2xpZW50X2lkIjoidGVzdC1jbGllbnQifQ==.sign";
         String[] tokenParts = token.split("\\.", 3);
         log.info("L: {}", tokenParts.length);
+    }
+
+    @Test
+    public void testFreeMemory() {
+/* Returns the maximum amount of memory available to
+   the Java Virtual Machine set by the '-mx' or '-Xmx' flags. */
+        long xmx = Runtime.getRuntime().maxMemory();
+
+/* Returns the total memory allocated from the system
+   (which can at most reach the maximum memory value
+   returned by the previous function). */
+        long total = Runtime.getRuntime().totalMemory();
+
+/* Returns the free memory *within* the total memory
+   returned by the previous function. */
+        long free = Runtime.getRuntime().freeMemory();
+
+        log.info("max:{}, total:{}, free:{}", xmx, total, free);
     }
 }

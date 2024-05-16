@@ -1,0 +1,13 @@
+env=MALLOC_ARENA_MAX=2;PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:
+isolate=false
+cpu_guarantee=0.4c
+cpu_limit=0.5c
+#memory_limit=1100m
+#anon_limit=900m
+#memory_guarantee=1100m
+porto_namespace=
+enable_porto=true
+#cwd=/place/db/iss3
+cwd=/home/ya-pashka/Projects/github/m_pashka/home-incubator/java-tests/python/iss3/run
+#-- start managed zone --
+#-- end managed zone --

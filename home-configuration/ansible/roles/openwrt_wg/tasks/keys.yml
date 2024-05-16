@@ -1,0 +1,40 @@
+- name: Load server key from secrets
+
+  delegate_to: localhost
+
+
+- name: Save server key
+  ansible.builtin.shell: |
+    wg genkey | tee /etc/wireguard/server-private.key | wg pubkey >/etc/wireguard/server-public.key
+    cat /etc/wireguard/server-private.key
+  changed_when: false
+  failed_when: false
+  register: wireguard_server_private_key
+
+- name: Get server publick key
+  ansible.builtin.command: cat /etc/wireguard/server-public.key
+  changed_when: false
+  failed_when: false
+  register: wireguard_server_public_key
+
+- name: Genrate client key
+  ansible.builtin.shell: |
+    wg genkey | tee /etc/wireguard/client-private.key | wg pubkey >/etc/wireguard/client-public.key
+    cat /etc/wireguard/client-private.key
+  changed_when: false
+  failed_when: false
+  register: wireguard_client_private_key
+
+- name: Get client publick key
+  ansible.builtin.command: cat /etc/wireguard/client-public.key
+  changed_when: false
+  failed_when: false
+  register: wireguard_client_public_key
+
+- name: Create conf
+  ansible.builtin.template:
+    src: wg0.conf.j2
+    dest: /etc/wireguard/wg0.conf
+    owner: root
+    group: root
+  notify: Restart wireguard

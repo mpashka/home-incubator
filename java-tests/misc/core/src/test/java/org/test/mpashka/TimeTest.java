@@ -8,8 +8,13 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAccessor;
 import java.util.List;
 import java.util.Locale;
 
@@ -61,4 +66,22 @@ No duration for Weeks: Unit must not have an estimated duration
         log.info("D: {}", fmt.parse("Fri Jan 13 09:36:03 MSK 2023"));
     }
 
+    @Test
+    public void testParseJUD() throws ParseException {
+        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+                .withZone(ZoneId.systemDefault());
+//                .withLocale(Locale.getDefault());
+
+        ZonedDateTime time = fmt.parse("2024-02-29 18:32:18", ZonedDateTime::from);
+        Instant instant = time.toInstant();
+        log.info("D: {} -> {}", time, instant);
+    }
+
+    @Test
+    public void testInstant() {
+        DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME;
+        Instant instant = Instant.ofEpochMilli(Instant.now().toEpochMilli());
+        LocalDateTime localDateTime = LocalDateTime.ofInstant(instant, ZoneId.systemDefault());
+        log.info("Instant: {}", formatter.format(localDateTime));
+    }
 }

@@ -1,0 +1,13 @@
+- name: Configure dhcp ipset
+  block:
+    - name: dhcp ipset domains config
+      ansible.builtin.template:
+        src: dhcp_ipset.j2
+        dst: /etc/config/dhcp_{{item.name}}
+      when: item.ipset
+  with_items: "{{wg_peers}}"
+
+- name: Configure dhcp
+  ansible.builtin.template:
+    src: dhcp.j2
+    dst: /etc/config/dhcp

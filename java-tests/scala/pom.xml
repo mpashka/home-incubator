@@ -38,6 +38,8 @@
         <slf4j.version>1.7.25</slf4j.version>
         <logback.version>1.2.3</logback.version>
 
+        <org.eclipse.jetty.version>9.4.40.v20210413</org.eclipse.jetty.version>
+
         <scala.test.version>3.0.0</scala.test.version>
         <junit.version>4.13.1</junit.version>
 

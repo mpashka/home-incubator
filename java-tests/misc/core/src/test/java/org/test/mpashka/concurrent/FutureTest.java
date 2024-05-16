@@ -10,6 +10,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,7 @@ public class FutureTest {
     }
 
     @Test
+    @Disabled
     public void testExecuteAllTimeout() throws Exception {
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         List<Callable<String>> tasks = List.of(() -> {

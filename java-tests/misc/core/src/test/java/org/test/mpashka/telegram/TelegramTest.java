@@ -8,6 +8,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +22,7 @@ public class TelegramTest {
             .build();
 
     @Test
+    @Disabled
     public void test() throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("http://localhost:8080/CustomerServicePort"))

@@ -1,0 +1,6 @@
+[submodule "home-configuration/ansible/files/home-config-secrets"]
+	path = home-configuration/ansible/files/home-config-secrets
+	url = m_pashka@192.168.2.4:git/home-config-secrets
+[submodule "home-configuration/home-config-secrets"]
+	path = home-configuration/home-config-secrets
+	url = m_pashka@192.168.2.4:git/home-config-secrets
