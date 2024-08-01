@@ -16,5 +16,11 @@ public class RegexpTest {
 
         log.info("{}", NON_ASCII.matcher("my-msg-name  . ,(:)['] ").replaceAll("_"));
         log.info("{}", NON_ASCII.matcher("my-msg-name ,(:)['] ").replaceAll("_"));
+        log.info("{}", Pattern.compile("(?<podId>[^/]+)").matcher("my-ms/g-name ,(:)['] ").replaceAll("_podId:${podId}_"));
+        log.info("{}", Pattern.compile(
+                "db/iss3/volumes/pod_(?<podId>[^/]+)_place/" +
+                        "db/iss3/volumes/PAD-IT-(?<id2>[^\\u002F])+/pod_agent/public_volume/" +
+                        "(?<file>eventlog|human_readable_current_spec.json|logs_transmitter_job_worker_eventlog|logs_transnmitter_job_worker_eventlog|tree_trace_eventlog)"
+        ).matcher("db/iss3/volumes/pod_g-name ,(:)['] /_place/db/iss3/volumes/PAD-IT-fqwefqwe/pod_agent/public_volume/eventlog").replaceAll("_podId:${podId}_"));
     }
 }

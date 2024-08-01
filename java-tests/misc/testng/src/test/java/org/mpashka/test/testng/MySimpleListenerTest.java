@@ -4,11 +4,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.testng.annotations.Test;
 
 @Slf4j
-//@Listeners({TestListener.class})
-public class My2Test {
-
+public class MySimpleListenerTest {
     @Test
-    public void test2() {
-        log.info("Must be ok2");
+    public void test() {
+        log.info("::simple-test");
     }
 }
