@@ -24,6 +24,7 @@
         <module>kotlin</module>
         <module>ext</module>
         <module>proto</module>
+        <module>otl</module>
     </modules>
 
     <dependencies>

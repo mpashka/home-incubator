@@ -40,6 +40,20 @@
                             <hostnameProperty>build.host</hostnameProperty>
                         </configuration>
                     </execution>
+        <execution>
+            <id>list-properties</id>
+            <!-- Binds to the "validate" phase by default. -->
+            <goals>
+                <goal>bsh-property</goal>
+            </goals>
+            <configuration>
+                <source>
+                    for (Map.Entry entry : project.getProperties().entrySet())  {
+                        log.info(entry.getKey() + " = " + entry.getValue());
+                    }
+                </source>
+            </configuration>
+        </execution>
                 </executions>
             </plugin>
         </plugins>
