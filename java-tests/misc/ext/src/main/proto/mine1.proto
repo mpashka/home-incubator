@@ -1,6 +1,6 @@
 package protobuf;
 
-option java_package = "org.mpashka.tests.misc.retrofit.proto";
+option java_package = "org.mpashka.test.misc.retrofit.proto";
 option java_outer_classname = "AddressBookProtos";
 
 message Person {

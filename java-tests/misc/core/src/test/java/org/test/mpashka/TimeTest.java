@@ -51,9 +51,10 @@ public class TimeTest {
 1 Days == PT24H
 No duration for Weeks: Unit must not have an estimated duration
  */
-        List.of("PT24H", "P1D", "P2D", "P3DT4H").forEach(t -> {
+        List.of("PT24H", "P1D", "P2D", "P3DT4H", "PT10S").forEach(t -> {
             try {
-                log.info("text:{} == {}", t, Duration.parse(t));
+                Duration duration = Duration.parse(t);
+                log.info("text:{} == {} ({} seconds)", t, duration, duration.getSeconds());
             } catch (Exception e) {
                 log.info("Can't parse {}: {}", t, e.getMessage());
             }
