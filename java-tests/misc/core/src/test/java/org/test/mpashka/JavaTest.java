@@ -172,4 +172,11 @@ public class JavaTest {
 
         log.info("max:{}, total:{}, free:{}", xmx, total, free);
     }
+
+    @Test
+    public void testRuntime() {
+        Runtime.Version version = Runtime.version();
+        int feature = version.feature();
+        log.info("Version:{}, feature:{}", version, feature);
+    }
 }

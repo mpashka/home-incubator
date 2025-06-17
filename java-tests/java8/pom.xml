@@ -16,6 +16,7 @@
     <modules>
         <module>core8</module>
         <module>jfr</module>
+        <module>guice</module>
     </modules>
 
     <properties>

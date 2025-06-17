@@ -6,6 +6,9 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.matchesRegex;
+
 public class RegexpTest {
 
     private static final Logger log = LoggerFactory.getLogger(RegexpTest.class);
@@ -22,5 +25,11 @@ public class RegexpTest {
                         "db/iss3/volumes/PAD-IT-(?<id2>[^\\u002F])+/pod_agent/public_volume/" +
                         "(?<file>eventlog|human_readable_current_spec.json|logs_transmitter_job_worker_eventlog|logs_transnmitter_job_worker_eventlog|tree_trace_eventlog)"
         ).matcher("db/iss3/volumes/pod_g-name ,(:)['] /_place/db/iss3/volumes/PAD-IT-fqwefqwe/pod_agent/public_volume/eventlog").replaceAll("_podId:${podId}_"));
+    }
+
+    @Test
+    public void testHamcrest() {
+        String devicesProperty = "/dev/null rwm /dev/my_dev_null 0666 root root;";
+        assertThat(devicesProperty, matchesRegex("/dev/null \\w+ /dev/my_dev_null .*"));
     }
 }

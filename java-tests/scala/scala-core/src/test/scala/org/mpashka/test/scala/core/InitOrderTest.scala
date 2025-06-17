@@ -57,6 +57,19 @@ class InitOrderTest extends WordSpecLike with StrictLogging {
       val mParamE = new MyClassParamDEarly("my_param")
       logger.info(s"MyClassEarly: ${mParamE.result}")
     }
+  }
 
+  "check init" must {
+    def myFn(myVal: => Int): Unit = {
+      logger.info("My fn")
+      logger.info(s"My fn: $myVal")
+    }
+
+    def createInt: Int = {
+      logger.info("Int created")
+      5
+    }
+    logger.info("Check init order...")
+    myFn(createInt)
   }
 }

@@ -9,7 +9,7 @@
         <artifactId>ws</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <artifactId>cxf</artifactId>
+    <artifactId>ws-cxf</artifactId>
     <version>1.0-SNAPSHOT</version>
 
 	<properties>

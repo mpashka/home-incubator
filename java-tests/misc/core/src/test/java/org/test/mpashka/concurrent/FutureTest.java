@@ -97,4 +97,133 @@ public class FutureTest {
             // Caused by: java.lang.RuntimeException
         }
     }
+
+    @Test
+    public void testAllFutureException() throws Exception {
+        CompletableFuture<String>[] f = new CompletableFuture[10];
+        for (int i = 0; i < f.length; i++) {
+            int idx = i;
+            CompletableFuture<String> ff = new CompletableFuture<>();
+            f[i] = ff;
+            new Thread(() -> {
+                log.info("Start thread {}", idx);
+                try {
+                    Thread.sleep(100 - idx*10);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                log.info("Thread exception {}", idx);
+                ff.completeExceptionally(new RuntimeException("My exception " + idx));
+            }).start();
+        }
+        CompletableFuture<Void> ff = CompletableFuture.allOf(f);
+        Void unused = ff.join();
+        log.info("Result: {}", unused);
+    }
+
+    @Test
+    public void testDone() {
+        CompletableFuture<String> f = new CompletableFuture<>();
+        log.info("Is done before: {}", f.isDone());
+        f.completeExceptionally(new RuntimeException("Hello"));
+        log.info("Is done after: {}. Exceptionally: {}. Cancelled: {}", f.isDone(), f.isCompletedExceptionally(), f.isCancelled());
+        try {
+            f.get();
+            log.info("Get done");
+        } catch (ExecutionException e) {
+            log.info("Get execution exception", e.getCause());
+        } catch (Exception e) {
+            log.info("Get exception", e);
+        }
+
+        CompletableFuture<String> f2 = new CompletableFuture<>();
+        log.info("Cancel: {}", f2.cancel(false));
+        log.info("Cancel2: {}", f2.cancel(false));
+        log.info("Cancel2a: {}", f2.cancel(true));
+        log.info("2Is done after: {}. Exceptionally: {}. Cancelled: {}", f2.isDone(), f2.isCompletedExceptionally(), f2.isCancelled());
+        try {
+            f2.get();
+            log.info("2Get done2");
+        } catch (CancellationException e) {
+            log.info("2Cancel exception", e);
+        } catch (Exception e) {
+            log.info("2Get2 exception", e);
+        }
+    }
+
+    @Test
+    public void testApply() {
+        thenApplyEx("completed normal", false, CompletableFuture.completedFuture("my_val"));
+        new Thread(() -> {
+            CompletableFuture<String> future = new CompletableFuture<>();
+            thenApplyEx("uncompleted normal", false, future);
+            future.completeExceptionally(new RuntimeException());
+        }).start();
+
+        thenApplyEx("completed exception", true, CompletableFuture.completedFuture("my_val"));
+        new Thread(() -> {
+            CompletableFuture<String> future = new CompletableFuture<>();
+            thenApplyEx("uncompleted exception", true, future);
+            future.completeExceptionally(new RuntimeException());
+        }).start();
+    }
+
+    private void thenApplyEx(String reason, boolean exception, CompletableFuture<String> future) {
+        CompletableFuture<String> appliedFuture = future.handle((f, e) -> {
+            if (exception) {
+                throw new RuntimeException("Apply internal exception");
+            }
+            return "result for (" + f + ", " + e + "): " + reason;
+        });
+        try {
+            String result = appliedFuture.get();
+            log.info("Got result: {}", result);
+        } catch (Exception e) {
+            log.info("Exception {}", reason, e);
+        }
+    }
+
+    @Test
+    public void testComplete2() throws Exception {
+        CompletableFuture<String> future = new CompletableFuture<>();
+        future.complete("Result1");
+        future.complete("Result2");
+        log.info("Result: {}", future.get());
+    }
+
+    @Test
+    public void testWhenComplete() throws Exception {
+        {
+            log.info("Test before");
+            CompletableFuture<String> futureBefore = new CompletableFuture<>();
+            futureBefore.complete("Result1");
+            futureBefore.whenComplete((a, e) ->
+                    log.info("Completed {}", a, e));
+        }
+
+        {
+            log.info("Test after");
+            CompletableFuture<String> futureBefore = new CompletableFuture<>();
+            futureBefore.complete("Result1");
+            futureBefore.whenComplete((a, e) ->
+                    log.info("Completed {}", a, e));
+        }
+
+        {
+            log.info("Test before exception");
+            CompletableFuture<String> futureBefore = new CompletableFuture<>();
+            futureBefore.completeExceptionally(new RuntimeException());
+            futureBefore.whenComplete((a, e) ->
+                    log.info("Completed {}", a, e));
+        }
+
+        {
+            log.info("Test after exception");
+            CompletableFuture<String> futureBefore = new CompletableFuture<>();
+            futureBefore.completeExceptionally(new RuntimeException());
+            futureBefore.whenComplete((a, e) ->
+                    log.info("Completed {}", a, e));
+        }
+
+    }
 }

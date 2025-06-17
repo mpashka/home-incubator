@@ -9,7 +9,7 @@
         <artifactId>ws</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <artifactId>jax-ws</artifactId>
+    <artifactId>ws-jax-ws</artifactId>
     <version>1.0-SNAPSHOT</version>
 
 

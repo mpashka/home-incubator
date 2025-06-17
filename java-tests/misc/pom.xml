@@ -15,6 +15,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>akka</module>
         <module>core</module>
         <module>hsqldb</module>
         <module>version</module>

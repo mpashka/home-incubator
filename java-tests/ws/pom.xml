@@ -15,8 +15,8 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>cxf</module>
-        <module>jax-ws</module>
+        <module>ws-cxf</module>
+        <module>ws-jax-ws</module>
     </modules>
 
     <dependencies>

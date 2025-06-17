@@ -4,3 +4,6 @@
 [submodule "home-configuration/home-config-secrets"]
 	path = home-configuration/home-config-secrets
 	url = m_pashka@192.168.2.4:git/home-config-secrets
+[submodule "hass-docs/themes/ananke"]
+	path = hass-docs/themes/ananke
+	url = https://github.com/theNewDynamic/gohugo-theme-ananke.git
