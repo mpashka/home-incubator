@@ -33,8 +33,10 @@ public class ParentContext extends AbstractModule {
 
     @Override
     protected void configure() {
+        log.info("Before configure");
         bind(MyBeanEager.class).asEagerSingleton();
 
         binder().bind(MyBean.class).to(MyBeanImpl.class);
+        log.info("After configure");
     }
 }

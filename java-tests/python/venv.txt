@@ -1,6 +1,0 @@
-pip==9.0.1
-pytest==2.9.2
-pluggy==0.3.1
-pytest_xdist==1.15.0
-pytest-rerunfailures==4.2
-teamcity_messages==1.13
