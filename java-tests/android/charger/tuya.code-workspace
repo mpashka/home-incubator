@@ -1,0 +1,15 @@
+{
+  "folders": [
+    {
+      "path": "tuya"
+    }
+  ],
+  "settings": {
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.project.sourcePaths": [
+      "app/src/main/java"
+    ],
+    "java.format.settings.url": ".vscode/java-formatter.xml",
+    "avdmanager.sdkPath": "/opt/java/impl/android-sdk"
+  }
+}

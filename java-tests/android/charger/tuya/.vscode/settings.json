@@ -1,0 +1,13 @@
+{
+    "java.configuration.updateBuildConfiguration": "automatic",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "/opt/java/jdk-21",
+            "default": true
+        }
+    ],
+    "java.jdt.ls.java.home": "/opt/java/jdk-21",
+    "java.compile.nullAnalysis.mode": "automatic"
+
+}
