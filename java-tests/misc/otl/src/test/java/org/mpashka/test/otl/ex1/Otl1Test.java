@@ -20,11 +20,11 @@ import io.opentelemetry.sdk.resources.Resource;
 import io.opentelemetry.sdk.trace.SdkTracerProvider;
 import io.opentelemetry.sdk.trace.export.SimpleSpanProcessor;
 import org.junit.jupiter.api.Test;
-import org.mpashka.test.log.LogHelper;
+//import org.mpashka.test.log.LogHelper;
 
 public class Otl1Test {
 
-    static {LogHelper.julToSlf4j();}
+//    static {LogHelper.julToSlf4j();}
     public static final boolean STANDARD_SPANS = false;
 
     @Test

@@ -9,7 +9,7 @@
     <packaging>pom</packaging>
 
     <properties>
-        <logback.version>1.2.3</logback.version>
+        <logback.version>1.5.18</logback.version>
     </properties>
 
     <modules>
