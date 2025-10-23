@@ -26,6 +26,7 @@
         <module>ext</module>
         <module>proto</module>
         <module>otl</module>
+        <module>typesafe</module>
     </modules>
 
     <dependencies>

@@ -3,9 +3,6 @@ package org.mpashka.test.otl.ex1;
 import java.io.Closeable;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -29,21 +26,16 @@ import io.opentelemetry.context.Context;
 import io.opentelemetry.context.propagation.ContextPropagators;
 import io.opentelemetry.exporter.otlp.http.logs.OtlpHttpLogRecordExporter;
 import io.opentelemetry.instrumentation.logback.appender.v1_0.OpenTelemetryAppender;
-import io.opentelemetry.sdk.OpenTelemetrySdk;
-import io.opentelemetry.sdk.common.CompletableResultCode;
 import io.opentelemetry.sdk.common.InstrumentationScopeInfo;
 import io.opentelemetry.sdk.internal.AttributesMap;
 import io.opentelemetry.sdk.logs.LogLimits;
 import io.opentelemetry.sdk.logs.LogRecordProcessor;
 import io.opentelemetry.sdk.logs.ReadWriteLogRecord;
-import io.opentelemetry.sdk.logs.SdkLoggerProvider;
 import io.opentelemetry.sdk.logs.data.Body;
 import io.opentelemetry.sdk.logs.data.LogRecordData;
 import io.opentelemetry.sdk.logs.export.BatchLogRecordProcessor;
 import io.opentelemetry.sdk.logs.export.LogRecordExporter;
-import io.opentelemetry.sdk.logs.export.SimpleLogRecordProcessor;
 import io.opentelemetry.sdk.resources.Resource;
-import io.opentelemetry.sdk.resources.ResourceBuilder;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,11 +49,16 @@ public class OtlLogsMyTest {
 
     private static final ThreadLocal<MyContext> context = ThreadLocal.withInitial(MyContext::new);
 
-    public static final String DEPLOY_PROJECT = "project";
+    public static final String ATTRIBUTE_DEPLOY_PROJECT = "project";
     public static final String PROJECT = "test-ya-pashka";
     public static final String PROJECT1 = "test-ya-pashka1";
     public static final String PROJECT2 = "test-ya-pashka2";
     public static final String PROJECT3 = "test-deploy-ya-pashka-5";
+    public static final String RESOURCE_KEY_PROJECT = "project";
+    public static final String RESOURCE_KEY_CLUSTER = "cluster";
+    public static final String RESOURCE_KEY_SERVICE = "service.name";
+    public static final String CLUSTER = "my_test_cluster";
+    public static final String SERVICE = "my_test_service";
 
     // "alextrushkin_test"
 
@@ -87,9 +84,9 @@ public class OtlLogsMyTest {
                 .build();
 
         LogRecordProcessor logRecordProcessor =
-//                BatchLogRecordProcessor.builder(logRecordExporter)
-//                .build()
-                SimpleLogRecordProcessor.create(logRecordExporter)
+                BatchLogRecordProcessor.builder(logRecordExporter)
+                .build()
+//                SimpleLogRecordProcessor.create(logRecordExporter)
                 ;
         OpenTelemetry otelSdk = new MyOpenTelemetry(logRecordProcessor);
 
@@ -120,32 +117,48 @@ public class OtlLogsMyTest {
             MDC.remove("aaa1");
             myContext.setAaa(null);
 
-            myContext.setMonitoringProject(PROJECT1);
-            MDC.pushByKey(DEPLOY_PROJECT, PROJECT1);
-            MDC.put(DEPLOY_PROJECT, PROJECT1);
+            myContext.setMonitoringProject(PROJECT);
+            MDC.pushByKey(ATTRIBUTE_DEPLOY_PROJECT, PROJECT1);
+            MDC.put(ATTRIBUTE_DEPLOY_PROJECT, PROJECT1);
+            log.trace("Trace message1, MDC{project:{}}", PROJECT1);
+            log.debug("Debug message1, MDC{project:{}}", PROJECT1);
             log.info("Info message1, MDC{project:{}}", PROJECT1);
-            assertThat(MDC.popByKey(DEPLOY_PROJECT), is(PROJECT1));
-            MDC.remove(DEPLOY_PROJECT);
+            log.warn("Warn message1, MDC{project:{}}", PROJECT1);
+            log.error("Error message1, MDC{project:{}}", PROJECT1);
+            assertThat(MDC.popByKey(ATTRIBUTE_DEPLOY_PROJECT), is(PROJECT1));
+            MDC.remove(ATTRIBUTE_DEPLOY_PROJECT);
             myContext.setMonitoringProject(null);
 
-            myContext.setMonitoringProject(PROJECT2);
-            MDC.pushByKey(DEPLOY_PROJECT, PROJECT2);
-            MDC.put(DEPLOY_PROJECT, PROJECT2);
-            log.info("Info message2, MDC{project:{}}", PROJECT2);
-            assertThat(MDC.popByKey(DEPLOY_PROJECT), is(PROJECT2));
-            MDC.remove(DEPLOY_PROJECT);
+            myContext.setMonitoringProject(PROJECT);
+            MDC.pushByKey(ATTRIBUTE_DEPLOY_PROJECT, PROJECT2);
+            MDC.put(ATTRIBUTE_DEPLOY_PROJECT, PROJECT2);
+            log.debug("Info message2, MDC{project:{}}", PROJECT2);
+            assertThat(MDC.popByKey(ATTRIBUTE_DEPLOY_PROJECT), is(PROJECT2));
+            MDC.remove(ATTRIBUTE_DEPLOY_PROJECT);
             myContext.setMonitoringProject(null);
 
-            myContext.setMonitoringProject(PROJECT3);
-            MDC.pushByKey(DEPLOY_PROJECT, PROJECT3);
-            MDC.put(DEPLOY_PROJECT, PROJECT3);
+            myContext.setMonitoringProject(PROJECT);
+            MDC.pushByKey(ATTRIBUTE_DEPLOY_PROJECT, PROJECT3);
+            MDC.put(ATTRIBUTE_DEPLOY_PROJECT, PROJECT3);
             MDC.pushByKey("deploy.pod_id", "my_pod");
             MDC.pushByKey("deploy.box_id", "my_box");
-            log.info("Info message3, MDC{project:{}, pod_id:my_pod}", PROJECT3);
-            assertThat(MDC.popByKey(DEPLOY_PROJECT), is(PROJECT3));
+            log.trace("Info message3, MDC{project:{}, pod_id:my_pod}", PROJECT3);
+            assertThat(MDC.popByKey(ATTRIBUTE_DEPLOY_PROJECT), is(PROJECT3));
             assertThat(MDC.popByKey("deploy.pod_id"), is("my_pod"));
             assertThat(MDC.popByKey("deploy.box_id"), is("my_box"));
-            MDC.remove(DEPLOY_PROJECT);
+            MDC.remove(ATTRIBUTE_DEPLOY_PROJECT);
+            myContext.setMonitoringProject(null);
+
+            myContext.setMonitoringProject(PROJECT);
+            MDC.pushByKey(ATTRIBUTE_DEPLOY_PROJECT, PROJECT3);
+            MDC.put(ATTRIBUTE_DEPLOY_PROJECT, PROJECT3);
+            MDC.pushByKey("deploy.pod_id", "my_pod");
+            MDC.pushByKey("deploy.box_id", "my_box");
+            log.error("Error message3, MDC{project:{}, pod_id:my_pod}", PROJECT3);
+            assertThat(MDC.popByKey(ATTRIBUTE_DEPLOY_PROJECT), is(PROJECT3));
+            assertThat(MDC.popByKey("deploy.pod_id"), is("my_pod"));
+            assertThat(MDC.popByKey("deploy.box_id"), is("my_box"));
+            MDC.remove(ATTRIBUTE_DEPLOY_PROJECT);
             myContext.setMonitoringProject(null);
 
             Thread.sleep(3_000);
@@ -182,7 +195,7 @@ public class OtlLogsMyTest {
         }
     }
 
-    public static class MyOpenTelemetry implements OpenTelemetry, LoggerProvider, Closeable {
+    private static class MyOpenTelemetry implements OpenTelemetry, LoggerProvider, Closeable {
         private final LogRecordProcessor logRecordProcessor;
 
         public MyOpenTelemetry(LogRecordProcessor logRecordProcessor) {
@@ -215,7 +228,7 @@ public class OtlLogsMyTest {
         }
     }
 
-    public static class MyLoggerBuilder implements LoggerBuilder {
+    private static class MyLoggerBuilder implements LoggerBuilder {
         private final LogRecordProcessor logRecordProcessor;
         private final String instrumentationScopeName;
         @Nullable private String instrumentationScopeVersion;
@@ -247,13 +260,21 @@ public class OtlLogsMyTest {
                     .build();
 
             return new MyLogger(logRecordProcessor, instrumentationScopeInfo);
-
         }
     }
 
-    public static class MyLogger implements io.opentelemetry.api.logs.Logger {
+    private static class MyLogger implements io.opentelemetry.api.logs.Logger, LogRecordBuilder {
         private final LogRecordProcessor logRecordProcessor;
         private final InstrumentationScopeInfo instrumentationScopeInfo;
+        private Resource resource;
+
+        private long timestampEpochNanos;
+        private long observedTimestampEpochNanos;
+        private Context context;
+        private Severity severity = Severity.UNDEFINED_SEVERITY_NUMBER;
+        private String severityText;
+        private Value<?> body;
+        private AttributesMap attributes;
 
         public MyLogger(LogRecordProcessor logRecordProcessor, InstrumentationScopeInfo instrumentationScopeInfo) {
             this.logRecordProcessor = logRecordProcessor;
@@ -262,44 +283,21 @@ public class OtlLogsMyTest {
 
         @Override
         public LogRecordBuilder logRecordBuilder() {
-            MyContext myContext = context.get();
+            MyContext myContext = OtlLogsMyTest.context.get();
             System.out.println("My context: " + myContext);
 
-            Resource resource = Resource.builder()
-                    .put("project", myContext.getMonitoringProject() != null ? myContext.getMonitoringProject() : PROJECT)
-                    .put("cluster", "my_test_cluster")
-                    .put("service.name", "my_test_service")
+            resource = Resource.builder()
+                    .put(RESOURCE_KEY_PROJECT, myContext.getMonitoringProject() != null ? myContext.getMonitoringProject() : PROJECT)
+                    .put(RESOURCE_KEY_CLUSTER, CLUSTER)
+                    .put(RESOURCE_KEY_SERVICE, SERVICE)
 //                    .put("custom1", "my_custom1")
 //                .put("cluster", "my_cluster")
 //                .put("service.name", "my_service")
                     .build()
-            ;
+                    ;
 
-            MyLogRecordBuilder logRecordBuilder = new MyLogRecordBuilder(logRecordProcessor, resource, instrumentationScopeInfo);
-            logRecordBuilder.setAttribute("aaa", myContext.getAaa());
-//            logRecordBuilder.setAttribute("project", myContext.getMonitoringProject());
-            return logRecordBuilder;
-        }
-    }
-
-    public static class MyLogRecordBuilder implements LogRecordBuilder {
-        private final LogRecordProcessor logRecordProcessor;
-        private final Resource resource;
-
-        protected final InstrumentationScopeInfo instrumentationScopeInfo;
-        protected long timestampEpochNanos;
-        protected long observedTimestampEpochNanos;
-        protected Context context;
-        protected Severity severity = Severity.UNDEFINED_SEVERITY_NUMBER;
-        protected String severityText;
-        protected Value<?> body;
-//        protected String eventName;
-        private AttributesMap attributes;
-
-        public MyLogRecordBuilder(LogRecordProcessor logRecordProcessor, Resource resource, InstrumentationScopeInfo instrumentationScopeInfo) {
-            this.logRecordProcessor = logRecordProcessor;
-            this.resource = resource;
-            this.instrumentationScopeInfo = instrumentationScopeInfo;
+            setAttribute("aaa", myContext.getAaa());
+            return this;
         }
 
         @Override
@@ -389,31 +387,6 @@ public class OtlLogsMyTest {
                                     timestampEpochNanos,
                                     instrumentationScopeInfo,
                                     resource));
-        }
-    }
-
-    record MyLogRecordData(
-            Resource getResource,
-            InstrumentationScopeInfo getInstrumentationScopeInfo,
-            long getTimestampEpochNanos,
-            long getObservedTimestampEpochNanos,
-            SpanContext getSpanContext,
-            Severity getSeverity,
-            String getSeverityText,
-            Value<?> getBodyValue,
-            Attributes getAttributes
-    ) implements LogRecordData {
-
-        public Body getBody() {
-            Value<?> valueBody = getBodyValue();
-            return valueBody == null
-                    ? Body.empty()
-                    : Body.string(valueBody.asString());
-        }
-
-        @Override
-        public int getTotalAttributeCount() {
-            return getAttributes() != null ? getAttributes().size() : 0;
         }
     }
 
@@ -535,5 +508,29 @@ public class OtlLogsMyTest {
             }
         }
     }
-}
 
+    record MyLogRecordData(
+            Resource getResource,
+            InstrumentationScopeInfo getInstrumentationScopeInfo,
+            long getTimestampEpochNanos,
+            long getObservedTimestampEpochNanos,
+            SpanContext getSpanContext,
+            Severity getSeverity,
+            String getSeverityText,
+            Value<?> getBodyValue,
+            Attributes getAttributes
+    ) implements LogRecordData {
+
+        public Body getBody() {
+            Value<?> valueBody = getBodyValue();
+            return valueBody == null
+                    ? Body.empty()
+                    : Body.string(valueBody.asString());
+        }
+
+        @Override
+        public int getTotalAttributeCount() {
+            return getAttributes() != null ? getAttributes().size() : 0;
+        }
+    }
+}

@@ -1,7 +1,5 @@
 package org.mpashka.tests.misc.guice;
 
-import java.lang.annotation.Annotation;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
@@ -34,6 +32,9 @@ public class ParentContext extends AbstractModule {
     @Override
     protected void configure() {
         log.info("Before configure");
+//        Provider<String> myInit2 = getProvider(Key.get(String.class, Names.named("my_init2")));
+//        log.info("My init2: {}", myInit2);
+//        bind(MyInit2.class).asEagerSingleton();
         bind(MyBeanEager.class).asEagerSingleton();
 
         binder().bind(MyBean.class).to(MyBeanImpl.class);
