@@ -1,0 +1,91 @@
+@startuml
+
+!define primary_key(x) <b><color:#b8861b><&key></color> x</b>
+!define foreign_key(x) <color:#aaaaaa><&key></color> x
+!define column(x) <color:#efefef><&media-record></color> x
+!define table(x) entity x << (T, white) >>
+
+entity "user" as user {
+  primary_key(user_id) : INTEGER
+  --
+  column(first_name) : TEXT
+  column(last_name) : TEXT
+}
+
+entity "shop" as shop {
+  primary_key(shop_id) : INTEGER
+  --
+  column(name) : TEXT <<NOT NULL>>
+  column(tags) : TEXT[]
+}
+
+entity "shop_point" as shop_point {
+  primary_key(shop_point_id) : INTEGER
+  --
+  foreign_key(shop_id) : INTEGER <<FK>>
+  column(tax_id) : INTEGER <<NOT NULL>>
+  column(name) : TEXT <<NOT NULL>>
+  column(location_name) : TEXT
+  column(address) : TEXT
+  column(city) : TEXT
+  column(city_unit) : TEXT
+}
+
+entity "category" as category {
+  primary_key(category_id) : INTEGER
+  --
+  column(name) : TEXT <<UNIQUE>>
+}
+
+entity "warranty" as warranty {
+  primary_key(warranty_id) : INTEGER
+  --
+  column(purchase_date) : TIMESTAMP <<NOT NULL>>
+  column(period_months) : INTEGER <<NOT NULL>>
+  column(status) : TEXT
+  column(notes) : TEXT
+}
+
+entity "receipt" as receipt {
+  primary_key(receipt_id) : INTEGER
+  --
+  foreign_key(user_id) : INTEGER <<FK>>
+  foreign_key(shop_point_id) : INTEGER <<FK, NULLABLE>>
+  column(pos_time) : TIMESTAMP <<NOT NULL>>
+  column(total) : NUMERIC(10,2) <<NOT NULL>>
+  column(image_path) : TEXT
+  column(created_at) : TIMESTAMP
+  column(tags) : TEXT[]
+}
+
+entity "receipt_raw" as receipt_raw {
+  primary_key(receipt_raw_id) : INTEGER
+  --
+  foreign_key(user_id) : INTEGER <<FK>>
+  column(url) : TEXT <<NOT NULL>>
+  foreign_key(receipt_id) : INTEGER <<FK, NULLABLE>>
+}
+
+entity "purchase_item" as purchase_item {
+  primary_key(purchase_item_id) : INTEGER
+  --
+  foreign_key(receipt_id) : INTEGER <<FK>>
+  column(name) : TEXT <<NOT NULL>>
+  foreign_key(category_id) : INTEGER <<FK, NULLABLE>>
+  column(price) : NUMERIC(10,2) <<NOT NULL>>
+  column(quantity) : INTEGER <<NOT NULL>>
+  foreign_key(warranty_id) : INTEGER <<FK, NULLABLE>>
+  column(tags) : TEXT[]
+}
+
+' Связи / Relationships
+user ||--o{ receipt : "имеет / has"
+user ||--o{ receipt_raw : "имеет / has"
+shop ||--o{ shop_point : "имеет точки / has points"
+shop_point ||--o{ receipt : "выдает / issues"
+receipt ||--o{ purchase_item : "содержит / contains"
+receipt_raw }o--|| receipt : "ссылается / references"
+category ||--o{ purchase_item : "классифицирует / classifies"
+warranty ||--o{ purchase_item : "покрывает / covers"
+
+@enduml

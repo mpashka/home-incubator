@@ -1,17 +1,17 @@
-This is "rs-receipt" application. 
+Это приложение "rs-receipt".
 
-This application allows you to save, manage and access receipts.
-Receipts which are issued in Serbia upon purchase have QR code with purchase information.
-This application allows you to scan QR code, save purchase information into the database and
-allows you to analyze expenses and find receipts for warranty service.
+Данное приложение позволяет сохранять, управлять и получать доступ к чекам.
+Чеки, которые выдаются в Сербии при покупке, содержат QR код с информацией о покупке.
+Это приложение позволяет сканировать QR код, сохранять информацию о покупке в базу данных и
+позволяет анализировать расходы и находить чеки для гарантийного обслуживания.
 
-The Application consists of the following modules:
-- *`/be_quarkus/`* backend. Written in java, uses quarkus framework, uses PostgreSQL to store data, myBatis as persistence framework
-- *`/fe_mobile_flutter/`* mobile frontend. Written in flutter. Allows user to scan receipts QR codes, sends information to backend. Allows purchase browse, filter, search, tagging. Stores all purchase information locally, synchronizes information when online. Uses drift to store local data.
-- *`/fe_web_vue/`* web frontend. Written in TypeScript, uses vue web framework, uses vue material components. Allows user to browse purchases, receipts. Allows to filter, search, tag purchases and receipts. Provides analytics information about expenses - expenses per month, expenses for specific type - e.g. food, amount of specific product or product type - e.g. milk, vegetables, entertaiment, e.t.c.
+Приложение состоит из следующих модулей:
+- *`/be_quarkus/`* бэкенд. Написан на java, использует фреймворк quarkus, использует PostgreSQL для хранения данных, myBatis в качестве фреймворка персистентности
+- *`/fe_mobile_flutter/`* мобильный фронтенд. Написан на flutter. Позволяет пользователю сканировать QR коды чеков, отправлять информацию на бэкенд. Позволяет просматривать, фильтровать, искать, добавлять теги к покупкам. Сохраняет всю информацию о покупках локально, синхронизирует информацию при наличии подключения. Использует drift для хранения локальных данных.
+- *`/fe_web_vue/`* веб фронтенд. Написан на TypeScript, использует веб-фреймворк vue, использует компоненты vue material. Позволяет пользователю просматривать покупки, чеки. Позволяет фильтровать, искать, добавлять теги к покупкам и чекам. Предоставляет аналитическую информацию о расходах - расходы по месяцам, расходы для конкретного типа - например, еда, количество конкретного продукта или типа продукта - например, молоко, овощи, развлечения и т.д.
 
-- *`@/docs/readme.md`* - modules description 
-- *`@/docs/`* project folder contains project documentation, entity and behavior diagrams, er database diagram.
-- *`@/docs/er_diagram.md`* er database diagram.
+- *`@/docs/readme.md`* - описание модулей
+- *`@/docs/`* папка проекта содержит документацию проекта, диаграммы сущностей и поведения, ER диаграмму базы данных.
+- *`@/docs/er_diagram.md`* ER диаграмма базы данных.
 
-Use and modify documentation if needed.
+Используйте и изменяйте документацию при необходимости.

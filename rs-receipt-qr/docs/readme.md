@@ -1,12 +1,12 @@
-Application that will allow you to scan receipts, save purchase information and allow 
-analyse expenses and find receipts for warranty service.
+Приложение, которое позволяет сканировать чеки, сохранять информацию о покупках и позволяет
+анализировать расходы и находить чеки для гарантийного обслуживания.
 
-## Modules:
-- **be_quarkus** - backend quarkus application
-- **fe_web_vue** - frontend typescript vue application with vue material components
-- **fe_mobile_flutter** - flutter mobile application. Is documented in @/docs/fe_mobile_flutter 
+## Модули:
+- **be_quarkus** - бэкенд приложение на quarkus
+- **fe_web_vue** - фронтенд приложение на typescript vue с компонентами vue material
+- **fe_mobile_flutter** - мобильное приложение на flutter. Документировано в @/docs/fe_mobile_flutter
 
-## Receipt QR code documentation
-- `@qr_crna_gora/qr-code-crna-gora.md` - information about QR code used in Montenegro
-- `@qr_srbija/qr-code-srbija.md` - information about QR code used in Serbija
+## Документация QR кода чека
+- `@qr_crna_gora/qr-code-crna-gora.md` - информация о QR коде, используемом в Черногории
+- `@qr_srbija/qr-code-srbija.md` - информация о QR коде, используемом в Сербии
 
