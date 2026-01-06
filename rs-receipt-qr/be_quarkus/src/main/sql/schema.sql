@@ -52,16 +52,20 @@ CREATE TABLE receipt (
 );
 
 -- Таблица сырых данных чеков (из QR кодов) / Raw receipt data table (from QR codes)
+-- Используется для асинхронной обработки QR кодов на backend
 CREATE TABLE receipt_raw (
     receipt_raw_id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES "user"(user_id) ON DELETE CASCADE,
     url TEXT NOT NULL,
-    receipt_id INTEGER REFERENCES receipt(receipt_id) ON DELETE SET NULL
+    receipt_id INTEGER REFERENCES receipt(receipt_id) ON DELETE SET NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    status TEXT DEFAULT 'pending' -- pending, processing, completed, failed
 );
 
--- Таблица позиций покупок / Purchase items table
-CREATE TABLE purchase_item (
-    purchase_item_id SERIAL PRIMARY KEY,
+-- Таблица позиций покупок / Receipt items table
+CREATE TABLE receipt_item (
+    receipt_item_id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES "user"(user_id) ON DELETE CASCADE,
     receipt_id INTEGER NOT NULL REFERENCES receipt(receipt_id) ON DELETE CASCADE,
     name TEXT NOT NULL,
     category_id INTEGER REFERENCES category(category_id) ON DELETE SET NULL,
@@ -81,7 +85,10 @@ CREATE INDEX idx_receipt_pos_time ON receipt(pos_time);
 CREATE INDEX idx_receipt_created_at ON receipt(created_at);
 CREATE INDEX idx_receipt_raw_user_id ON receipt_raw(user_id);
 CREATE INDEX idx_receipt_raw_receipt_id ON receipt_raw(receipt_id);
+CREATE INDEX idx_receipt_raw_status ON receipt_raw(status); -- Для быстрой выборки pending QR кодов
 CREATE INDEX idx_shop_point_shop_id ON shop_point(shop_id);
-CREATE INDEX idx_purchase_item_receipt_id ON purchase_item(receipt_id);
-CREATE INDEX idx_purchase_item_category_id ON purchase_item(category_id);
-CREATE INDEX idx_purchase_item_warranty_id ON purchase_item(warranty_id);
+CREATE INDEX idx_shop_point_tax_id ON shop_point(tax_id); -- Для поиска по tax_id при обработке QR
+CREATE INDEX idx_receipt_item_user_id ON receipt_item(user_id);
+CREATE INDEX idx_receipt_item_receipt_id ON receipt_item(receipt_id);
+CREATE INDEX idx_receipt_item_category_id ON receipt_item(category_id);
+CREATE INDEX idx_receipt_item_warranty_id ON receipt_item(warranty_id);

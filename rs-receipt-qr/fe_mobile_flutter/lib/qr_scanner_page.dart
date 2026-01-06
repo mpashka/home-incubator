@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'local_db.dart';
-import 'local_db.g.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:drift/drift.dart' show Value;
@@ -59,16 +58,18 @@ class _QrScannerPageState extends State<QrScannerPage> {
   Future<void> saveInvoiceToDb(InvoiceResource invoice, LocalDatabase db) async {
     final receiptId = await db.into(db.receipts).insert(
       ReceiptsCompanion.insert(
-        shopId: const Value(null),
-        date: DateTime.parse(invoice.dateTimeCreated),
+        userId: 1, // TODO: get actual user ID
+        shopPointId: const Value(null),
+        posTime: DateTime.parse(invoice.dateTimeCreated),
         total: invoice.totalPrice,
         imagePath: const Value(null),
-        createdAt: DateTime.now(),
+        createdAt: Value(DateTime.now()),
       ),
     );
     for (final item in invoice.items) {
-      await db.into(db.purchaseItems).insert(
-        PurchaseItemsCompanion.insert(
+      await db.into(db.receiptItems).insert(
+        ReceiptItemsCompanion.insert(
+          userId: 1, // TODO: get actual user ID
           receiptId: receiptId,
           name: item.name,
           categoryId: const Value(null),

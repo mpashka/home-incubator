@@ -2,8 +2,9 @@ package com.receipt;
 
 import java.util.List;
 
-public class PurchaseItem {
+public class ReceiptItem {
     private Integer id;
+    private Integer userId;
     private Integer receiptId;
     private String name;
     private Integer categoryId;
@@ -15,6 +16,8 @@ public class PurchaseItem {
     // Getters and setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
+    public Integer getUserId() { return userId; }
+    public void setUserId(Integer userId) { this.userId = userId; }
     public Integer getReceiptId() { return receiptId; }
     public void setReceiptId(Integer receiptId) { this.receiptId = receiptId; }
     public String getName() { return name; }
@@ -29,4 +32,4 @@ public class PurchaseItem {
     public void setWarrantyId(Integer warrantyId) { this.warrantyId = warrantyId; }
     public List<String> getTags() { return tags; }
     public void setTags(List<String> tags) { this.tags = tags; }
-} 
+}

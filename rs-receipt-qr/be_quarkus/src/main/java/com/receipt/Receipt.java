@@ -4,8 +4,9 @@ import java.util.List;
 
 public class Receipt {
     private Integer id;
-    private Integer shopId;
-    private java.sql.Date date;
+    private Integer userId;
+    private Integer shopPointId;
+    private java.sql.Timestamp posTime;
     private java.math.BigDecimal total;
     private String imagePath;
     private java.sql.Timestamp createdAt;
@@ -14,10 +15,12 @@ public class Receipt {
     // Getters and setters
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }
-    public Integer getShopId() { return shopId; }
-    public void setShopId(Integer shopId) { this.shopId = shopId; }
-    public java.sql.Date getDate() { return date; }
-    public void setDate(java.sql.Date date) { this.date = date; }
+    public Integer getUserId() { return userId; }
+    public void setUserId(Integer userId) { this.userId = userId; }
+    public Integer getShopPointId() { return shopPointId; }
+    public void setShopPointId(Integer shopPointId) { this.shopPointId = shopPointId; }
+    public java.sql.Timestamp getPosTime() { return posTime; }
+    public void setPosTime(java.sql.Timestamp posTime) { this.posTime = posTime; }
     public java.math.BigDecimal getTotal() { return total; }
     public void setTotal(java.math.BigDecimal total) { this.total = total; }
     public String getImagePath() { return imagePath; }

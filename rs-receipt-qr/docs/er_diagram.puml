@@ -64,11 +64,14 @@ entity "receipt_raw" as receipt_raw {
   foreign_key(user_id) : INTEGER <<FK>>
   column(url) : TEXT <<NOT NULL>>
   foreign_key(receipt_id) : INTEGER <<FK, NULLABLE>>
+  column(created_at) : TIMESTAMP
+  column(status) : TEXT <<DEFAULT 'pending'>>
 }
 
-entity "purchase_item" as purchase_item {
-  primary_key(purchase_item_id) : INTEGER
+entity "receipt_item" as receipt_item {
+  primary_key(receipt_item_id) : INTEGER
   --
+  foreign_key(user_id) : INTEGER <<FK>>
   foreign_key(receipt_id) : INTEGER <<FK>>
   column(name) : TEXT <<NOT NULL>>
   foreign_key(category_id) : INTEGER <<FK, NULLABLE>>
@@ -81,11 +84,29 @@ entity "purchase_item" as purchase_item {
 ' Связи / Relationships
 user ||--o{ receipt : "имеет / has"
 user ||--o{ receipt_raw : "имеет / has"
+user ||--o{ receipt_item : "имеет / has"
 shop ||--o{ shop_point : "имеет точки / has points"
 shop_point ||--o{ receipt : "выдает / issues"
-receipt ||--o{ purchase_item : "содержит / contains"
+receipt ||--o{ receipt_item : "содержит / contains"
 receipt_raw }o--|| receipt : "ссылается / references"
-category ||--o{ purchase_item : "классифицирует / classifies"
-warranty ||--o{ purchase_item : "покрывает / covers"
+category ||--o{ receipt_item : "классифицирует / classifies"
+warranty ||--o{ receipt_item : "покрывает / covers"
+
+note right of receipt_raw
+  **Статусы обработки QR кода:**
+  • pending - ожидает обработки
+  • processing - обрабатывается
+  • completed - обработан успешно
+  • failed - ошибка обработки
+end note
+
+note right of receipt
+  **Новая схема v3:**
+  • Добавлен user_id (обязательный)
+  • shop_id → shop_point_id
+  • date → pos_time
+  • Добавлены tags
+end note
 
 @enduml
+

@@ -36,7 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   qr_code_scanner: ^1.0.1
   drift: ^2.15.0
-  drift_flutter: ^2.15.0
+  drift_flutter: ^0.2.8
   sqlite3_flutter_libs: ^0.5.15
   http: ^1.2.1
 

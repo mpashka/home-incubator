@@ -56,33 +56,33 @@ INSERT INTO receipt_raw (receipt_raw_id, user_id, url, receipt_id) VALUES
 (3, 2, 'https://suf.purs.gov.rs/v/?vl=...example3...', 3),
 (4, 1, 'https://suf.purs.gov.rs/v/?vl=...example4...', NULL);
 
--- Вставка позиций покупок / Insert purchase items
-INSERT INTO purchase_item (purchase_item_id, receipt_id, name, category_id, price, quantity, warranty_id, tags) VALUES
--- Чек 1: продукты
-(1, 1, 'Молоко 3.2% 1л', 2, 125.00, 2, NULL, ARRAY['органика']),
-(2, 1, 'Хлеб белый', 10, 89.00, 1, NULL, NULL),
-(3, 1, 'Помидоры', 3, 199.50, 1, NULL, ARRAY['свежие']),
-(4, 1, 'Говядина фарш 500г', 4, 450.00, 2, NULL, NULL),
-(5, 1, 'Яблоки Гренни 1кг', 3, 180.00, 1, NULL, NULL),
-(6, 1, 'Сок апельсиновый 1л', 9, 165.00, 3, NULL, NULL),
+-- Вставка позиций покупок / Insert receipt items
+INSERT INTO receipt_item (receipt_item_id, user_id, receipt_id, name, category_id, price, quantity, warranty_id, tags) VALUES
+-- Чек 1: продукты (user_id=1)
+(1, 1, 1, 'Молоко 3.2% 1л', 2, 125.00, 2, NULL, ARRAY['органика']),
+(2, 1, 1, 'Хлеб белый', 10, 89.00, 1, NULL, NULL),
+(3, 1, 1, 'Помидоры', 3, 199.50, 1, NULL, ARRAY['свежие']),
+(4, 1, 1, 'Говядина фарш 500г', 4, 450.00, 2, NULL, NULL),
+(5, 1, 1, 'Яблоки Гренни 1кг', 3, 180.00, 1, NULL, NULL),
+(6, 1, 1, 'Сок апельсиновый 1л', 9, 165.00, 3, NULL, NULL),
 
--- Чек 2: продукты быстро
-(7, 2, 'Вода минеральная 1.5л', 9, 75.00, 4, NULL, NULL),
-(8, 2, 'Шоколад молочный', 1, 220.00, 2, NULL, ARRAY['десерт']),
-(9, 2, 'Круассан', 10, 95.00, 2, NULL, NULL),
+-- Чек 2: продукты быстро (user_id=1)
+(7, 1, 2, 'Вода минеральная 1.5л', 9, 75.00, 4, NULL, NULL),
+(8, 1, 2, 'Шоколад молочный', 1, 220.00, 2, NULL, ARRAY['десерт']),
+(9, 1, 2, 'Круассан', 10, 95.00, 2, NULL, NULL),
 
--- Чек 3: электроника
-(10, 3, 'Ноутбук Lenovo IdeaPad', 5, 45990.00, 1, 1, ARRAY['работа', 'новый']),
+-- Чек 3: электроника (user_id=2)
+(10, 2, 3, 'Ноутбук Lenovo IdeaPad', 5, 45990.00, 1, 1, ARRAY['работа', 'новый']),
 
--- Чек 4: продукты
-(11, 4, 'Сыр гауда 200г', 2, 289.00, 1, NULL, NULL),
-(12, 4, 'Масло оливковое 500мл', 1, 345.00, 1, NULL, ARRAY['экстра']),
-(13, 4, 'Паста спагетти 500г', 1, 120.00, 3, NULL, NULL),
-(14, 4, 'Томатный соус 400г', 1, 95.00, 2, NULL, NULL),
+-- Чек 4: продукты (user_id=1)
+(11, 1, 4, 'Сыр гауда 200г', 2, 289.00, 1, NULL, NULL),
+(12, 1, 4, 'Масло оливковое 500мл', 1, 345.00, 1, NULL, ARRAY['экстра']),
+(13, 1, 4, 'Паста спагетти 500г', 1, 120.00, 3, NULL, NULL),
+(14, 1, 4, 'Томатный соус 400г', 1, 95.00, 2, NULL, NULL),
 
--- Чек 5: косметика
-(15, 5, 'Крем для лица', 7, 345.80, 1, NULL, ARRAY['уход']),
-(16, 5, 'Шампунь 400мл', 7, 222.00, 1, NULL, NULL);
+-- Чек 5: косметика (user_id=3)
+(15, 3, 5, 'Крем для лица', 7, 345.80, 1, NULL, ARRAY['уход']),
+(16, 3, 5, 'Шампунь 400мл', 7, 222.00, 1, NULL, NULL);
 
 -- Обновление последовательностей / Update sequences
 ALTER SEQUENCE user_user_id_seq RESTART WITH 4;
@@ -92,4 +92,4 @@ ALTER SEQUENCE category_category_id_seq RESTART WITH 11;
 ALTER SEQUENCE warranty_warranty_id_seq RESTART WITH 4;
 ALTER SEQUENCE receipt_receipt_id_seq RESTART WITH 6;
 ALTER SEQUENCE receipt_raw_receipt_raw_id_seq RESTART WITH 5;
-ALTER SEQUENCE purchase_item_purchase_item_id_seq RESTART WITH 17;
+ALTER SEQUENCE receipt_item_receipt_item_id_seq RESTART WITH 17;

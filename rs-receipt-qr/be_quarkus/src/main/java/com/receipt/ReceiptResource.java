@@ -13,6 +13,9 @@ public class ReceiptResource {
     @Inject
     ReceiptMapper receiptMapper;
 
+    @Inject
+    ReceiptItemMapper receiptItemMapper;
+
     @GET
     public List<Receipt> getAll() {
         return receiptMapper.getAll();
@@ -31,12 +34,12 @@ public class ReceiptResource {
 
     @POST
     @Path("/with-items")
-    public void createWithItems(ReceiptWithItems data, @Inject PurchaseItemMapper purchaseItemMapper) {
+    public void createWithItems(ReceiptWithItems data) {
         receiptMapper.insert(data.receipt);
         if (data.items != null) {
-            for (PurchaseItem item : data.items) {
+            for (ReceiptItem item : data.items) {
                 item.setReceiptId(data.receipt.getId());
-                purchaseItemMapper.insert(item);
+                receiptItemMapper.insert(item);
             }
         }
     }
@@ -67,5 +70,5 @@ public class ReceiptResource {
 
 class ReceiptWithItems {
     public Receipt receipt;
-    public List<PurchaseItem> items;
+    public List<ReceiptItem> items;
 }
