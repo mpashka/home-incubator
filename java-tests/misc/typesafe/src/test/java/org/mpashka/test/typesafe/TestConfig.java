@@ -39,4 +39,18 @@ public class TestConfig {
             }
         });
     }
+
+    @Test
+    public void testStringValues() {
+        Config config = ConfigFactory.parseString(
+                """
+                        {
+                            my_option: "Hey",
+                            my_option2: Hey,
+                            my_option_mw: Hey this is an multi-word,
+                        }""");
+        log.info("My Option: {}", config.getString("my_option"));
+        log.info("My Option2: {}", config.getString("my_option2"));
+        log.info("My Option multi: {}", config.getString("my_option_mw"));
+    }
 }
