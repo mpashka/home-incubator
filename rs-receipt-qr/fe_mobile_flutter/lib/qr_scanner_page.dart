@@ -8,7 +8,7 @@ import 'qr_scanner_invoice_models.dart';
 
 class QrScannerPage extends StatefulWidget {
   final void Function(String) onScanned;
-  const QrScannerPage({Key? key, required this.onScanned}) : super(key: key);
+  const QrScannerPage({super.key, required this.onScanned});
 
   @override
   State<QrScannerPage> createState() => _QrScannerPageState();
