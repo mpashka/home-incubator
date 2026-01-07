@@ -22,5 +22,6 @@ avdmanager list avd
 emulator -avd <name>
 
 flutter devices
+flutter build apk
 flutter run
 flutter run -d <device>

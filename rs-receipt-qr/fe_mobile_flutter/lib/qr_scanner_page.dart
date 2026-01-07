@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:qr_code_scanner/qr_code_scanner.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 import 'local_db.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -15,15 +15,16 @@ class QrScannerPage extends StatefulWidget {
 }
 
 class _QrScannerPageState extends State<QrScannerPage> {
-  final GlobalKey qrKey = GlobalKey(debugLabel: 'QR');
-  QRViewController? controller;
+  final MobileScannerController controller = MobileScannerController(
+    detectionSpeed: DetectionSpeed.noDuplicates,
+  );
   bool _isProcessing = false;
   String? _message;
 
   @override
-  void dispose() {
-    controller?.dispose();
+  Future<void> dispose() async {
     super.dispose();
+    await controller.dispose();
   }
 
   Map<String, String?> extractParamsFromQrUrl(String url) {
@@ -112,13 +113,18 @@ class _QrScannerPageState extends State<QrScannerPage> {
     }
   }
 
-  void _onQRViewCreated(QRViewController controller) {
-    this.controller = controller;
-    controller.scannedDataStream.listen((scanData) async {
-      controller.pauseCamera();
-      await _handleScan(scanData.code ?? '');
-      controller.resumeCamera();
-    });
+  Future<void> _onDetect(BarcodeCapture capture) async {
+    if (_isProcessing) return;
+
+    final barcodes = capture.barcodes;
+    if (barcodes.isEmpty) return;
+
+    final code = barcodes.first.rawValue;
+    if (code == null || code.isEmpty) return;
+
+    await controller.stop();
+    await _handleScan(code);
+    await controller.start();
   }
 
   @override
@@ -127,9 +133,9 @@ class _QrScannerPageState extends State<QrScannerPage> {
       appBar: AppBar(title: const Text('Scan QR Code')),
       body: Stack(
         children: [
-          QRView(
-            key: qrKey,
-            onQRViewCreated: _onQRViewCreated,
+          MobileScanner(
+            controller: controller,
+            onDetect: _onDetect,
           ),
           if (_isProcessing)
             Container(
