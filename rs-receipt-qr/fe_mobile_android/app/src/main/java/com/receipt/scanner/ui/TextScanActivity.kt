@@ -8,7 +8,6 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
 import android.view.View
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.CameraSelector
@@ -23,7 +22,6 @@ import com.receipt.scanner.data.SettingsRepository
 import com.receipt.scanner.databinding.ActivityTextScanBinding
 import com.receipt.scanner.model.ReceiptTextData
 import com.receipt.scanner.model.ReceiptTextRequest
-import com.receipt.scanner.ocr.TextRecognizerProvider
 import com.receipt.scanner.util.TextReceiptAnalyzer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -49,7 +47,6 @@ class TextScanActivity : AppCompatActivity() {
     private var cameraProvider: ProcessCameraProvider? = null
     private var imageAnalysis: ImageAnalysis? = null
 
-    private var currentMode = TextRecognizerProvider.Mode.MLKIT_OFFLINE_LATIN
     private var isProcessing = false
     private var lastScannedData: ReceiptTextData? = null
     private var lastScanTime: Long = 0
@@ -83,69 +80,6 @@ class TextScanActivity : AppCompatActivity() {
 
         binding.grantPermissionButton.setOnClickListener {
             requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-        }
-
-        // OCR mode selection
-        binding.chipOffline.setOnClickListener {
-            switchOcrMode(TextRecognizerProvider.Mode.MLKIT_OFFLINE_LATIN)
-        }
-
-        binding.chipCloud.setOnClickListener {
-            switchOcrMode(TextRecognizerProvider.Mode.FIREBASE_CLOUD)
-        }
-    }
-
-    private fun switchOcrMode(mode: TextRecognizerProvider.Mode) {
-        if (currentMode == mode) return
-
-        currentMode = mode
-        Toast.makeText(
-            this,
-            if (mode == TextRecognizerProvider.Mode.MLKIT_OFFLINE_LATIN)
-                getString(R.string.ocr_mode_offline_desc)
-            else
-                getString(R.string.ocr_mode_cloud_desc),
-            Toast.LENGTH_SHORT
-        ).show()
-
-        // Restart camera with new analyzer
-        restartCameraWithNewMode()
-    }
-
-    private fun restartCameraWithNewMode() {
-        // Close existing analyzer
-        textAnalyzer?.close()
-        textAnalyzer = null
-
-        // Unbind and rebind camera
-        cameraProvider?.let { provider ->
-            imageAnalysis?.let { analysis ->
-                provider.unbind(analysis)
-            }
-
-            // Create new analyzer with selected mode
-            textAnalyzer = TextReceiptAnalyzer(
-                currentMode,
-                ::onReceiptTextDetected,
-                ::onTextError
-            )
-
-            imageAnalysis = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-                .also {
-                    it.setAnalyzer(cameraExecutor, textAnalyzer!!)
-                }
-
-            try {
-                provider.bindToLifecycle(
-                    this,
-                    CameraSelector.DEFAULT_BACK_CAMERA,
-                    imageAnalysis
-                )
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
         }
     }
 
@@ -186,9 +120,9 @@ class TextScanActivity : AppCompatActivity() {
                 }
 
             textAnalyzer = TextReceiptAnalyzer(
-                currentMode,
                 ::onReceiptTextDetected,
-                ::onTextError
+                ::onTextError,
+                ::onTextDetected
             )
 
             imageAnalysis = ImageAnalysis.Builder()
@@ -213,6 +147,12 @@ class TextScanActivity : AppCompatActivity() {
             }
 
         }, ContextCompat.getMainExecutor(this))
+    }
+
+    private fun onTextDetected(errorMessage: String) {
+        runOnUiThread {
+            showStatus(getString(R.string.receipt_text_succeed) + ": " + errorMessage, true)
+        }
     }
 
     private fun onTextError(errorMessage: String) {

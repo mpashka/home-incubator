@@ -1,7 +1,6 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.gms.google-services")
 }
 
 android {
@@ -62,10 +61,6 @@ dependencies {
 
     // ML Kit Text Recognition (offline, Latin only)
     implementation(libs.mlkit.text.recognition)
-
-    // Firebase ML Kit Text Recognition (cloud, supports Cyrillic + Latin)
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.mlkit.text)
 
     // Networking
     implementation(libs.retrofit)

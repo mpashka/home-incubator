@@ -36,10 +36,6 @@ mlkit-barcode = { group = "com.google.mlkit", name = "barcode-scanning", version
 # ML Kit Text Recognition (offline, Latin only)
 mlkit-text-recognition = { group = "com.google.mlkit", name = "text-recognition", version.ref = "mlkitTextRecognition" }
 
-# Firebase ML Kit Text Recognition (cloud, supports Cyrillic + Latin)
-firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version = "34.7.0" }
-firebase-mlkit-text = { group = "com.google.firebase", name = "firebase-ml-vision" }
-
 # Networking
 retrofit = { group = "com.squareup.retrofit2", name = "retrofit", version.ref = "retrofit" }
 retrofit-gson = { group = "com.squareup.retrofit2", name = "converter-gson", version.ref = "retrofit" }

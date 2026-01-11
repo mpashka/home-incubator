@@ -29,6 +29,7 @@
     <string name="scan_text_hint">Point camera at receipt PFR section</string>
     <string name="receipt_text_detected">Receipt text detected</string>
     <string name="receipt_text_sent">Receipt text sent successfully</string>
+    <string name="receipt_text_succeed">Text recognized</string>
     <string name="receipt_text_failed">Failed to send receipt text</string>
     <string name="scanning_mode">Select scanning mode</string>
 
