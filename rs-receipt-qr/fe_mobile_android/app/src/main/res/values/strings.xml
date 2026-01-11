@@ -22,4 +22,19 @@
     <string name="delete">Delete</string>
     <string name="qr_detected">QR Code Detected</string>
     <string name="grant_permission">Grant Permission</string>
+
+    <!-- Scan mode selection -->
+    <string name="scan_qr_code">Scan QR Code</string>
+    <string name="scan_receipt_text">Scan Receipt Text</string>
+    <string name="scan_text_hint">Point camera at receipt PFR section</string>
+    <string name="receipt_text_detected">Receipt text detected</string>
+    <string name="receipt_text_sent">Receipt text sent successfully</string>
+    <string name="receipt_text_failed">Failed to send receipt text</string>
+    <string name="scanning_mode">Select scanning mode</string>
+
+    <!-- OCR mode selection -->
+    <string name="ocr_mode_offline">Offline (Latin)</string>
+    <string name="ocr_mode_cloud">Cloud (Cyrillic)</string>
+    <string name="ocr_mode_offline_desc">Fast, works offline, Latin only</string>
+    <string name="ocr_mode_cloud_desc">Requires internet, supports Cyrillic</string>
 </resources>

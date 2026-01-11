@@ -38,6 +38,7 @@ be_quarkus/
    - `ShopPoint.java` - точки продаж
    - `Receipt.java` - чеки
    - `ReceiptRaw.java` - сырые QR коды
+   - `ReceiptText.java` - данные чеков из OCR сканирования (PFR данные)
    - `ReceiptItem.java` - позиции чеков
    - `Category.java` - категории товаров
    - `Warranty.java` - гарантии
@@ -45,6 +46,7 @@ be_quarkus/
 2. **Persistence Layer** - MyBatis mappers
    - `ReceiptMapper.java` - CRUD для чеков
    - `ReceiptRawMapper.java` - CRUD для сырых QR
+   - `ReceiptTextMapper.java` - CRUD для данных OCR сканирования
    - `ShopPointMapper.java` - CRUD для точек продаж
    - `ShopMapper.java` - CRUD для магазинов
    - `ReceiptItemMapper.java` - CRUD для позиций
@@ -56,6 +58,7 @@ be_quarkus/
 4. **API Layer** - REST endpoints
    - `ReceiptResource.java` - API для чеков
    - `ReceiptRawResource.java` - API для QR кодов
+   - `ReceiptTextResource.java` - API для данных OCR сканирования
    - `ReceiptItemResource.java` - API для позиций
 
 5. **DTO Layer** - модели для внешних API
@@ -120,6 +123,35 @@ be_quarkus/
 - `GET /api/receipt-raw/user/{userId}` - QR коды пользователя
 
 **Компонент:** `ReceiptRawResource.java`
+
+### 5. API для данных OCR сканирования (PFR)
+
+**Endpoints:**
+- `POST /api/receipt-text` - сохранение данных из OCR сканирования
+- `GET /api/receipt-text` - список всех записей
+- `GET /api/receipt-text/{id}` - получение записи по ID
+- `GET /api/receipt-text/user/{userId}` - записи по пользователю
+- `DELETE /api/receipt-text/{id}` - удаление записи
+
+**Request (POST):**
+```json
+{
+  "userId": 1,
+  "pfrTime": "07.09.2024. 19:25:47",
+  "pfrReceiptNumber": "P8BPS55R-P8BPS55R-71822",
+  "pfrCounter": "64763/71822ПП"
+}
+```
+
+**Response:**
+```json
+{
+  "receiptTextId": 123,
+  "status": "received"
+}
+```
+
+**Компонент:** `ReceiptTextResource.java`
 
 ---
 
@@ -191,11 +223,14 @@ quarkus.mybatis.scan-path=com.receipt
 5. `warranty` - гарантии
 6. `receipt` - чеки (с user_id, shop_point_id, pos_time, tags)
 7. `receipt_raw` - сырые QR коды (с status, created_at)
-8. `receipt_item` - позиции чеков (с user_id, tags)
+8. `receipt_text` - данные из OCR сканирования (PFR данные: время, номер чека, счётчик)
+9. `receipt_item` - позиции чеков (с user_id, tags)
 
 **Ключевые индексы:**
 - `idx_receipt_raw_status` - для быстрой выборки pending QR
 - `idx_shop_point_tax_id` - для поиска по tax_id при обработке
+- `idx_receipt_text_user_id` - для выборки по пользователю
+- `idx_receipt_text_pfr_receipt_number` - для поиска по номеру чека
 - Индексы для всех FK и дат
 
 ### Миграции

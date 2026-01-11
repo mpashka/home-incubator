@@ -68,6 +68,17 @@ entity "receipt_raw" as receipt_raw {
   column(status) : TEXT <<DEFAULT 'pending'>>
 }
 
+entity "receipt_text" as receipt_text {
+  primary_key(receipt_text_id) : INTEGER
+  --
+  foreign_key(user_id) : INTEGER <<FK>>
+  column(pfr_time) : TEXT <<NOT NULL>>
+  column(pfr_receipt_number) : TEXT <<NOT NULL>>
+  column(pfr_counter) : TEXT <<NOT NULL>>
+  column(created_at) : TIMESTAMP
+  column(status) : TEXT <<DEFAULT 'received'>>
+}
+
 entity "receipt_item" as receipt_item {
   primary_key(receipt_item_id) : INTEGER
   --
@@ -84,6 +95,7 @@ entity "receipt_item" as receipt_item {
 ' Связи / Relationships
 user ||--o{ receipt : "имеет / has"
 user ||--o{ receipt_raw : "имеет / has"
+user ||--o{ receipt_text : "имеет / has"
 user ||--o{ receipt_item : "имеет / has"
 shop ||--o{ shop_point : "имеет точки / has points"
 shop_point ||--o{ receipt : "выдает / issues"
@@ -106,6 +118,18 @@ note right of receipt
   • shop_id → shop_point_id
   • date → pos_time
   • Добавлены tags
+end note
+
+note right of receipt_text
+  **PFR данные из OCR сканирования:**
+  • pfr_time - ПФР време
+  • pfr_receipt_number - ПФР број рачуна
+  • pfr_counter - Бројач рачуна
+
+  **Статусы:**
+  • received - получено
+  • processed - обработано
+  • error - ошибка
 end note
 
 @enduml

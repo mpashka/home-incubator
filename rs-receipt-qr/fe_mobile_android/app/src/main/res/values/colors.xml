@@ -7,6 +7,7 @@
     <color name="black">#000000</color>
     <color name="scanner_overlay">#80000000</color>
     <color name="scanner_frame">#FFFFFF</color>
+    <color name="scanner_frame_text">#FFA726</color>
     <color name="success">#4CAF50</color>
     <color name="error">#F44336</color>
     <color name="pending">#FFC107</color>

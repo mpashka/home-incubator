@@ -22,9 +22,8 @@
         tools:targetApi="35">
 
         <activity
-            android:name=".ui.MainActivity"
+            android:name=".ui.HomeActivity"
             android:exported="true"
-            android:screenOrientation="portrait"
             android:theme="@style/Theme.ReceiptScanner">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -33,15 +32,29 @@
         </activity>
 
         <activity
+            android:name=".ui.MainActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ui.HomeActivity"
+            android:theme="@style/Theme.ReceiptScanner" />
+
+        <activity
+            android:name=".ui.TextScanActivity"
+            android:exported="false"
+            android:screenOrientation="portrait"
+            android:parentActivityName=".ui.HomeActivity"
+            android:theme="@style/Theme.ReceiptScanner" />
+
+        <activity
             android:name=".ui.SettingsActivity"
             android:exported="false"
-            android:parentActivityName=".ui.MainActivity"
+            android:parentActivityName=".ui.HomeActivity"
             android:theme="@style/Theme.ReceiptScanner" />
 
         <activity
             android:name=".ui.HistoryActivity"
             android:exported="false"
-            android:parentActivityName=".ui.MainActivity"
+            android:parentActivityName=".ui.HomeActivity"
             android:theme="@style/Theme.ReceiptScanner" />
 
     </application>

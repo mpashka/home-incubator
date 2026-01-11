@@ -1,6 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -9,7 +10,7 @@ android {
 
     defaultConfig {
         applicationId = "com.receipt.scanner"
-        minSdk = 26
+        minSdk = 34
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
@@ -58,6 +59,13 @@ dependencies {
 
     // ML Kit Barcode Scanning
     implementation(libs.mlkit.barcode)
+
+    // ML Kit Text Recognition (offline, Latin only)
+    implementation(libs.mlkit.text.recognition)
+
+    // Firebase ML Kit Text Recognition (cloud, supports Cyrillic + Latin)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.mlkit.text)
 
     // Networking
     implementation(libs.retrofit)
