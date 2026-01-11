@@ -20,6 +20,12 @@
   - Offline работа с локальной БД (Drift)
   - Синхронизация с backend
 
+- **fe_mobile_android** - нативное Android приложение
+  - Документация: `@/docs/fe_mobile_android/overview.md`
+  - Сканирование QR кодов чеков (ML Kit)
+  - Оптимизировано для больших QR кодов (~900 байт)
+  - Android 15 + Xiaomi HyperOS 2
+
 ## Документация
 
 ### API
