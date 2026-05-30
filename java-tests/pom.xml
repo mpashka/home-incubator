@@ -11,7 +11,7 @@
 
 
     <properties>
-        <java.version>17</java.version>
+        <java.version>19</java.version>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.compiler.source>${java.version}</maven.compiler.source>
 
@@ -225,13 +225,11 @@
 
 
     <modules>
-        <module>java8</module>
         <module>misc</module>
         <module>spring</module>
         <module>jms</module>
         <module>ws</module>
         <module>helpers</module>
-        <module>kotlin</module>
     </modules>
 
 </project>

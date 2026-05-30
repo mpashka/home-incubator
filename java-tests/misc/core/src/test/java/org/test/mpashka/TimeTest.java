@@ -65,6 +65,15 @@ No duration for Weeks: Unit must not have an estimated duration
     public void testParse() throws ParseException {
         SimpleDateFormat fmt = new SimpleDateFormat("EEE MMM d HH:mm:ss Z yyyy", Locale.US);
         log.info("D: {}", fmt.parse("Fri Jan 13 09:36:03 MSK 2023"));
+
+        Instant instant = Instant.parse("2007-12-03T10:15:30.00Z");
+        log.info("D: {}", instant);
+
+        Instant instant1 = Instant.parse("2007-12-03T10:15:30");
+        log.info("D: {}", instant1);
+
+        Instant instant2 = Instant.parse("2007-12-03");
+        log.info("D2: {}", instant2);
     }
 
     @Test

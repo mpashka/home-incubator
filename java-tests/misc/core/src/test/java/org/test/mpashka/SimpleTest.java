@@ -6,17 +6,33 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 
+import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
+@Slf4j
 public class SimpleTest {
 
     public List<Integer> top3(List<Integer> in) {
         SortedList out = new SortedList(3);
         in.forEach(out::add);
         return out.top();
+    }
+
+    @Test
+    public void testSubstring() {
+        doSubstring("aaa.bbb");
+        doSubstring(".bbb");
+        doSubstring("bbb");
+        doSubstring("bbb.");
+    }
+
+    private void doSubstring(String in) {
+        int dotIdx = in.indexOf('.');
+        String preDot = dotIdx >= 0 ? in.substring(0, dotIdx) : in;
+        log.info("In: {}, dot: {}", in, preDot);
     }
 
     @Test
