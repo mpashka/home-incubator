@@ -1,0 +1,15 @@
+.idea/
+.vscode/
+.env
+.env.*
+!.env.example
+*.iml
+*.log
+
+backend/target/
+web/node_modules/
+web/dist/
+web/coverage/
+
+infra/data/
+books/
