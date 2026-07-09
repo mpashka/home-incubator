@@ -1,10 +1,10 @@
 # Схема БД
 
-@tag:domain-model @tag:request-id @tag:reading-block @tag:difficulty-model
+@tag:domain-model @tag:request-id @tag:reading-block @tag:difficulty-model @tag:auth @tag:account-linking
 
 Проектируемая схема PostgreSQL для MVP. Соответствует начальной модели и
 вертикальному сценарию из [`architecture.md`](architecture.md). Схема реализована
-Flyway-миграцией `backend/src/main/resources/db/migration/V1__init.sql`, которая и
+Flyway-миграцией `backend/core/src/main/resources/db/migration/V1__init.sql`, которая и
 является источником истины (см. правило 6 в [`../AGENTS.md`](../AGENTS.md)).
 
 > **Пересмотр (2026-07-07).** Отказались от хранения книги как множества мелких
@@ -45,6 +45,10 @@ Flyway-миграцией `backend/src/main/resources/db/migration/V1__init.sql`
 | `display_name` | text | NOT NULL |
 | `timezone` | text | NOT NULL, IANA tz (для расчёта пользовательских дат) |
 | `created_at` | timestamptz | NOT NULL, default now() |
+| `owner_account_id` | uuid | NULL, FK → app_account(id) ON DELETE SET NULL (аккаунт-владелец профиля, `@tag:account-linking`; nullable для обратной совместимости) |
+
+Колонка `owner_account_id` добавлена миграцией `V3__accounts.sql` (ADR 0002); индекс
+`idx_users_owner_account`.
 
 ### user_language_skills (@tag:reading-block)
 
@@ -177,6 +181,42 @@ Flyway-миграцией `backend/src/main/resources/db/migration/V1__init.sql`
 Индекс: `(user_id, occurred_at)` для дневной агрегации по UTC-окну. Миграция —
 `V2__reading_events.sql`.
 
+## Аккаунты и идентичности (@tag:auth @tag:account-linking)
+
+Модель аутентификации ADR 0002: аккаунты приложения отделены от учебных профилей
+(`users`). Один `app_account` владеет одним или несколькими профилями, а несколько
+внешних OAuth-идентичностей могут резолвиться в один аккаунт (ребёнок на нескольких
+устройствах). Реализовано миграцией `V3__accounts.sql`. Подробности и решение —
+[`adr/0002-auth-oauth-and-account-linking.md`](adr/0002-auth-oauth-and-account-linking.md).
+На этом этапе — только модель данных и логика резолва, без OAuth/enforcement (фазы H/I).
+
+### app_account
+
+Аккаунт приложения: идентичность, в которую резолвится `sub` токена.
+
+| Колонка | Тип | Ограничения |
+| --- | --- | --- |
+| `id` | uuid | PK, default gen_random_uuid() |
+| `display_name` | text | NOT NULL |
+| `role` | text | NOT NULL, CHECK IN (`owner`,`child`) |
+| `created_at` | timestamptz | NOT NULL, default now() |
+
+### external_identity
+
+Внешняя OAuth-идентичность (IdP `sub`), связанная с `app_account`. Много
+идентичностей → один аккаунт. Резолв идемпотентен по `(provider, subject)`.
+
+| Колонка | Тип | Ограничения |
+| --- | --- | --- |
+| `id` | uuid | PK, default gen_random_uuid() |
+| `account_id` | uuid | NOT NULL, FK → app_account(id) ON DELETE CASCADE |
+| `provider` | text | NOT NULL, напр. `google` |
+| `subject` | text | NOT NULL, IdP `sub` |
+| `email` | text | NULL |
+| `linked_at` | timestamptz | NOT NULL, default now() |
+
+Уникальность: `(provider, subject)`. Индекс: `idx_external_identity_account (account_id)`.
+
 ## Будущее: модель сложности (@tag:difficulty-model)
 
 Не входит в первый vertical slice, документируется как направление (ADR 0001):
@@ -197,6 +237,8 @@ books 1───1 book_texts
 users 1───* vocabulary_items
 vocabulary_items 1───* word_events *───0..1 learning_sessions
 users 1───* reading_events   *───1 books   *───0..1 learning_sessions
+app_account 1───* external_identity          (несколько идентичностей → один аккаунт)
+app_account 1───* users(learner)             (owner_account_id, аккаунт владеет профилями)
 ```
 
 ## Отношение к вертикальному сценарию

@@ -14,6 +14,8 @@
 | `@tag:domain-model` | Начальная модель данных и таблицы (users, user_language_skills, books, book_texts, reading_progress, learning_sessions, vocabulary_items, word_events). |
 | `@tag:reading-block` | Динамический блок чтения и его размер как свойство связки «пользователь + язык»; позиция — символьное смещение. |
 | `@tag:difficulty-model` | Будущее: оценка сложности слов и уровня пользователя для подбора доли незнакомых слов в блоке. |
+| `@tag:auth` | OAuth 2.1 авторизация MCP/REST: свой Authorization Server + Google, resource server, PRM, ограничение использования. |
+| `@tag:account-linking` | Связывание нескольких OAuth-идентичностей в один аккаунт приложения и владение учебными профилями. |
 
 На текущем этапе исходный код backend/web ещё не создан, поэтому теги размещены в документации. При написании соответствующего кода добавляй тот же `@tag:<slug>` в комментарий у начала файла (см. соглашение в [`../AGENTS.md`](../AGENTS.md)).
 

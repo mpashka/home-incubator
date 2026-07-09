@@ -114,6 +114,83 @@ layer, PostgreSQL и Flyway. Схема — [`db-schema.md`](db-schema.md). За
   `infra/docker-compose.yml` и env-переменные, `bootRun --args=dev`, команды тестов,
   URL REST/OpenAPI/Swagger/Actuator/MCP, примеры curl и список MCP tools.
 
+## Аутентификация и выставление наружу (ADR 0002)
+
+Дизайн и проверенные требования — [`adr/0002-auth-oauth-and-account-linking.md`](adr/0002-auth-oauth-and-account-linking.md).
+Свой Spring Authorization Server + вход через Google; MCP/REST — OAuth2 resource
+server. Предпосылки: секреты Google OAuth; для ChatGPT — HTTPS-домен и платный
+план с Developer Mode.
+
+### Фаза G. Модель аккаунтов и идентичностей ✅
+
+- ✅ Миграция `V3__accounts.sql`: `app_account`, `external_identity`
+  (`UNIQUE(provider, subject)`), `users.owner_account_id` FK (`@tag:account-linking`).
+- ✅ JPA-сущности/репозитории (пакет `account`: `AppAccount`, `ExternalIdentity` +
+  репозитории, `UserRepository.findByOwnerAccountId`); dev-сидер создаёт owner-аккаунт
+  + dev-идентичность и связывает существующие профили с аккаунтом (идемпотентно).
+- ✅ Резолвер «идентичность → аккаунт → профили» (`AccountService`,
+  идемпотентный upsert по `(provider, subject)`) в service layer, без enforcement;
+  unit-тест (Mockito): create-on-first-seen, return-existing-on-repeat, список профилей.
+
+### Фаза H0. Модуляризация (modular monolith) ✅
+
+Одно приложение, разные Gradle-модули (без микросервисов). Нужна до AS, чтобы
+`auth` зависел от домена, а не от boot-приложения.
+
+- ✅ `backend:core` — сущности, репозитории, сервисы, модель аккаунтов + резолвер,
+  Flyway-миграции, common (доменные исключения + `TimeConfig`). Library (java-library,
+  без Spring Boot plugin; версии — через BOM `spring-boot-dependencies:3.4.5`).
+- ✅ `backend:auth` — каркас модуля (пустой пакет `dev.homeincubator.lngedu.auth` +
+  `package-info.java`), Spring Authorization Server + Google — фаза H. Зависит от `core`.
+- ✅ `backend:app` — `@SpringBootApplication`, REST-контроллеры + MCP + web, dev-сидер,
+  `application.yml`. Зависит от `core` + `auth`. Boot-jar.
+- ✅ Поведение не меняется: boot + все тесты (26, 1 skipped) + живой сценарий на
+  локальном PostgreSQL.
+
+### Фаза H. Authorization Server + вход через Google ✅
+
+- ✅ Spring Authorization Server (`backend:auth`, `@tag:auth`): OAuth 2.1 Auth Code +
+  PKCE (S256), метаданные OIDC/AS discovery, включённый OIDC DCR-endpoint
+  (`/connect/register`). Конфиг: `AuthorizationServerConfig` (`@Order(1)` filter
+  chain через `OAuth2AuthorizationServerConfigurer`, seed-клиент, issuer-настройки),
+  `DefaultSecurityConfig` (`@Order(2)` `oauth2Login` + permit всей текущей поверхности),
+  `TokenConfig` (эфемерный RSA `JWKSource`, `JwtDecoder`, token customizer).
+- ✅ Федерация входа в Google (Spring Security OAuth2 Login, `application.yml`,
+  env `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`); token customizer резолвит
+  `google`+`sub`+email через `AccountService.resolveByExternalIdentity` (upsert
+  `external_identity` → `app_account`).
+- ✅ Выдача JWT: `sub`/`account_id`=app-аккаунт, `aud`=ресурс MCP
+  (env `MCP_RESOURCE_URI`), issuer env `AUTH_ISSUER_URI`.
+- ⚠️ Не проверено вживую (нет реального Google-клиента): интерактивный вход в
+  Google и полная выдача токена. Проверены boot, discovery-метаданные, DCR-endpoint
+  в метаданных, редирект `/oauth2/authorization/google` → accounts.google.com и
+  JWKS — см. журнал 2026-07-09. Фаза I закрывает защиту `/api` и `/sse`
+  (resource server), Phase L — реальные креды Google + ChatGPT.
+
+### Фаза I. Resource Server на MCP/REST + PRM ⛔
+
+- ⛔ OAuth2 resource server (валидация JWT, issuer/audience) на MCP и REST.
+- ⛔ PRM на `/.well-known/oauth-protected-resource`; `401 WWW-Authenticate:
+  resource_metadata` на MCP-endpoint.
+- ⛔ Аккаунт из токена; инструменты/REST работают только с профилями аккаунта
+  (закрывает правило 5, `userId` больше не доверенный вход).
+
+### Фаза J. Связывание идентичностей ⛔
+
+- ⛔ Привязка второй идентичности к существующему аккаунту (вход-в-аккаунт +
+  добавить, либо код-приглашение / родительская привязка) (`@tag:account-linking`).
+- ⛔ Родитель/админ привязывает детские профили к аккаунту.
+
+### Фаза K. Ограничение использования ⛔
+
+- ⛔ Allowlist аккаунтов/идентичностей, scopes/роли, rate-limit на аккаунт.
+
+### Фаза L. Выставление наружу + ChatGPT ⛔
+
+- ⛔ Cloudflare named tunnel + DNS-запись, HTTPS на MCP.
+- ⛔ Регистрация custom connector в ChatGPT (Developer Mode), OAuth-flow, проверка
+  видимости и вызова tools.
+
 ## Журнал
 
 - 2026-07-08: план создан.
@@ -167,3 +244,84 @@ layer, PostgreSQL и Flyway. Схема — [`db-schema.md`](db-schema.md). За
   даёт по одной строке (learning_sessions=1, reading_events=1, word_events=1,
   progress не продвигается повторно). MCP SSE `/sse` → 200 text/event-stream,
   8 tools зарегистрированы; OpenAPI `/v3/api-docs` → 200; `/actuator/health` → 200.
+- 2026-07-09: реализована фаза G — модель аккаунтов и идентичностей (ADR 0002).
+  Миграция `V3__accounts.sql` (forward-only): таблицы `app_account`
+  (`role` CHECK IN owner/child), `external_identity` (`UNIQUE(provider, subject)`,
+  индекс по `account_id`), колонка `users.owner_account_id` (nullable FK ON DELETE
+  SET NULL, индекс). Пакет `account`: сущности `AppAccount`/`ExternalIdentity`,
+  репозитории (`ExternalIdentityRepository.findByProviderAndSubject`,
+  `AppAccountRepository`, `UserRepository.findByOwnerAccountId`) и `AccountService`
+  (идемпотентный резолв идентичность→аккаунт с upsert по `(provider, subject)`,
+  список профилей аккаунта; без security enforcement). `DevDataSeeder` создаёт
+  owner-аккаунт + dev google-идентичность и связывает существующие профили
+  (идемпотентно, guard на существующую идентичность). Unit-тест `AccountServiceTest`
+  (Mockito, без БД): create-on-first-seen, return-existing-on-repeat, делегация списка.
+  `:backend:compileJava :backend:compileTestJava :backend:test` — 26 тестов, 1 skipped
+  (`VerticalScenarioIT` без Docker), 0 failures. Живая проверка на локальном
+  PostgreSQL: Flyway применил V3 поверх V1/V2 на БД с существующими данными
+  («Successfully applied 1 migration … now at version v3»), сидер залинковал
+  2 профиля; psql: `app_account=1`, `external_identity=1`,
+  `users where owner_account_id is not null=2`.
+- 2026-07-09: реализована фаза H0 — модульный монолит. Единый модуль `backend`
+  разбит на три Gradle-модуля под `backend/` (одно разворачиваемое приложение):
+  `backend:core` (java-library, без Spring Boot plugin; версии — через BOM
+  `spring-boot-dependencies:3.4.5`) — пакеты `user`/`book`/`reading`/`session`/
+  `vocabulary`/`stats`/`account`, доменные исключения + `TimeConfig` из `common`,
+  все Flyway-миграции (`db/migration/V1..V3`); `backend:auth` (java-library →
+  зависит от `core`) — пустой каркас пакета `dev.homeincubator.lngedu.auth`
+  (`package-info.java`), логику даёт фаза H; `backend:app` (Spring Boot bootJar →
+  зависит от `core` + `auth`) — `LngEduApplication` (в базовом пакете, чтобы
+  component/entity-scan покрывал core), REST-контроллеры + web-request-DTO +
+  `web` (`ApiExceptionHandler`, `OpenApiConfig`), `mcp`, `DevDataSeeder`,
+  `application.yml`. Пакеты и SQL не переименованы — только перемещены; `common`
+  разделён между модулями (исключения + `TimeConfig` → core, `DevDataSeeder` → app),
+  оба сохраняют имя пакета `…common` (split-package на одном classpath — допустимо
+  для одного приложения). Контроллеры и их web-DTO вынесены в app (core без
+  spring-web), transport-слой отделён от application/domain. `settings.gradle.kts`:
+  `include("backend:core", "backend:auth", "backend:app")`; корневой `build`
+  зависит от `:backend:app:build`. `core` явно добавляет
+  `junit-platform-launcher` (без boot-plugin Gradle его не подтягивает).
+  `./gradlew check` зелёный: 26 тестов, 1 skipped (`VerticalScenarioIT` без Docker),
+  0 failures (core 20, app 6). Живая проверка на локальном PostgreSQL:
+  `:backend:app:bootRun --spring.profiles.active=dev` (порт 8097, 8080 занят) —
+  Flyway провалидировал 3 миграции (schema at v3), `DevDataSeeder` отработал
+  идемпотентно, `/actuator/health` → 200 `{"status":"UP"}`, `/api/profiles` → 2
+  профиля (Ana/Ben).
+- 2026-07-09: реализована фаза H — Spring Authorization Server + федерация входа в
+  Google (`backend:auth`, `@tag:auth`, ADR 0002). Зависимости модуля:
+  `spring-boot-starter-oauth2-authorization-server` + `-oauth2-client` (security
+  транзитивно). Классы в пакете `dev.homeincubator.lngedu.auth`:
+  `AuthorizationServerConfig` (`@Order(1)` filter chain через
+  `OAuth2AuthorizationServerConfigurer.authorizationServer()` с
+  `.oidc(clientRegistrationEndpoint)` → включён OIDC DCR; entry-point редиректит
+  неаутентифицированные AS-запросы в `/oauth2/authorization/google`; `RegisteredClientRepository`
+  с одним публичным PKCE-клиентом `mcp-demo-client`; `AuthorizationServerSettings`
+  с issuer из `AUTH_ISSUER_URI`), `DefaultSecurityConfig` (`@Order(2)` `oauth2Login`
+  + `anyRequest().permitAll()` — вся текущая поверхность остаётся открытой в этой фазе),
+  `TokenConfig` (эфемерный RSA `JWKSource` — токены не переживают рестарт, `JwtDecoder`,
+  `OAuth2TokenCustomizer`: резолвит Google-`sub`/email через
+  `AccountService.resolveByExternalIdentity` и ставит `sub`/`account_id`=app-аккаунт,
+  `aud`=`MCP_RESOURCE_URI`). `application.yml`: блок
+  `spring.security.oauth2.client.registration.google` с env
+  `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET` (dev-дефолты `dummy-*`, scope
+  `openid,email,profile`). `.env.example` документирует `GOOGLE_CLIENT_ID`,
+  `GOOGLE_CLIENT_SECRET`, `AUTH_ISSUER_URI`, `MCP_RESOURCE_URI`. Тесты: DB-free
+  `AuthorizationServerMetadataTest` (`@SpringBootTest` RANDOM_PORT с исключённым
+  DataSource/JPA + mock `AccountService`, MockMvc): discovery `200` с
+  `issuer`/`authorization_endpoint`/`token_endpoint`/`jwks_uri`/`registration_endpoint`,
+  редирект PKCE-authorize → `/oauth2/authorization/google`, `/oauth2/authorization/google`
+  → `accounts.google.com`, JWKS публикует RSA-ключ. Существующие `@WebMvcTest`-срезы
+  переведены на `@AutoConfigureMockMvc(addFilters = false)` (Security на classpath), их
+  интент сохранён. `./gradlew check` (все модули) — **30 тестов, 1 skipped**
+  (`VerticalScenarioIT` без Docker), 0 failures, 0 errors (core 20, auth 4, app 6).
+  Живой boot на локальном PostgreSQL (порт 8097, dummy Google creds,
+  `AUTH_ISSUER_URI`/`MCP_RESOURCE_URI`=`http://localhost:8097`): `Started` за 4 с;
+  `curl /.well-known/openid-configuration` → 200 (`issuer`=localhost:8097,
+  `authorization_endpoint=/oauth2/authorize`, `token_endpoint=/oauth2/token`,
+  `jwks_uri=/oauth2/jwks`, `registration_endpoint=/connect/register`,
+  `code_challenge_methods_supported=[S256]`); `/oauth2/authorization/google` → `302`
+  на `https://accounts.google.com/o/oauth2/v2/auth?...client_id=dummy-client-id`;
+  `/oauth2/jwks` → 200 (RSA-ключ); `/api/profiles` → 200, 2 профиля (Ana/Ben) —
+  текущая поверхность осталась открытой. **Не проверено (нет реального Google-клиента):**
+  интерактивный вход в Google и полная выдача токена — только boot, метаданные, DCR
+  в метаданных и редирект.

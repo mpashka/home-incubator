@@ -1,3 +1,3 @@
 rootProject.name = "lng-edu-mcp"
 
-include("backend")
+include("backend:core", "backend:auth", "backend:app")

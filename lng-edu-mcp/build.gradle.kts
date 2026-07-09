@@ -36,7 +36,8 @@ if (webPackageJson.isFile) {
 }
 
 tasks.named("build") {
-    dependsOn(":backend:build", "webBuild")
+    // :backend:app is the bootable module; its build aggregates the core + auth libraries it depends on.
+    dependsOn(":backend:app:build", "webBuild")
 }
 
 tasks.named<Delete>("clean") {
