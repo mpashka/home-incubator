@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16
+    container_name: lngedu-postgres
+    environment:
+      POSTGRES_DB: lngedu
+      POSTGRES_USER: lngedu
+      POSTGRES_PASSWORD: lngedu
+    ports:
+      - "5432:5432"
+    volumes:
+      - lngedu-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lngedu -d lngedu"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  lngedu-pgdata:

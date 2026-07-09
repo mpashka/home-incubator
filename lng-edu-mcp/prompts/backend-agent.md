@@ -1,5 +1,7 @@
 # Задание агенту: backend и MCP
 
+@tag:vertical-slice @tag:mcp-tools @tag:request-id @tag:domain-model
+
 Работай в репозитории `lng-edu-mcp`. Сначала прочитай `AGENTS.md`, `README.md`, `docs/architecture.md` и `docs/decisions.md`.
 
 Создай production-minded MVP backend на Java 21, актуальном стабильном Spring Boot, Gradle Kotlin DSL и PostgreSQL. Не ограничивайся каркасом: реализуй и проверь первый вертикальный учебный сценарий.

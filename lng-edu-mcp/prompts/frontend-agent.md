@@ -1,5 +1,7 @@
 # Задание агенту: Vue web-клиент
 
+@tag:vertical-slice
+
 Работай в репозитории `lng-edu-mcp`. Сначала прочитай `AGENTS.md`, `README.md`, `docs/architecture.md`, актуальную OpenAPI-схему backend и его инструкции запуска.
 
 Создай в `web/` Vue 3 приложение на TypeScript strict и Vite. Используй Vue Router и Pinia. Цель — рабочий интерфейс первого вертикального учебного сценария, а не демонстрационный набор экранов.

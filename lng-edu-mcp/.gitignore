@@ -1,5 +1,20 @@
+*.log
+*~
+*.jar
+*.class
+**/*.iml
+**/*.ipr
+**/.idea
+**/target
+**/.DS_Store
+
+
 .idea/
 .vscode/
+.gradle/
+.idea/
+
+
 .env
 .env.*
 !.env.example
@@ -13,3 +28,7 @@ web/coverage/
 
 infra/data/
 books/
+
+# Gradle build output
+build/
+.gradle/

@@ -1,5 +1,7 @@
 # Архитектура MVP
 
+@tag:vertical-slice @tag:mcp-tools @tag:request-id @tag:domain-model @tag:reading-block @tag:difficulty-model
+
 ## Границы системы
 
 Backend хранит все долгоживущее состояние обучения и предоставляет два транспорта:
@@ -22,14 +24,27 @@ Backend хранит все долгоживущее состояние обуч
 ## Начальная модель
 
 - `users`
+- `user_language_skills`
 - `books`
-- `book_chunks`
+- `book_texts`
 - `reading_progress`
 - `learning_sessions`
 - `vocabulary_items`
 - `word_events`
 
+Детальная схема таблиц, ключей и связей — в [`db-schema.md`](db-schema.md).
+
 Следующим этапом добавляются вопросы, ответы, упражнения и расписание интервальных повторений.
+
+## Единица чтения (@tag:reading-block)
+
+Текст книги хранится крупным блоком (`book_texts`), позиция чтения — символьное
+смещение. Блок для одного шага занятия собирается динамически в application layer
+с ограничениями min/max размера и предпочтением закончить на границе
+предложения/абзаца. Размер блока — свойство связки «пользователь + язык»
+(`user_language_skills`), а не книги, и растёт с уровнем владения. В дальнейшем он
+определяется моделью сложности слов (`@tag:difficulty-model`). Обоснование и
+варианты — в [`adr/0001-reading-blocks-and-text-storage.md`](adr/0001-reading-blocks-and-text-storage.md).
 
 ## MCP tools MVP
 
