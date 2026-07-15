@@ -7,6 +7,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import org.mpashka.shopping.match.VariantImage;
 
 import java.util.List;
 
@@ -26,7 +27,7 @@ public class NormalizationResource {
     }
 
     public record VariantDto(String color, Integer ramGb, Integer storageGb, Long matchGroupId,
-                             List<OfferDto> offers) {
+                             String image, List<OfferDto> offers) {
     }
 
     public record ModelDto(Long id, String title, Double screenInches, String soc, List<VariantDto> variants) {
@@ -49,7 +50,9 @@ public class NormalizationResource {
                         .map(o -> new OfferDto(o.marketplace, o.seller, o.price, o.greenPrice,
                                 o.currency, o.deliveryFromChina, o.globalFirmware, o.url))
                         .toList();
-                return new VariantDto(v.color, v.ramGb, v.storageGb, v.matchGroupId, offers);
+                VariantImage vi = VariantImage.find("variant", v).firstResult();
+                return new VariantDto(v.color, v.ramGb, v.storageGb, v.matchGroupId,
+                        vi == null ? null : vi.url, offers);
             }).toList();
             return new ModelDto(m.id, m.title, m.screenInches, m.soc, variants);
         }).toList();

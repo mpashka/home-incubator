@@ -38,9 +38,12 @@ Living checklist. `[x]` done · `[~]` partial · `[ ]` todo.
       cleanly as-is: real tablets, prices, Ozon URLs, china flag (Honor MagicPad 2, Xiaomi Pad
       8 Pro, Lenovo Legion Y700, …). Ozon payloads fit the context; the LLM parses the encoded
       states. Remaining Ozon work is just draining captures.
-- [ ] **(3) Drain backlog + raise the viewer** ← current. Normalize the full capture backlog
-      (run batches or enable the scheduled job); build the Vue model view over `GET /api/models`
-      (price comparison, china flag, photos, match groups).
+- [x] **(3) Process the backlog + raise the viewer** — full backlog normalized (0 in queue;
+      306 models, ~1900 offers). Vue model view built over `GET /api/models`: filters (title,
+      SoC, min screen, marketplace, sort) + a "Snapdragon 8, >11"" preset, model cards with
+      photo/price-range/marketplace/China badges, expandable to per-variant offer tables with
+      price comparison, green price, China-vs-local, and links. `GET /api/models` now returns a
+      variant thumbnail. Runs at http://localhost:5173 (`npm run dev`, proxies /api → :8080).
 
 ## Backlog
 
