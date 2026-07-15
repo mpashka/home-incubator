@@ -27,10 +27,12 @@ Living checklist. `[x]` done · `[~]` partial · `[ ]` todo.
 
 ## In progress / next
 
-- [x] **(1) Tighten model dedup** — models now keyed by the authoritative YM `modelId`
-      (parsed from the product URL, which the LLM copies reliably), with normalized-title
-      fallback; SoC/screen dropped from the key. Brand-prefix variants merge; grouping matches
-      YM's own catalog. Verified: 71 models all `modelId`-keyed, per-seller price comparison.
+- [x] **(1) Tighten model dedup** — models keyed by the normalized canonical title for BOTH
+      marketplaces (SoC/screen dropped — LLM-variable; `modelId` dropped — Yandex assigns a
+      distinct one per config → over-splits). Groups one tablet across sellers, China-vs-local,
+      AND Ozon-vs-Yandex. Verified: 0 title splits; cross-marketplace models appear (Xiaomi Pad 8
+      = 59 offers across both). Residual: "Xiaomi Pad 8" vs "Xiaomi Mi Pad 8" still split by the
+      LLM's inconsistent brand wording — future prompt/normalization tweak.
 - [x] **(2) Ozon normalization** — no extractor needed. Verified both Ozon DOM (visible cards)
       and Ozon network (`page/json/v2`, double-encoded widget states, ≤ ~260 KB) normalize
       cleanly as-is: real tablets, prices, Ozon URLs, china flag (Honor MagicPad 2, Xiaomi Pad

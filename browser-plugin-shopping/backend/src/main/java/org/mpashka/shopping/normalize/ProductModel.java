@@ -24,21 +24,20 @@ public class ProductModel extends PanacheEntity {
     public String soc;
 
     /**
-     * Dedup key. A marketplace `modelId` (when the LLM extracted one) is authoritative — it
-     * groups every seller of the same model regardless of title/SoC/screen wording. Otherwise
-     * fall back to a normalized title (SoC/screen are LLM-variable, so they are NOT in the key,
-     * to avoid splitting one model into several).
+     * Dedup key = normalized canonical title, for BOTH marketplaces. This groups the same
+     * tablet across sellers, "from China" vs local listings, and Ozon vs Yandex Market — which
+     * is the whole point (compare all prices for one model). SoC/screen are NOT in the key
+     * (LLM-variable → would split one model); nor is a marketplace `modelId` (Yandex assigns a
+     * distinct one per configuration/batch → would over-split). The LLM is prompted to keep the
+     * title canonical (brand once, no colour/memory).
      */
-    static String keyOf(String title, String sourceModelId) {
-        if (sourceModelId != null && !sourceModelId.isBlank()) {
-            return "id:" + sourceModelId.trim();
-        }
+    static String keyOf(String title) {
         String t = title == null ? "" : title;
-        return "t:" + t.toLowerCase().replaceAll("[^\\p{L}\\p{N}]+", " ").trim();
+        return t.toLowerCase().replaceAll("[^\\p{L}\\p{N}]+", " ").trim();
     }
 
-    static ProductModel findOrCreate(String title, Double screenInches, String soc, String sourceModelId) {
-        String key = keyOf(title, sourceModelId);
+    static ProductModel findOrCreate(String title, Double screenInches, String soc) {
+        String key = keyOf(title);
         ProductModel m = find("dedupKey", key).firstResult();
         if (m == null) {
             m = new ProductModel();
