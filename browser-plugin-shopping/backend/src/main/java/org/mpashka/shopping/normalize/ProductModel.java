@@ -23,15 +23,22 @@ public class ProductModel extends PanacheEntity {
     public Double screenInches;
     public String soc;
 
-    static String keyOf(String title, Double screenInches, String soc) {
-        return (title + "|" + screenInches + "|" + soc)
-                .toLowerCase()
-                .replaceAll("\\s+", " ")
-                .trim();
+    /**
+     * Dedup key. A marketplace `modelId` (when the LLM extracted one) is authoritative — it
+     * groups every seller of the same model regardless of title/SoC/screen wording. Otherwise
+     * fall back to a normalized title (SoC/screen are LLM-variable, so they are NOT in the key,
+     * to avoid splitting one model into several).
+     */
+    static String keyOf(String title, String sourceModelId) {
+        if (sourceModelId != null && !sourceModelId.isBlank()) {
+            return "id:" + sourceModelId.trim();
+        }
+        String t = title == null ? "" : title;
+        return "t:" + t.toLowerCase().replaceAll("[^\\p{L}\\p{N}]+", " ").trim();
     }
 
-    static ProductModel findOrCreate(String title, Double screenInches, String soc) {
-        String key = keyOf(title, screenInches, soc);
+    static ProductModel findOrCreate(String title, Double screenInches, String soc, String sourceModelId) {
+        String key = keyOf(title, sourceModelId);
         ProductModel m = find("dedupKey", key).firstResult();
         if (m == null) {
             m = new ProductModel();
@@ -40,6 +47,11 @@ public class ProductModel extends PanacheEntity {
             m.screenInches = screenInches;
             m.soc = soc;
             m.persist();
+        } else {
+            // Enrich: fill attributes the first capture couldn't determine.
+            if (m.screenInches == null && screenInches != null) m.screenInches = screenInches;
+            if (m.soc == null && soc != null) m.soc = soc;
+            if ((m.title == null || m.title.isBlank()) && title != null) m.title = title;
         }
         return m;
     }

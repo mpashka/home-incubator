@@ -36,6 +36,8 @@ public record NormalizedOffer(
         Boolean globalFirmware,
         @JsonPropertyDescription("Absolute product URL")
         String url,
+        @JsonPropertyDescription("Marketplace model id if present in the payload (e.g. modelId); groups sellers of the same model. Null if unknown.")
+        String sourceModelId,
         @JsonPropertyDescription("Absolute image URLs for THIS listing; empty if none")
         java.util.List<String> imageUrls) {
 }

@@ -72,7 +72,9 @@ public class PayloadTrimmer {
         o.set("title", bb.get("title"));
         o.set("price", bb.get("price"));
         copy(bb, o, "marketSku");
-        copy(bb, o, "modelId");
+        // Emit the model id under the SAME name the LLM outputs (reliable pass-through), and
+        // as a STRING so it matches NormalizedOffer.sourceModelId without number→string issues.
+        if (bb.hasNonNull("modelId")) o.put("sourceModelId", bb.get("modelId").asText());
         copy(bb, o, "shopId");
         if (bb.has("isCrossBorder")) o.set("crossBorder", bb.get("isCrossBorder"));
 

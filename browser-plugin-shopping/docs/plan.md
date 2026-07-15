@@ -27,9 +27,11 @@ Living checklist. `[x]` done · `[~]` partial · `[ ]` todo.
 
 ## In progress / next
 
-- [ ] **(1) Tighten model dedup** ← current. Same model splits on LLM-variable SoC/screen/casing.
-      Normalize title casing; prefer YM `modelId` (already extracted) as the model key.
-- [ ] **(2) Ozon extractor** — decode widget tiles to a clean compact offer list (parity with the
+- [x] **(1) Tighten model dedup** — models now keyed by the authoritative YM `modelId`
+      (parsed from the product URL, which the LLM copies reliably), with normalized-title
+      fallback; SoC/screen dropped from the key. Brand-prefix variants merge; grouping matches
+      YM's own catalog. Verified: 71 models all `modelId`-keyed, per-seller price comparison.
+- [ ] **(2) Ozon extractor** ← current. Decode widget tiles to a clean compact offer list (parity with the
       YM trimmer); then drain the ~120 Ozon captures. Verify Ozon normalization quality.
 - [ ] **(3) Drain all captures + raise the viewer** — normalize the full backlog; build the Vue
       model view over `GET /api/models` (price comparison, china flag, photos, match groups).

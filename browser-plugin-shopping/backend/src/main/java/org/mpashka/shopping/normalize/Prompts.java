@@ -12,8 +12,11 @@ final class Prompts {
             one offer. Normalize the model name to a canonical form without colour/memory.
             Infer `deliveryFromChina` and `globalFirmware` from any delivery/description text.
             Include the listing's image URLs in `imageUrls` (used later to match the same
-            product across marketplaces). Use null for anything you cannot determine.
-            Do not invent values.
+            product across marketplaces). If the item carries a model id (e.g. `modelId`), copy
+            it verbatim into `sourceModelId` — it groups different sellers of the same model.
+            Keep `modelTitle` a CONSISTENT canonical name (brand once, no colour/memory), e.g.
+            "Xiaomi Redmi Pad 2 Pro", "Honor Pad 10". Use null for anything you cannot
+            determine. Do not invent values.
             """;
 
     /**
@@ -38,6 +41,7 @@ final class Prompts {
               "deliveryFromChina": boolean|null,
               "globalFirmware": boolean|null,
               "url": string,
+              "sourceModelId": string|null, // marketplace modelId if present
               "imageUrls": [string]        // may be empty
             }]}
             """;

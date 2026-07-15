@@ -12,6 +12,8 @@ import org.mpashka.shopping.match.VariantImage;
 import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Persistence side of normalization: reads un-normalized captures, and upserts the
@@ -52,8 +54,26 @@ public class NormalizationService {
         if (c != null) c.normalized = true;
     }
 
+    /** Yandex Market URLs are `market.yandex.ru/product--<slug>/<modelId>`. */
+    private static final Pattern YM_MODEL_ID = Pattern.compile("/product--[^/]*/(\\d+)");
+
+    /**
+     * The authoritative model id. Prefer the LLM's `sourceModelId`, but fall back to parsing it
+     * from the product URL — the LLM copies the URL (which we build with the id) far more
+     * reliably than a standalone field, so this makes model dedup robust.
+     */
+    private static String modelIdOf(NormalizedOffer o) {
+        if (o.sourceModelId() != null && !o.sourceModelId().isBlank()) return o.sourceModelId();
+        if (o.url() != null) {
+            Matcher m = YM_MODEL_ID.matcher(o.url());
+            if (m.find()) return m.group(1);
+        }
+        return null;
+    }
+
     private void upsertOffer(NormalizedOffer o) {
-        ProductModel model = ProductModel.findOrCreate(o.modelTitle(), o.screenInches(), o.soc());
+        ProductModel model = ProductModel.findOrCreate(
+                o.modelTitle(), o.screenInches(), o.soc(), modelIdOf(o));
         Variant variant = Variant.findOrCreate(model, o.color(), o.ramGb(), o.storageGb());
 
         // Register the listing's photos for later perceptual-hash matching.
