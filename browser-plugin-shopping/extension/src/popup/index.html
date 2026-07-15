@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Shopping Collector</title>
+    <style>
+      body { font: 13px/1.4 system-ui, sans-serif; margin: 0; width: 280px; padding: 14px; }
+      h1 { font-size: 14px; margin: 0 0 10px; }
+      label { display: block; margin: 10px 0 4px; color: #444; }
+      input[type="url"] { width: 100%; box-sizing: border-box; padding: 6px; }
+      .row { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
+      .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-top: 12px; }
+      .stat { background: #f4f4f5; border-radius: 6px; padding: 8px; text-align: center; }
+      .stat b { display: block; font-size: 16px; }
+      .err { color: #b00020; margin-top: 8px; min-height: 16px; }
+      button { margin-top: 10px; padding: 6px 10px; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <h1>Shopping Collector</h1>
+    <div class="row">
+      <input type="checkbox" id="enabled" />
+      <label for="enabled" style="margin: 0">Collection enabled</label>
+    </div>
+    <label for="backendUrl">Backend URL</label>
+    <input type="url" id="backendUrl" placeholder="http://localhost:8080" />
+    <div class="stats">
+      <div class="stat"><b id="captured">0</b>captured</div>
+      <div class="stat"><b id="synced">0</b>synced</div>
+      <div class="stat"><b id="queued">0</b>queued</div>
+    </div>
+    <div class="stats" style="grid-template-columns: 1fr 1fr">
+      <div class="stat"><b id="search">0</b>search pages</div>
+      <div class="stat"><b id="product">0</b>product cards</div>
+    </div>
+    <div class="err" id="err"></div>
+    <button id="flush">Sync now</button>
+    <a href="#" id="wishlist" style="display: inline-block; margin-top: 10px; margin-left: 8px">Wishlist…</a>
+    <script src="popup.js"></script>
+  </body>
+</html>
