@@ -1,6 +1,7 @@
 // @tag:auth @tag:account-linking
 package dev.homeincubator.lngedu.account;
 
+import dev.homeincubator.lngedu.common.ForbiddenException;
 import dev.homeincubator.lngedu.user.User;
 import dev.homeincubator.lngedu.user.UserRepository;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -81,6 +82,27 @@ public class AccountService {
     @Transactional(readOnly = true)
     public List<User> listOwnedLearners(UUID accountId) {
         return userRepository.findByOwnerAccountId(accountId);
+    }
+
+    /**
+     * Ownership guard (@tag:auth, closes AGENTS rule 5). Verifies that {@code learnerId} is a profile
+     * owned by {@code accountId}; otherwise throws {@link ForbiddenException}. The caller resolves
+     * {@code accountId} from the authenticated token at the transport adapter — this method stays
+     * transport-agnostic (no SecurityContext, no web types). A missing learner is treated as forbidden
+     * so an authenticated caller cannot probe which learner ids exist.
+     */
+    @Transactional(readOnly = true)
+    public void assertOwnsLearner(UUID accountId, UUID learnerId) {
+        if (accountId == null || learnerId == null) {
+            throw new ForbiddenException("Missing account or learner id");
+        }
+        UUID owner = userRepository.findById(learnerId)
+                .map(User::getOwnerAccountId)
+                .orElse(null);
+        if (!accountId.equals(owner)) {
+            throw new ForbiddenException(
+                    "Learner " + learnerId + " is not owned by account " + accountId);
+        }
     }
 
     private AppAccount loadAccount(UUID accountId) {

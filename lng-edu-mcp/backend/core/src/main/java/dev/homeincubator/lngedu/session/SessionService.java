@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.UUID;
 
 /**
  * Sessions use case: start (idempotent by {@code request_id}) and finish a learning session.
@@ -72,6 +73,19 @@ public class SessionService {
             return SessionView.of(sessionRepository.findByRequestId(cmd.requestId())
                     .orElseThrow(() -> race));
         }
+    }
+
+    /**
+     * Resolve the learner (user id) that owns a session, for the transport-layer ownership guard
+     * (@tag:auth). Throws {@link NotFoundException} if the session does not exist — the adapter then
+     * asserts the authenticated account owns the returned learner before finishing. Kept
+     * transport-agnostic (no SecurityContext) so core stays decoupled from the web.
+     */
+    @Transactional(readOnly = true)
+    public UUID getSessionLearner(UUID sessionId) {
+        return sessionRepository.findById(sessionId)
+                .map(LearningSession::getUserId)
+                .orElseThrow(() -> NotFoundException.of("session", sessionId));
     }
 
     @Transactional

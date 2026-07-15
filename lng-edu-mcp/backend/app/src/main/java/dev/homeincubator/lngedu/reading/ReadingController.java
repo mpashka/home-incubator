@@ -1,11 +1,13 @@
-// @tag:vertical-slice @tag:request-id @tag:reading-block
+// @tag:vertical-slice @tag:request-id @tag:reading-block @tag:auth
 package dev.homeincubator.lngedu.reading;
 
+import dev.homeincubator.lngedu.account.AccountService;
 import dev.homeincubator.lngedu.common.ValidationException;
 import dev.homeincubator.lngedu.reading.ReadingCommands.Comprehension;
 import dev.homeincubator.lngedu.reading.ReadingCommands.GetNextChunkCommand;
 import dev.homeincubator.lngedu.reading.ReadingCommands.NextChunkView;
 import dev.homeincubator.lngedu.reading.ReadingCommands.RecordChunkResultCommand;
+import dev.homeincubator.lngedu.security.CurrentAccount;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -21,7 +23,8 @@ import java.util.UUID;
 /**
  * Thin REST adapter for reading. {@code GET next} builds the reading block dynamically
  * (@tag:reading-block) and does not advance progress; {@code POST result} records the outcome and
- * advances progress, idempotent by {@code requestId} (@tag:request-id).
+ * advances progress, idempotent by {@code requestId} (@tag:request-id). Both verify that the
+ * authenticated account owns the learner before delegating (@tag:auth).
  */
 @RestController
 @RequestMapping("/api/reading")
@@ -29,20 +32,27 @@ import java.util.UUID;
 public class ReadingController {
 
     private final ReadingService readingService;
+    private final AccountService accountService;
+    private final CurrentAccount currentAccount;
 
-    public ReadingController(ReadingService readingService) {
+    public ReadingController(ReadingService readingService, AccountService accountService,
+                             CurrentAccount currentAccount) {
         this.readingService = readingService;
+        this.accountService = accountService;
+        this.currentAccount = currentAccount;
     }
 
     @GetMapping("/next")
     @Operation(summary = "Get the next reading block for a learner and book (does not advance progress)")
     public NextChunkView next(@RequestParam UUID userId, @RequestParam UUID bookId) {
+        accountService.assertOwnsLearner(currentAccount.accountId(), userId);
         return readingService.getNextChunk(new GetNextChunkCommand(userId, bookId));
     }
 
     @PostMapping("/result")
     @Operation(summary = "Record a reading-block result and advance progress (idempotent by requestId)")
     public ReadingResultResponse result(@Valid @RequestBody RecordChunkResultRequest request) {
+        accountService.assertOwnsLearner(currentAccount.accountId(), request.userId());
         Comprehension comprehension = parseComprehension(request.comprehension());
         RecordChunkResultCommand cmd = new RecordChunkResultCommand(
                 request.userId(), request.bookId(), request.sessionId(),

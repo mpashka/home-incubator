@@ -167,13 +167,28 @@ server. Предпосылки: секреты Google OAuth; для ChatGPT — 
   JWKS — см. журнал 2026-07-09. Фаза I закрывает защиту `/api` и `/sse`
   (resource server), Phase L — реальные креды Google + ChatGPT.
 
-### Фаза I. Resource Server на MCP/REST + PRM ⛔
+### Фаза I. Resource Server на MCP/REST + PRM ✅
 
-- ⛔ OAuth2 resource server (валидация JWT, issuer/audience) на MCP и REST.
-- ⛔ PRM на `/.well-known/oauth-protected-resource`; `401 WWW-Authenticate:
-  resource_metadata` на MCP-endpoint.
-- ⛔ Аккаунт из токена; инструменты/REST работают только с профилями аккаунта
-  (закрывает правило 5, `userId` больше не доверенный вход).
+- ✅ OAuth2 resource server (`backend:auth`, `ResourceServerConfig`, `@Order(0)` filter
+  chain, `securityMatcher` `/api/**`,`/sse`,`/mcp/**`): валидация JWT нашего issuer и
+  audience (`AudienceValidator` + `JwtValidators.createDefaultWithIssuer`), подпись
+  проверяется по общему in-process `JWKSource` (без сетевого JWKS на старте).
+- ✅ PRM (RFC 9728) на `/.well-known/oauth-protected-resource`
+  (`ProtectedResourceMetadataController`, permitAll); `401` с
+  `WWW-Authenticate: Bearer resource_metadata="…"` через
+  `ResourceMetadataAuthenticationEntryPoint`.
+- ✅ Аккаунт из токена (`CurrentAccount` читает claim `account_id` в адаптере);
+  `AccountService.assertOwnsLearner` (ядро, transport-agnostic) вызывается в каждом
+  контроллере/MCP-tool с параметром учащегося; `GET /api/profiles`/`list_learners`
+  фильтруют по владельцу; чужой учащийся → `403` Problem Details
+  `urn:problem-type:forbidden`. Закрыто правило 5, `userId` больше не доверенный вход.
+- ✅ `finish` без параметра учащегося тоже закрыт: `SessionService.getSessionLearner`
+  (ядро, transport-agnostic, `404` если сессии нет) резолвит `user_id` сессии, адаптер
+  (`POST /api/sessions/{id}/finish` и MCP `finish_learning_session`) проверяет владение
+  этим учащимся до завершения — аккаунт A не может завершить сессию аккаунта B.
+- ⚠️ Полностью авторизованный вызов вживую требует реального Google-токена (фаза L) —
+  проверены `401`+PRM-заголовок, PRM-JSON, `/sse` `401` и открытость discovery/health;
+  сам happy-path с токеном покрыт тестами (mock/подписанный JWT), не живым Google-входом.
 
 ### Фаза J. Связывание идентичностей ⛔
 
@@ -325,3 +340,43 @@ server. Предпосылки: секреты Google OAuth; для ChatGPT — 
   текущая поверхность осталась открытой. **Не проверено (нет реального Google-клиента):**
   интерактивный вход в Google и полная выдача токена — только boot, метаданные, DCR
   в метаданных и редирект.
+- 2026-07-15: реализована фаза I — OAuth2 Resource Server на MCP/REST + PRM (ADR 0002,
+  `@tag:auth`). `backend:auth` получил `spring-boot-starter-oauth2-resource-server`.
+  `ResourceServerConfig` (`@Order(0)` filter chain, `securityMatcher`
+  `/api/**`,`/sse`,`/mcp/**`, stateless, CSRF off) валидирует JWT: подпись по общему
+  in-process `JWKSource`, `JwtValidators.createDefaultWithIssuer(AUTH_ISSUER_URI)` +
+  `AudienceValidator(MCP_RESOURCE_URI)`; decoder строится инлайн, чтобы не конфликтовать
+  с bean `JwtDecoder` Authorization Server. `ResourceMetadataAuthenticationEntryPoint`
+  добавляет к `401` заголовок `WWW-Authenticate: Bearer … resource_metadata="…"`. PRM
+  (RFC 9728) — `ProtectedResourceMetadataController` (app, permitAll) на
+  `/.well-known/oauth-protected-resource`. Владение: `CurrentAccount` (app) читает claim
+  `account_id` из `JwtAuthenticationToken`; `AccountService.assertOwnsLearner(accountId,
+  learnerId)` (ядро, transport-agnostic, missing→forbidden) вызывается в адаптере во всех
+  6 контроллерах и 6 MCP-tools с параметром учащегося (`/api/books` и `list_books` — только
+  когда передан `userId`/`learnerId`; `finish`-по-`sessionId` без параметра учащегося не
+  гейтится); `ProfileService.listLearnersOwnedBy` фильтрует `GET /api/profiles`/`list_learners`
+  по владельцу. `ForbiddenException`→`403` Problem Details `urn:problem-type:forbidden`
+  (`ApiExceptionHandler`). `DefaultSecurityConfig` (`@Order(2)`) теперь ловит только
+  открытое (PRM, метаданные AS, health, OpenAPI/Swagger, login). Тесты (+10): `AudienceValidatorTest`
+  (3, auth), `ProtectedResourceMetadataControllerTest` (1), `ResourceServerSecurityTest`
+  (6: no-token `401`+header, mock-JWT `200`, подписанный токен верный aud `200` / неверный
+  aud `401`, чужой учащийся `403` / свой `200`); существующие `@WebMvcTest`-срезы получили
+  моки `CurrentAccount`/`AccountService`, интент сохранён; `LngEduMcpToolsTest` обновлён под
+  новую сигнатуру и account-scoped `list_learners`. `./gradlew check` — **40 тестов, 1 skipped**
+  (`VerticalScenarioIT` без Docker), 0 failures (core 20, auth 7, app 13). Живая проверка на
+  локальном PostgreSQL (порт 8097, `AUTH_ISSUER_URI`/`MCP_RESOURCE_URI`=`http://localhost:8097`):
+  `curl /api/profiles` → `401` с `WWW-Authenticate: Bearer resource_metadata="http://localhost:8097/.well-known/oauth-protected-resource"`;
+  `/.well-known/oauth-protected-resource` → `200`
+  (`resource`+`authorization_servers`+`scopes_supported`+`bearer_methods_supported`);
+  `/sse` → `401`; невалидный Bearer → `401` c `error="invalid_token"` и `resource_metadata`;
+  открытыми остались `/.well-known/openid-configuration`, `/oauth2/jwks`, `/actuator/health`,
+  `/v3/api-docs`, Swagger UI (все `200`). **Не проверено вживую (нет реального Google-токена):**
+  happy-path авторизованного вызова — покрыт тестами (mock/подписанный JWT), полный Google-flow — фаза L.
+- 2026-07-15: закрыт остаточный gap фазы I — `finish` без параметра учащегося. Добавлен
+  transport-agnostic `SessionService.getSessionLearner(sessionId)` (ядро; `user_id` сессии,
+  `404` если сессии нет). `SessionController.finish` и MCP `finish_learning_session` резолвят
+  учащегося сессии и вызывают `AccountService.assertOwnsLearner(accountId, learnerId)` до
+  завершения: существующая сессия чужого аккаунта → `403` Problem Details, несуществующая →
+  `404` (прежнее поведение). Тесты (+2, в `ResourceServerSecurityTest` добавлен `SessionController`):
+  finish чужой сессии → `403`, finish своей → `200`. `./gradlew check` — **42 теста, 1 skipped**
+  (`VerticalScenarioIT` без Docker), 0 failures (core 20, auth 7, app 15).

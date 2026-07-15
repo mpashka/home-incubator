@@ -1,9 +1,11 @@
-// @tag:mcp-tools @tag:vertical-slice @tag:request-id
+// @tag:mcp-tools @tag:vertical-slice @tag:request-id @tag:auth
 package dev.homeincubator.lngedu.mcp;
 
+import dev.homeincubator.lngedu.account.AccountService;
 import dev.homeincubator.lngedu.book.BookService;
 import dev.homeincubator.lngedu.book.BookSummary;
 import dev.homeincubator.lngedu.common.ValidationException;
+import dev.homeincubator.lngedu.security.CurrentAccount;
 import dev.homeincubator.lngedu.reading.ReadingCommands.ChunkResultView;
 import dev.homeincubator.lngedu.reading.ReadingCommands.Comprehension;
 import dev.homeincubator.lngedu.reading.ReadingCommands.GetNextChunkCommand;
@@ -41,6 +43,11 @@ import java.util.UUID;
  * second mechanism is added here. {@code finish_learning_session} is idempotent by nature (it stamps
  * {@code finished_at} only once), so its {@code request_id} exists for interface consistency and safe
  * replay by the LLM client.
+ *
+ * <p>Ownership (@tag:auth): the account is taken from the validated bearer token via
+ * {@link CurrentAccount}, never from a tool parameter. {@code list_learners} returns only that
+ * account's learners, and every tool that names a learner asserts ownership
+ * ({@link AccountService#assertOwnsLearner}) before delegating (closes AGENTS rule 5).
  */
 @Component
 public class LngEduMcpTools {
@@ -51,26 +58,33 @@ public class LngEduMcpTools {
     private final ReadingService readingService;
     private final VocabularyService vocabularyService;
     private final StatsService statsService;
+    private final AccountService accountService;
+    private final CurrentAccount currentAccount;
 
     public LngEduMcpTools(ProfileService profileService,
                           BookService bookService,
                           SessionService sessionService,
                           ReadingService readingService,
                           VocabularyService vocabularyService,
-                          StatsService statsService) {
+                          StatsService statsService,
+                          AccountService accountService,
+                          CurrentAccount currentAccount) {
         this.profileService = profileService;
         this.bookService = bookService;
         this.sessionService = sessionService;
         this.readingService = readingService;
         this.vocabularyService = vocabularyService;
         this.statsService = statsService;
+        this.accountService = accountService;
+        this.currentAccount = currentAccount;
     }
 
     @Tool(name = "list_learners",
-            description = "List the available learner profiles with their per-language reading "
-                    + "skills. Use this first to pick a learner id; do not invent ids.")
+            description = "List your learner profiles with their per-language reading skills. Use "
+                    + "this first to pick a learner id; do not invent ids. Only profiles owned by "
+                    + "your account are returned.")
     public List<LearnerSummary> listLearners() {
-        return profileService.listLearners();
+        return profileService.listLearnersOwnedBy(currentAccount.accountId());
     }
 
     @Tool(name = "list_books",
@@ -84,6 +98,9 @@ public class LngEduMcpTools {
             @ToolParam(required = false,
                     description = "Learner id (UUID); when set, each book includes this learner's progress")
             UUID learnerId) {
+        if (learnerId != null) {
+            accountService.assertOwnsLearner(currentAccount.accountId(), learnerId);
+        }
         return bookService.listBooks(language, learnerId);
     }
 
@@ -96,6 +113,7 @@ public class LngEduMcpTools {
             @ToolParam(description = "Book id (UUID)") UUID bookId,
             @ToolParam(description = "Client-generated idempotency key; reuse it to safely retry")
             String requestId) {
+        accountService.assertOwnsLearner(currentAccount.accountId(), learnerId);
         return sessionService.startLearningSession(new StartSessionCommand(learnerId, bookId, requestId));
     }
 
@@ -106,6 +124,7 @@ public class LngEduMcpTools {
     public NextChunkView getNextChunk(
             @ToolParam(description = "Learner id (UUID)") UUID learnerId,
             @ToolParam(description = "Book id (UUID)") UUID bookId) {
+        accountService.assertOwnsLearner(currentAccount.accountId(), learnerId);
         return readingService.getNextChunk(new GetNextChunkCommand(learnerId, bookId));
     }
 
@@ -124,6 +143,7 @@ public class LngEduMcpTools {
             String comprehension,
             @ToolParam(description = "Client-generated idempotency key; reuse it to safely retry")
             String requestId) {
+        accountService.assertOwnsLearner(currentAccount.accountId(), learnerId);
         Comprehension result = parseComprehension(comprehension);
         return readingService.recordChunkResult(new RecordChunkResultCommand(
                 learnerId, bookId, sessionId, endOffset, result, requestId));
@@ -143,6 +163,7 @@ public class LngEduMcpTools {
                     description = "Session id (UUID) this happened in, if any") UUID sessionId,
             @ToolParam(description = "Client-generated idempotency key; reuse it to safely retry")
             String requestId) {
+        accountService.assertOwnsLearner(currentAccount.accountId(), learnerId);
         return vocabularyService.recordUnknownWord(new RecordUnknownWordCommand(
                 learnerId, language, lemma, context, sessionId, requestId));
     }
@@ -156,6 +177,10 @@ public class LngEduMcpTools {
             @ToolParam(required = false,
                     description = "Client-generated idempotency key; reuse it to safely retry")
             String requestId) {
+        // Resolve the session's learner (404 if unknown) and assert ownership before finishing, so a
+        // caller can only finish sessions of learners its account owns (@tag:auth).
+        UUID learnerId = sessionService.getSessionLearner(sessionId);
+        accountService.assertOwnsLearner(currentAccount.accountId(), learnerId);
         // finish is idempotent by nature (stamps finished_at once); request_id needs no extra
         // mechanism, so it is not forwarded to the service.
         return sessionService.finishLearningSession(new FinishSessionCommand(sessionId));
@@ -166,6 +191,7 @@ public class LngEduMcpTools {
                     + "studied, session count, new words, characters and blocks read.")
     public DailyStatsView getDailyStats(
             @ToolParam(description = "Learner id (UUID)") UUID learnerId) {
+        accountService.assertOwnsLearner(currentAccount.accountId(), learnerId);
         return statsService.getDailyStats(learnerId);
     }
 

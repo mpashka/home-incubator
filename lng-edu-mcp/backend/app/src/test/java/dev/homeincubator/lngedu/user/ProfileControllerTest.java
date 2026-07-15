@@ -1,5 +1,6 @@
 package dev.homeincubator.lngedu.user;
 
+import dev.homeincubator.lngedu.security.CurrentAccount;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -17,8 +18,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 /**
  * Web slice test: profiles list returns 200 and the expected JSON shape. No DB / Docker.
- * Security filters are disabled ({@code addFilters = false}) — Phase H keeps this surface open and
- * this slice only exercises controller mapping/serialization.
+ * Security filters are disabled ({@code addFilters = false}); this slice only exercises controller
+ * mapping/serialization. The account is stubbed via a mocked {@link CurrentAccount}, so the
+ * controller lists that account's learners (@tag:auth). Full security wiring is covered by
+ * {@code ResourceServerSecurityTest}.
  */
 @WebMvcTest(ProfileController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -30,10 +33,15 @@ class ProfileControllerTest {
     @MockitoBean
     private ProfileService profileService;
 
+    @MockitoBean
+    private CurrentAccount currentAccount;
+
     @Test
     void listsProfilesAsJson() throws Exception {
+        UUID accountId = UUID.fromString("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa");
         UUID id = UUID.fromString("11111111-1111-1111-1111-111111111111");
-        when(profileService.listLearners()).thenReturn(List.of(new LearnerSummary(
+        when(currentAccount.accountId()).thenReturn(accountId);
+        when(profileService.listLearnersOwnedBy(accountId)).thenReturn(List.of(new LearnerSummary(
                 id, "Ana (dev)", "Europe/Belgrade",
                 List.of(new LearnerSummary.LanguageSkillSummary("sr", "A2", 30, 60)))));
 

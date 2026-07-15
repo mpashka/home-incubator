@@ -39,6 +39,8 @@ dependencies {
 
     // Testing
     testImplementation("org.springframework.boot:spring-boot-starter-test")
+    // Resource-server security tests: mint/mock JWTs (jwt() post-processor) for @WebMvcTest slices.
+    testImplementation("org.springframework.security:spring-security-test")
     testImplementation("org.testcontainers:junit-jupiter")
     testImplementation("org.testcontainers:postgresql")
 }

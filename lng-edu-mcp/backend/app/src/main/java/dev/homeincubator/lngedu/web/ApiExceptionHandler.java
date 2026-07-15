@@ -1,5 +1,6 @@
 package dev.homeincubator.lngedu.web;
 
+import dev.homeincubator.lngedu.common.ForbiddenException;
 import dev.homeincubator.lngedu.common.NotFoundException;
 import dev.homeincubator.lngedu.common.ValidationException;
 import jakarta.validation.ConstraintViolationException;
@@ -34,6 +35,12 @@ public class ApiExceptionHandler {
     @ExceptionHandler(ValidationException.class)
     public ProblemDetail handleValidation(ValidationException ex) {
         return problem(HttpStatus.BAD_REQUEST, "validation-error", "Validation Failed", ex.getMessage());
+    }
+
+    /** Ownership guard (@tag:auth): the authenticated account does not own the referenced learner. */
+    @ExceptionHandler(ForbiddenException.class)
+    public ProblemDetail handleForbidden(ForbiddenException ex) {
+        return problem(HttpStatus.FORBIDDEN, "forbidden", "Forbidden", ex.getMessage());
     }
 
     /** Request-body bean-validation (@Valid on @RequestBody records). */

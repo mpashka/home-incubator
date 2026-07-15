@@ -1,6 +1,6 @@
 # Архитектура MVP
 
-@tag:vertical-slice @tag:mcp-tools @tag:request-id @tag:domain-model @tag:reading-block @tag:difficulty-model
+@tag:vertical-slice @tag:mcp-tools @tag:request-id @tag:domain-model @tag:reading-block @tag:difficulty-model @tag:auth
 
 ## Границы системы
 
@@ -45,6 +45,22 @@ Backend хранит все долгоживущее состояние обуч
 (`user_language_skills`), а не книги, и растёт с уровнем владения. В дальнейшем он
 определяется моделью сложности слов (`@tag:difficulty-model`). Обоснование и
 варианты — в [`adr/0001-reading-blocks-and-text-storage.md`](adr/0001-reading-blocks-and-text-storage.md).
+
+## Аутентификация и владение профилями (@tag:auth)
+
+Дизайн — [`adr/0002-auth-oauth-and-account-linking.md`](adr/0002-auth-oauth-and-account-linking.md).
+MCP/REST — **OAuth2 Resource Server**: защищённая поверхность (`/api/**`, `/sse`,
+`/mcp/**`) требует валидный JWT нашего Authorization Server (проверяются issuer и
+audience = идентификатор MCP-ресурса). Аккаунт берётся из claim `account_id` токена,
+и адаптеры (контроллеры/MCP tools) работают только с профилями этого аккаунта:
+`list_learners`/`GET /api/profiles` фильтруют по владельцу, любая операция с чужим
+учащимся отклоняется (`403`). Так закрывается правило 5 AGENTS — `userId` из запроса
+больше не доверенный вход. Каталог книг общий для всех аккаунтов.
+
+Для bootstrap MCP-клиента сервер отдаёт **Protected Resource Metadata** (RFC 9728) на
+`/.well-known/oauth-protected-resource` и на `401` добавляет заголовок
+`WWW-Authenticate: Bearer resource_metadata="…"`. Открытыми остаются PRM, метаданные AS,
+`/actuator/health` и OpenAPI/Swagger.
 
 ## MCP tools MVP
 

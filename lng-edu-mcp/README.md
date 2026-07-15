@@ -102,6 +102,43 @@ export JAVA_HOME=/opt/java/jdk-25
 - MCP-сервер `lng-edu` в том же приложении/порту: SSE `http://localhost:8080/sse`,
   endpoint сообщений `http://localhost:8080/mcp/message`.
 
+### Аутентификация (OAuth2 Resource Server, фаза I)
+
+Начиная с фазы I защищённая поверхность — `/api/**`, `/sse` и `/mcp/**` — требует
+валидный **Bearer-токен** (JWT нашего Authorization Server; проверяются issuer
+`AUTH_ISSUER_URI` и audience — токен обязан содержать `MCP_RESOURCE_URI` в `aud`).
+Аккаунт берётся из claim `account_id` токена (не из параметра запроса), и каждый вызов
+работает только с учебными профилями этого аккаунта (`GET /api/profiles` и `list_learners`
+возвращают только своих учащихся; обращение к чужому учащемуся → `403` Problem Details
+`urn:problem-type:forbidden`). Каталог книг (`GET /api/books` без `userId`) — общий.
+
+Токен выдаёт вход через Google на нашем Authorization Server (OAuth 2.1 Auth Code + PKCE):
+`GET /oauth2/authorize` → Google-логин → `code` → `POST /oauth2/token`. Метаданные для
+клиента:
+
+- Protected Resource Metadata (RFC 9728): `GET /.well-known/oauth-protected-resource`
+  (`resource`, `authorization_servers`, `scopes_supported`, `bearer_methods_supported`).
+- На неавторизованный запрос защищённый endpoint отвечает `401` c заголовком
+  `WWW-Authenticate: Bearer resource_metadata="<MCP_RESOURCE_URI>/.well-known/oauth-protected-resource"`,
+  по которому MCP-клиент (ChatGPT) находит AS и выполняет OAuth-flow.
+
+Открытыми остаются: `GET /.well-known/oauth-protected-resource`, метаданные AS
+(`/.well-known/openid-configuration`, `/oauth2/jwks`, `/connect/register`),
+`/actuator/health`, OpenAPI/Swagger.
+
+Env для issuer/audience (см. [`infra/.env.example`](infra/.env.example)):
+
+| Переменная         | Назначение                                    | Dev-дефолт              |
+| ------------------ | --------------------------------------------- | ----------------------- |
+| `AUTH_ISSUER_URI`  | Issuer нашего Authorization Server (в токене) | `http://localhost:8080` |
+| `MCP_RESOURCE_URI` | Идентификатор MCP-ресурса (audience токена)   | `http://localhost:8080` |
+
+Пример вызова с токеном:
+
+```bash
+curl -H "Authorization: Bearer <ACCESS_TOKEN>" http://localhost:8080/api/profiles
+```
+
 ### Примеры REST-вызовов
 
 ```bash

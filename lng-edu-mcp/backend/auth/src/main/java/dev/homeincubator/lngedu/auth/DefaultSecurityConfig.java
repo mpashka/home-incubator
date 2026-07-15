@@ -15,11 +15,11 @@ import org.springframework.security.web.SecurityFilterChain;
  * Google login UI ({@code oauth2Login}) used to authenticate the resource owner during the AS
  * authorization flow.
  *
- * <p>IMPORTANT for Phase H: every existing application endpoint is PERMITTED here so current
- * behaviour and tests keep working ({@code /api}, {@code /sse}, {@code /mcp}, actuator, OpenAPI /
- * Swagger, and the AS metadata all stay open). Only the AS authorization flow (the {@code @Order(1)}
- * chain) requires login. Phase I introduces the resource-server chain that actually protects
- * {@code /api} and {@code /sse}.
+ * <p>As of Phase I the protected surface ({@code /api/**}, {@code /sse}, {@code /mcp/**}) is owned by
+ * the resource-server chain ({@link ResourceServerConfig}, {@code @Order(0)}) and the AS endpoints by
+ * the {@code @Order(1)} chain. This {@code @Order(2)} chain only catches what is left — the login UI,
+ * the Protected Resource Metadata document, actuator health and OpenAPI/Swagger — and keeps it open
+ * (permitAll), while providing the Google login UI for the AS authorization flow.
  */
 @Configuration
 public class DefaultSecurityConfig {
@@ -28,7 +28,8 @@ public class DefaultSecurityConfig {
     @Order(2)
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http) throws Exception {
         http
-                // Phase H: keep the whole app surface open; do not protect /api or /sse yet.
+                // Only non-protected, non-AS endpoints reach this chain (PRM, actuator, OpenAPI, login);
+                // keep them open. /api, /sse and /mcp are protected by the @Order(0) resource server.
                 .authorizeHttpRequests(authorize -> authorize.anyRequest().permitAll())
                 // Federated login into Google for the AS authentication UI.
                 .oauth2Login(Customizer.withDefaults());

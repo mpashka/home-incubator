@@ -1,7 +1,9 @@
 package dev.homeincubator.lngedu.mcp;
 
+import dev.homeincubator.lngedu.account.AccountService;
 import dev.homeincubator.lngedu.book.BookService;
 import dev.homeincubator.lngedu.reading.ReadingService;
+import dev.homeincubator.lngedu.security.CurrentAccount;
 import dev.homeincubator.lngedu.session.SessionCommands.SessionView;
 import dev.homeincubator.lngedu.session.SessionCommands.StartSessionCommand;
 import dev.homeincubator.lngedu.session.SessionService;
@@ -35,19 +37,23 @@ class LngEduMcpToolsTest {
     @Mock private ReadingService readingService;
     @Mock private VocabularyService vocabularyService;
     @Mock private StatsService statsService;
+    @Mock private AccountService accountService;
+    @Mock private CurrentAccount currentAccount;
 
     private LngEduMcpTools tools() {
         return new LngEduMcpTools(profileService, bookService, sessionService,
-                readingService, vocabularyService, statsService);
+                readingService, vocabularyService, statsService, accountService, currentAccount);
     }
 
     @Test
-    void listLearners_delegatesAndReturnsMappedLearners() {
+    void listLearners_delegatesToAccountScopedListing() {
+        UUID accountId = UUID.randomUUID();
         UUID learnerId = UUID.randomUUID();
         LearnerSummary learner = new LearnerSummary(
                 learnerId, "Ana", "Europe/Belgrade",
                 List.of(new LearnerSummary.LanguageSkillSummary("sr", "A2", 40, 80)));
-        when(profileService.listLearners()).thenReturn(List.of(learner));
+        when(currentAccount.accountId()).thenReturn(accountId);
+        when(profileService.listLearnersOwnedBy(accountId)).thenReturn(List.of(learner));
 
         List<LearnerSummary> result = tools().listLearners();
 

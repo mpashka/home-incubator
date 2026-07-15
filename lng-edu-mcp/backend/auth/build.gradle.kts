@@ -24,7 +24,9 @@ dependencies {
     api("org.springframework.boot:spring-boot-starter-oauth2-authorization-server")
     // OAuth2 Login client to federate the end-user login into Google.
     api("org.springframework.boot:spring-boot-starter-oauth2-client")
-    // spring-boot-starter-security comes in transitively via the two starters above.
+    // OAuth2 Resource Server: validate JWT bearer tokens (issuer + audience) on MCP/REST (Phase I).
+    api("org.springframework.boot:spring-boot-starter-oauth2-resource-server")
+    // spring-boot-starter-security comes in transitively via the starters above.
 
     // Testing: MockMvc-based metadata/redirect checks (no DB, no real Google).
     testImplementation("org.springframework.boot:spring-boot-starter-test")
