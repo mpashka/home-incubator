@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Комната</string>
+    <string name="app_name">Home Wi-Fi Roaming</string>
     <!-- Лончер Xiaomi пишет в списке «имя приложения — имя виджета», поэтому имена разные. -->
     <string name="widget_name">Точка Wi-Fi</string>
     <string name="widget_desc">Комната по BSSID и уровень сигнала</string>

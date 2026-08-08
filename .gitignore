@@ -9,3 +9,7 @@
 **/.idea
 **/target
 **/.DS_Store
+
+# Локальные запросы к AI-агенту: контекст пользователя, не часть продукта.
+/home-lan/bssid-show/pc-linux/docs/requests/
+*/docs/requests/
