@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+      DayNight без панели заголовка. Готовой темы `DeviceDefault.DayNight.NoActionBar`
+      в платформе нет — есть либо DayNight с панелью, либо NoActionBar без DayNight,
+      поэтому одну собираем из другой.
+
+      Панель убрана не для красоты: она рисуется ПОВЕРХ содержимого, и при прокрутке под неё
+      уезжают верхние кнопки — до них потом не дотянуться. Заголовок при этом ничего не
+      сообщает, имя приложения видно в лончере. Отступ под строку состояния даёт
+      fitsSystemWindows в разметке.
+    -->
+    <style name="AppTheme" parent="@android:style/Theme.DeviceDefault.DayNight">
+        <item name="android:windowActionBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+    </style>
+</resources>

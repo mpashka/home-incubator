@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- кухня: кастрюля с крышкой -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M11,3 L13,3 L13,6 L11,6 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M2.5,6.5 L21.5,6.5 L21.5,9 L2.5,9 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M4,10.5 L20,10.5 L20,17 A3,3 0 0,1 17,20 L7,20 A3,3 0 0,1 4,17 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M1,11.5 L4,11.5 L4,13.5 L1,13.5 Z M20,11.5 L23,11.5 L23,13.5 L20,13.5 Z" />
+</vector>

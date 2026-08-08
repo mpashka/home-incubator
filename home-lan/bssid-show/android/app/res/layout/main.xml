@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- fitsSystemWindows: с targetSdk 35+ окно рисуется под системными панелями,
+     без этого первые строки статуса прячутся за заголовком. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fitsSystemWindows="true"
+    android:clipToPadding="false">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp"
+        android:focusableInTouchMode="true">
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="18sp"
+            android:textIsSelectable="true"
+            android:fontFamily="monospace" />
+
+        <Button
+            android:id="@+id/refresh"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/refresh" />
+
+        <Button
+            android:id="@+id/survey"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/survey" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textSize="16sp"
+            android:text="@string/why_location" />
+
+        <Button
+            android:id="@+id/perm"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/grant" />
+
+        <Button
+            android:id="@+id/loc"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/open_location_settings" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textSize="16sp"
+            android:text="@string/map_help" />
+
+        <EditText
+            android:id="@+id/map"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minLines="8"
+            android:gravity="top|start"
+            android:inputType="textMultiLine|textNoSuggestions"
+            android:fontFamily="monospace"
+            android:textSize="14sp"
+            android:hint="@string/map_help"
+            android:importantForAutofill="no" />
+
+        <Button
+            android:id="@+id/add"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/add_current" />
+
+        <Button
+            android:id="@+id/save"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/save" />
+    </LinearLayout>
+</ScrollView>

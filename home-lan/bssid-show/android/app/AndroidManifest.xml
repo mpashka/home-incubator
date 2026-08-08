@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="org.mpashka.bssidshow">
+
+    <!-- @tag:bssid-read BSSID без ACCESS_FINE_LOCATION система молча подменяет на 02:00:00:00:00:00 -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- @tag:site-survey startScan() требует именно CHANGE_WIFI_STATE, хотя ничего не меняет.
+         Разрешение обычное: выдаётся при установке, диалога пользователю не показывает. -->
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+    <!-- @tag:survey-upload единственное обращение в сеть: явный PUT файла замеров -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- ponytail: открытый HTTP разрешён для временного приёмника в доверенной домашней
+         LAN; если появится другой сетевой трафик, ограничить network security config. -->
+    <application
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="true"
+        android:usesCleartextTraffic="true"
+        android:supportsRtl="true"
+        android:theme="@style/AppTheme">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!-- @tag:site-survey обход точек замера; открывается только из MainActivity -->
+        <activity
+            android:name=".SurveyActivity"
+            android:exported="false"
+            android:label="@string/survey" />
+
+        <!-- Нажатие на виджет. Активность нужна только затем, чтобы процесс на миг оказался
+             на переднем плане: в фоне система BSSID не отдаёт. -->
+        <activity
+            android:name=".RefreshActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity=""
+            android:launchMode="singleInstance" />
+
+        <receiver
+            android:name=".RoomWidget"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/widget_info" />
+        </receiver>
+    </application>
+</manifest>

@@ -1,0 +1,271 @@
+#!/usr/bin/env python3
+"""Show the current home AP and collect an Android-compatible Wi-Fi survey."""
+
+import csv
+import io
+import json
+import os
+import re
+import shlex
+import subprocess
+import sys
+import time
+from datetime import datetime
+from pathlib import Path
+
+
+HERE = Path(__file__).resolve().parent
+SURVEY_DIR = (HERE / "../../../../../../home/home-config-secrets/ansible/.configs/out/wifi-survey").resolve()
+HEADER = ("point", "scan", "ts", "bssid", "ssid", "freq_mhz", "rssi", "connected", "cached")
+
+
+def run(*command, sudo=False):
+    command = (("sudo",) if sudo and os.geteuid() else ()) + command
+    result = subprocess.run(command, text=True, capture_output=True,
+                            env={**os.environ, "LC_ALL": "C"})
+    if result.returncode:
+        raise RuntimeError(result.stderr.strip() or f"{command[0]} завершился с ошибкой")
+    return result.stdout
+
+
+def wifi_device(iw):
+    candidate = None
+    for line in iw.splitlines():
+        value = line.strip()
+        if value.startswith("Interface "):
+            candidate = value.split(maxsplit=1)[1]
+        elif value == "type managed" and candidate:
+            return candidate
+    raise RuntimeError("Wi-Fi-интерфейс не найден")
+
+
+# @tag:bssid-read
+def parse_link(text):
+    if "Not connected." in text:
+        raise RuntimeError("Wi-Fi не подключён")
+    fields = {
+        "bssid": r"Connected to ([0-9a-f:]{17})",
+        "ssid": r"^\s*SSID: (.*)$",
+        "freq": r"^\s*freq: ([0-9.]+)",
+        "rssi": r"^\s*signal: (-?[0-9.]+)",
+    }
+    values = {key: re.search(pattern, text, re.I | re.M) for key, pattern in fields.items()}
+    if not all(values.values()):
+        raise RuntimeError("iw вернул неполные данные текущего соединения")
+    return {
+        "bssid": values["bssid"].group(1).lower(),
+        "ssid": values["ssid"].group(1),
+        "freq": round(float(values["freq"].group(1))),
+        "rssi": round(float(values["rssi"].group(1))),
+    }
+
+
+def parse_scan(text):
+    networks = []
+    current = None
+    for line in text.splitlines():
+        match = re.match(r"BSS ([0-9a-f:]{17})\(on ", line, re.I)
+        if match:
+            if current and {"freq", "rssi"} <= current.keys():
+                networks.append(current)
+            current = {"bssid": match.group(1).lower(), "ssid": ""}
+            continue
+        if current is None:
+            continue
+        match = re.match(r"\s+freq: ([0-9.]+)$", line)
+        if match:
+            current["freq"] = round(float(match.group(1)))
+        match = re.match(r"\s+signal: (-?[0-9.]+) dBm$", line)
+        if match:
+            current["rssi"] = round(float(match.group(1)))
+        match = re.match(r"\s+SSID: ?(.*)$", line)
+        if match:
+            current["ssid"] = match.group(1)
+    if current and {"freq", "rssi"} <= current.keys():
+        networks.append(current)
+    return networks
+
+
+# @tag:ap-map
+def normalize(bssid):
+    first, rest = bssid.lower().split(":", 1)
+    return f"{int(first, 16) & ~2:02x}:{rest}"
+
+
+def read_aps(path=HERE / "aps.txt"):
+    aps = {}
+    for line in path.read_text().splitlines():
+        line = line.strip()
+        if line and not line.startswith("#"):
+            bssid, host, interface, name = line.split(maxsplit=3)
+            aps[normalize(bssid)] = {"host": host, "interface": interface, "name": name}
+    return aps
+
+
+def current(interface):
+    return parse_link(run("iw", "dev", interface, "link"))
+
+
+def status():
+    interface = wifi_device(run("iw", "dev"))
+    link = current(interface)
+    ap = read_aps().get(normalize(link["bssid"]))
+    name = ap["name"] if ap else "неизвестная точка"
+    print(f"SSID:  {link['ssid']}")
+    print(f"BSSID: {link['bssid']} → {name}")
+    print(f"RSSI:  {link['rssi']} dBm")
+
+
+def device_address(interface):
+    match = re.search(r"^\s*addr ([0-9a-f:]{17})$",
+                      run("iw", "dev", interface, "info"), re.I | re.M)
+    if not match:
+        raise RuntimeError("не удалось прочитать MAC Wi-Fi-интерфейса")
+    return match.group(1).lower()
+
+
+def kick_command(ap, address):
+    payload = json.dumps({"addr": address, "reason": 5, "deauth": True, "ban_time": 10_000},
+                         separators=(",", ":"))
+    remote = f"ubus call hostapd.{ap['interface']} del_client {shlex.quote(payload)}"
+    return ("ssh", "-o", "BatchMode=yes", "-o", "ConnectTimeout=5", ap["host"], remote)
+
+
+def roam():
+    interface = wifi_device(run("iw", "dev"))
+    before = current(interface)
+    ap = read_aps().get(normalize(before["bssid"]))
+    if not ap:
+        raise RuntimeError(f"текущий BSSID {before['bssid']} отсутствует в aps.txt")
+    print(f"Отключаю ноутбук от «{ap['name']}» на 10 секунд…")
+    run(*kick_command(ap, device_address(interface)))
+    deadline = time.monotonic() + 20
+    while time.monotonic() < deadline:
+        time.sleep(1)
+        try:
+            after = current(interface)
+        except RuntimeError:
+            continue
+        if after["bssid"] != before["bssid"]:
+            target = read_aps().get(normalize(after["bssid"]))
+            name = target["name"] if target else "неизвестная точка"
+            print(f"BSSID: {before['bssid']} → {after['bssid']} ({name}, {after['rssi']} dBm)")
+            return
+    raise RuntimeError(f"за 20 секунд Wi-Fi не перешёл с {before['bssid']}")
+
+
+def read_points(path):
+    return [line.strip() for line in path.read_text().splitlines()
+            if line.strip() and not line.lstrip().startswith("#")]
+
+
+def append_scan(path, point, networks, link):
+    new_file = not path.exists()
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    seen = False
+    with path.open("a", newline="") as output:
+        writer = csv.writer(output, lineterminator="\n")
+        if new_file:
+            writer.writerow(HEADER)
+        for network in networks:
+            connected = network["bssid"] == link["bssid"]
+            seen |= connected
+            writer.writerow((point, 1, now, network["bssid"], network["ssid"],
+                             network["freq"], network["rssi"], int(connected), 0))
+        if not seen:
+            writer.writerow((point, 1, now, link["bssid"], link["ssid"], link["freq"],
+                             link["rssi"], 1, 0))
+
+
+# @tag:site-survey
+def survey(points_path, output_path):
+    interface = wifi_device(run("iw", "dev"))
+    points = read_points(points_path)
+    if not points:
+        raise RuntimeError(f"маршрут пуст: {points_path}")
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    if output_path.exists():
+        raise RuntimeError(f"файл уже существует: {output_path}")
+    aps = read_aps()
+    for number, point in enumerate(points, 1):
+        input(f"[{number}/{len(points)}] Встаньте на точку «{point}» и нажмите Enter: ")
+        networks = parse_scan(run("iw", "dev", interface, "scan", sudo=True))
+        if not networks:
+            raise RuntimeError("свежий скан пуст; точка не засчитана")
+        link = current(interface)
+        append_scan(output_path, point, networks, link)
+        print(f"Записано сетей: {len(networks)}")
+        for network in networks:
+            ap = aps.get(normalize(network["bssid"]))
+            if ap:
+                marker = " *" if network["bssid"] == link["bssid"] else ""
+                print(f"  {ap['name']:8} {network['ssid']:12} {network['rssi']:4} dBm{marker}")
+    print(f"Готово: {output_path}")
+
+
+def check():
+    assert SURVEY_DIR.parts[-3:] == (".configs", "out", "wifi-survey")
+    scan = """BSS d4:da:21:71:10:22(on wlan0) -- associated
+\tfreq: 5300.0
+\tsignal: -71.00 dBm
+\tSSID: m260G
+BSS 00:11:22:33:44:55(on wlan0)
+\tfreq: 2412.0
+\tsignal: -80.50 dBm
+\tSSID: name,with,commas
+"""
+    networks = parse_scan(scan)
+    assert networks == [
+        {"bssid": "d4:da:21:71:10:22", "ssid": "m260G", "freq": 5300, "rssi": -71},
+        {"bssid": "00:11:22:33:44:55", "ssid": "name,with,commas", "freq": 2412, "rssi": -80},
+    ]
+    assert normalize("D6:DA:21:71:10:22") == "d4:da:21:71:10:22"
+    bedroom = read_aps()["d4:da:21:71:10:22"]
+    assert bedroom == {"host": "root@192.168.2.2", "interface": "wlan1", "name": "спальня"}
+    assert kick_command(bedroom, "80:13:16:44:54:30")[-1].startswith(
+        "ubus call hostapd.wlan1 del_client ")
+    output = io.StringIO()
+    csv.writer(output).writerow(("точка", "name,with,commas"))
+    assert output.getvalue() == 'точка,"name,with,commas"\r\n'
+    print("check: ok")
+
+
+def usage():
+    name = Path(sys.argv[0]).name
+    print(f"""Команды:
+  {name} bssid                              текущие SSID, BSSID→имя и RSSI
+  {name} roam                               отключить от текущей AP и переподключиться
+  {name} survey [points.txt [result.csv]]   записать обход сразу для Ansible
+  {name} check                              запустить самопроверку
+  {name} help                               показать эту справку""")
+
+
+def main():
+    args = sys.argv[1:]
+    if not args:
+        usage()
+        print("\nТекущий Wi-Fi:")
+        status()
+    elif args == ["bssid"]:
+        status()
+    elif args == ["roam"]:
+        roam()
+    elif args in (["help"], ["--help"], ["-h"]):
+        usage()
+    elif args[0] == "survey" and len(args) <= 3:
+        points = Path(args[1]) if len(args) > 1 else HERE / "points.txt"
+        output = Path(args[2]) if len(args) > 2 else SURVEY_DIR / datetime.now().strftime(
+            "survey-%Y%m%d-%H%M.csv")
+        survey(points, output)
+    elif args == ["check"]:
+        check()
+    else:
+        raise RuntimeError("неизвестная команда; запустите bssid-show help")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (FileNotFoundError, PermissionError, RuntimeError, ValueError) as error:
+        print(f"Ошибка: {error}", file=sys.stderr)
+        sys.exit(1)

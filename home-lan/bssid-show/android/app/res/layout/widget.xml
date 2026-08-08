@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  1x1: места хватает ровно на одну иконку. Уровень сигнала — полоса из четырёх палочек
+  по нижнему краю: цвет дублируется количеством, поэтому читается и без различения цветов.
+
+  Палочки — ImageView, а не View: RemoteViews разрешает инфлейтить только фиксированный
+  список классов, и голый View в него не входит («Class not allowed to be inflated»).
+  Ошибка валит всю разметку — виджет становится чёрным квадратом «не удалось добавить».
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:padding="6dp">
+
+    <ImageView
+        android:id="@+id/icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="8dp"
+        android:scaleType="fitCenter"
+        android:tint="#FFFFFFFF"
+        android:src="@drawable/ic_hall" />
+
+    <!-- Комнаты без встроенной иконки рисуются глифом из карты (эмодзи). Так новую комнату
+         можно завести данными, не пересобирая приложение. autoSize — чтобы глиф занимал
+         клетку целиком и переживал изменение размера виджета. -->
+    <TextView
+        android:id="@+id/glyph"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_gravity="center"
+        android:layout_marginBottom="8dp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="#FFFFFFFF"
+        android:autoSizeTextType="uniform"
+        android:autoSizeMinTextSize="10sp"
+        android:autoSizeMaxTextSize="44sp"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="5dp"
+        android:layout_gravity="bottom"
+        android:orientation="horizontal">
+
+        <ImageView android:id="@+id/b1" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="match_parent" android:layout_marginEnd="2dp" />
+        <ImageView android:id="@+id/b2" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="match_parent" android:layout_marginEnd="2dp" />
+        <ImageView android:id="@+id/b3" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="match_parent" android:layout_marginEnd="2dp" />
+        <ImageView android:id="@+id/b4" android:layout_width="0dp" android:layout_weight="1"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+</FrameLayout>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- спальня: кровать сбоку -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M1.5,5 L4,5 L4,19 L1.5,19 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M4,12 L22.5,12 L22.5,17 L4,17 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M20,17 L22.5,17 L22.5,19.5 L20,19.5 Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M5.5,8.5 A1.5,1.5 0 0,1 7,7 L10.5,7 A1.5,1.5 0 0,1 12,8.5 L12,11 L5.5,11 Z" />
+</vector>
