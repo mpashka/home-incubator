@@ -7,8 +7,10 @@ import json
 import os
 import re
 import shlex
+import socket
 import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime
 from pathlib import Path
@@ -16,7 +18,8 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 SURVEY_DIR = (HERE / "../../../../../../home/home-config-secrets/ansible/.configs/out/wifi-survey").resolve()
-HEADER = ("point", "scan", "ts", "bssid", "ssid", "freq_mhz", "rssi", "connected", "cached")
+HEADER = ("point", "scan", "ts", "bssid", "ssid", "freq_mhz", "rssi", "connected", "cached", "device")
+DEVICE = socket.gethostname()
 
 
 def run(*command, sudo=False):
@@ -171,10 +174,10 @@ def append_scan(path, point, networks, link):
             connected = network["bssid"] == link["bssid"]
             seen |= connected
             writer.writerow((point, 1, now, network["bssid"], network["ssid"],
-                             network["freq"], network["rssi"], int(connected), 0))
+                             network["freq"], network["rssi"], int(connected), 0, DEVICE))
         if not seen:
             writer.writerow((point, 1, now, link["bssid"], link["ssid"], link["freq"],
-                             link["rssi"], 1, 0))
+                             link["rssi"], 1, 0, DEVICE))
 
 
 # @tag:site-survey
@@ -224,6 +227,13 @@ BSS 00:11:22:33:44:55(on wlan0)
     assert bedroom == {"host": "root@192.168.2.2", "interface": "wlan1", "name": "спальня"}
     assert kick_command(bedroom, "80:13:16:44:54:30")[-1].startswith(
         "ubus call hostapd.wlan1 del_client ")
+    with tempfile.TemporaryDirectory() as directory:
+        path = Path(directory) / "survey.csv"
+        append_scan(path, "точка", networks, networks[0])
+        with path.open(newline="") as source:
+            rows = list(csv.reader(source))
+        assert rows[0] == list(HEADER)
+        assert all(row[-1] == DEVICE for row in rows[1:])
     output = io.StringIO()
     csv.writer(output).writerow(("точка", "name,with,commas"))
     assert output.getvalue() == 'точка,"name,with,commas"\r\n'

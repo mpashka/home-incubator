@@ -25,7 +25,9 @@ tags: "@tag:bssid-read @tag:ap-map @tag:site-survey"
 - Карта BSSID→комната и маршрут — данные, не зашитые ветвления в коде.
 - Текущий статус содержит как минимум SSID, BSSID и RSSI либо явную причину отсутствия данных.
 - Замер совместим с Android CSV:
-  `point,scan,ts,bssid,ssid,freq_mhz,rssi,connected,cached`.
+  `point,scan,ts,bssid,ssid,freq_mhz,rssi,connected,cached,device`.
+- Последняя колонка `device` содержит hostname Linux-машины; старые CSV без неё остаются
+  допустимым входом анализа.
 - В одном скане пишутся все видимые сети; текущая связь помечается `connected=1`.
 - Файл по умолчанию сохраняется прямо в
   `home-config-secrets @/ansible/.configs/out/wifi-survey/` как вход для общего анализа в

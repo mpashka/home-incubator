@@ -8,7 +8,8 @@
 - `@tag:bssid-read` — точные BSSID и dBm текущего соединения читаются через `iw link`.
 - `@tag:site-survey` — свежий активный скан всех BSSID читается через `sudo iw scan`; результат
   сразу пишется в Android-совместимый CSV внутри Ansible-проекта:
-  `@/ansible/.configs/out/wifi-survey/`.
+  `@/ansible/.configs/out/wifi-survey/`. Последняя колонка `device` заполняется стабильным
+  hostname из стандартной библиотеки Python.
 - `@tag:ap-map` — карта хранится отдельно в [`../../aps.txt`](../../aps.txt); у адреса
   сбрасывается бит `0x02`, как в Android-клиенте. Там же лежат SSH-адрес и имя hostapd BSS,
   нужные однословной команде `roam`.

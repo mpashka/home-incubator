@@ -44,6 +44,7 @@ mkdir -p "$OUT/gen" "$OUT/classes"
 
 if [ "${1:-}" = check ]; then
     "$JDK/bin/java" -cp "$OUT/classes" org.mpashka.bssidshow.Rooms
+    "$JDK/bin/java" -cp "$OUT/classes:$PLATFORM" org.mpashka.bssidshow.SurveyActivity
     exec python3 ./receive-survey.py --check
 fi
 

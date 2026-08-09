@@ -7,3 +7,4 @@
 ## Запросы
 
 - [`01-send-results/`](01-send-results/index.md) — передача CSV замеров с телефона на ПК.
+- [`02-survey-device/`](02-survey-device/index.md) — идентификатор устройства в общем CSV замеров.

@@ -8,6 +8,7 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.wifi.ScanResult;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -49,7 +50,8 @@ public class SurveyActivity extends Activity {
     /** Сколько стоять на точке. Меньше — не успевает прийти ни один свежий скан. */
     private static final long WINDOW_MS = 25_000;
 
-    private static final String HEADER = "point,scan,ts,bssid,ssid,freq_mhz,rssi,connected,cached\n";
+    private static final String HEADER = "point,scan,ts,bssid,ssid,freq_mhz,rssi,connected,cached,device\n";
+    private static final String DEVICE = device(Build.MANUFACTURER, Build.MODEL);
     private static final SimpleDateFormat TS = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US);
     private static final SimpleDateFormat FILE_TS = new SimpleDateFormat("yyyyMMdd-HHmm", Locale.US);
 
@@ -67,7 +69,7 @@ public class SurveyActivity extends Activity {
     private Button measure, sendPc, sendServer, resend;
 
     private BroadcastReceiver receiver;
-    private long deadline, lastScanTs;
+    private long deadline, lastScanTs, measureStartedUs;
     private int scans;
 
     @Override
@@ -143,12 +145,27 @@ public class SurveyActivity extends Activity {
         SharedPreferences p = RoomWidget.prefs(this);
         String saved = p.getString("survey_file", null);
         File f = saved == null ? null : new File(dir(), saved);
-        if (f != null && f.exists()) {
+        int savedIndex = Math.min(p.getInt("survey_index", 0), points.size());
+        // `adb install -r` сохраняет prefs. Завершённый старый файл можно отправить, но
+        // незавершённый CSV прежнего формата дописывать нельзя: получится смешанный файл.
+        if (f != null && f.exists() && (savedIndex >= points.size() || currentFormat(f))) {
             csv = f;
-            index = Math.min(p.getInt("survey_index", 0), points.size());
+            index = savedIndex;
         } else {
             restart();
         }
+    }
+
+    private static boolean currentFormat(File file) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            return currentHeader(reader.readLine());
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
+    private static boolean currentHeader(String line) {
+        return HEADER.trim().equals(line);
     }
 
     private void restart() {
@@ -214,6 +231,7 @@ public class SurveyActivity extends Activity {
         measure.setEnabled(false);
         scans = 0;
         lastScanTs = 0;
+        measureStartedUs = SystemClock.elapsedRealtimeNanos() / 1_000;
 
         receiver = new BroadcastReceiver() {
             @Override public void onReceive(Context c, Intent i) { collect(false); }
@@ -334,6 +352,14 @@ public class SurveyActivity extends Activity {
     private void collect(boolean cached) {
         List<ScanResult> results = wm.getScanResults();
         if (results == null || results.isEmpty()) return;
+        if (!cached) {
+            List<ScanResult> fresh = new ArrayList<>();
+            for (ScanResult r : results) {
+                if (fresh(r.timestamp, measureStartedUs)) fresh.add(r);
+            }
+            if (fresh.isEmpty()) return;
+            results = fresh;
+        }
         long ts = 0;
         for (ScanResult r : results) ts = Math.max(ts, r.timestamp);
         if (!cached && ts == lastScanTs) return;   // тот же самый скан, второй раз не пишем
@@ -380,11 +406,38 @@ public class SurveyActivity extends Activity {
           .append(freq).append(',')
           .append(rssi).append(',')
           .append(connected ? 1 : 0).append(',')
-          .append(cached ? 1 : 0).append('\n');
+          .append(cached ? 1 : 0).append(',')
+          .append(csv(DEVICE)).append('\n');
     }
 
     private static String csv(String s) {
-        return s.contains(",") || s.contains("\"") ? '"' + s.replace("\"", "\"\"") + '"' : s;
+        return s.contains(",") || s.contains("\"") || s.contains("\n") || s.contains("\r")
+                ? '"' + s.replace("\"", "\"\"") + '"' : s;
+    }
+
+    private static String device(String manufacturer, String model) {
+        return (manufacturer + " " + model).trim();
+    }
+
+    private static boolean fresh(long scanTimestampUs, long measureStartedUs) {
+        return scanTimestampUs >= measureStartedUs;
+    }
+
+    /** Самопроверка CSV и фильтра свежести без телефона. См. build.sh check. */
+    public static void main(String[] args) {
+        assertEq("Lenovo TB376FC", csv(device("Lenovo", "TB376FC")));
+        assertEq("\"Acme, Inc. Model \"\"A\"\"\"", csv(device("Acme, Inc.", "Model \"A\"")));
+        if (currentHeader("point,scan,ts,bssid,ssid,freq_mhz,rssi,connected,cached")) {
+            throw new AssertionError("старый CSV принят за текущий");
+        }
+        if (!currentHeader(HEADER.trim())) throw new AssertionError("текущий CSV не распознан");
+        if (fresh(999, 1_000)) throw new AssertionError("старый ScanResult принят за свежий");
+        if (!fresh(1_000, 1_000)) throw new AssertionError("новый ScanResult отброшен");
+        System.out.println("SurveyActivity: ok");
+    }
+
+    private static void assertEq(String want, String got) {
+        if (!want.equals(got)) throw new AssertionError("ожидалось " + want + ", получено " + got);
     }
 
     private void unregister() {
