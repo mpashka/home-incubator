@@ -35,8 +35,35 @@ Java 25 — `/opt/java/jdk-25`, она же по умолчанию в `PATH`. �
 | `importer` | Конвертация исходной sqlite-базы в целевую Postgres |
 | `backend` | Spring Boot: поиск по словоформам, REST API, пополнение через LLM |
 
-Фронтенд на Vue появится отдельной директорией `frontend/` на этапе 7
-(см. [plan.md](../plan.md)).
+У каждого модуля свой `index.md`: [core](../../core/index.md), [importer](../../importer/index.md),
+[backend](../../backend/index.md), [frontend](../../frontend/index.md).
+
+## Запуск словаря
+
+Двумя командами, в разных терминалах; база должна быть поднята и заполнена.
+
+```bash
+./gradlew :backend:bootRun          # http://localhost:8180
+cd frontend && npm run dev          # http://localhost:8181, /api уходит на бэкенд
+```
+
+Проверка, что бэкенд отвечает:
+
+```bash
+curl 'http://localhost:8180/api/words?q=%D0%B2%D0%BE%D0%B4&limit=3'
+```
+
+### Если не запускается
+
+- **Flyway: `Migration checksum mismatch`.** Файл миграции изменили после того, как его
+  применили к базе — даже правка комментария меняет контрольную сумму. Либо вернуть файл
+  как был, либо привести историю в соответствие (`flyway repair`; вручную —
+  `update flyway_schema_history set checksum = <локальная сумма> where version = '<номер>'`,
+  число печатается в самой ошибке как «Resolved locally»).
+- **Vite: `ENOSPC: System limit for number of file watchers reached`.** Кончились
+  inotify-наблюдатели, их съели другие программы (обычно IDE). Либо поднять предел
+  (`sysctl fs.inotify.max_user_watches`, нужен root), либо запустить со слежением
+  опросом: `CHOKIDAR_USEPOLLING=1 npm run dev`.
 
 ## База данных
 
