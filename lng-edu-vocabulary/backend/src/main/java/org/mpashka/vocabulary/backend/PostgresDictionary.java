@@ -120,9 +120,14 @@ public class PostgresDictionary {
     /**
      * Дописывает к найденному слову ту форму, по которой оно нашлось.
      *
-     * <p>Только тем словам, чьё заглавное слово запросу не отвечает: если совпало само
-     * заглавное, объяснять нечего. Иначе пользователь видит {@code во̏д} в ответ на
-     * «вода» и не понимает, как он там оказался.
+     * <p>Только тем словам, которые <b>без указателя форм не нашлись бы вовсе</b>: если
+     * запросу отвечает само заглавное слово, объяснять нечего. Иначе пользователь видит
+     * {@code во̏д} в ответ на «вода» и не понимает, как он там оказался.
+     *
+     * <p>Заглавное слово сравнивается <b>без знаков ударения</b>, и кириллическое, и
+     * латинское: в {@code headword_latin} ударение стоит комбинируемым знаком
+     * ({@code vòda}), поэтому обычное сравнение с началом запроса {@code voda} не
+     * срабатывает, и объяснение приписывалось слову, которое и так нашлось.
      */
     // @tag:word-forms
     private List<FoundWord> attachMatchedForms(List<FoundWord> found, String prefix, boolean matchForms) {
@@ -132,9 +137,8 @@ public class PostgresDictionary {
         String plainPrefix = prefix.substring(0, prefix.length() - 1);
         List<FoundWord> result = new ArrayList<>(found.size());
         for (FoundWord word : found) {
-            if (word.headwordPlain().startsWith(plainPrefix)
-                    || word.headwordLatin() != null
-                    && word.headwordLatin().toLowerCase().startsWith(plainPrefix)) {
+            if (startsWithPlain(word.headwordPlain(), plainPrefix)
+                    || startsWithPlain(word.headwordLatin(), plainPrefix)) {
                 result.add(word);
                 continue;
             }
@@ -151,6 +155,12 @@ public class PostgresDictionary {
             result.add(word.withMatchedForm(matched.isEmpty() ? null : matched.getFirst()));
         }
         return result;
+    }
+
+    /** Начинается ли слово с запроса, если ударения не считать. */
+    private static boolean startsWithPlain(String word, String plainPrefix) {
+        return word != null
+                && Serbian.stripCombiningAccents(word).toLowerCase().startsWith(plainPrefix);
     }
 
     private static final String WORD_COLUMNS = """
