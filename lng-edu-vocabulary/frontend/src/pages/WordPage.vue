@@ -6,7 +6,8 @@ import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { loadWord, loadWordById, WordNotFound } from '../api/dictionary.js'
 import {
-  partOfSpeechName, statusName, statusKey, formName, formNameSerbian, formLabel as labelOf
+  partOfSpeechName, statusName, statusKey, statusNotable, formName, formNameSerbian,
+  formLabel as labelOf
 } from '../labels.js'
 import Accented from '../components/Accented.vue'
 import SerbianText from '../components/SerbianText.vue'
@@ -75,7 +76,9 @@ const grammarHint = { м: 'мужской род', ж: 'женский род', 
 const grammarTitle = (mark) => grammarHint[mark] ?? 'Грамматическая помета'
 
 const posName = (w) => partOfSpeechName(w?.partOfSpeech)
-const statusOf = (w) => statusName(w?.status)
+// Пометка состояния показывается, только когда несёт сведения: «импортировано» стоит
+// почти у всех статей и не сообщает ничего.
+const statusOf = (w) => (statusNotable(w?.status) ? statusName(w?.status) : '')
 const statusClassOf = (w) => statusKey(w?.status)
 
 /** Подпись формы в выбранном виде: по-русски, по-сербски, и так и так, либо кодом. */
@@ -162,6 +165,13 @@ const backToSearch = computed(() => {
             {{ statusOf(homonym) }}
           </span>
         </div>
+
+        <!-- Предупреждение висит, только пока есть что делать: языковой пробел
+             остался у 356 статей из 47 019. -->
+        <p v-if="homonym.needsLanguageReview" class="review-warning">
+          В этой статье осталось незакрытое: {{ homonym.reviewReason }}.
+          Показанное берите с оговоркой — пробел закрывается внешним источником.
+        </p>
 
         <ol v-if="homonym.senses?.length" class="senses">
           <li v-for="(sense, index) in homonym.senses" :key="index" class="sense">

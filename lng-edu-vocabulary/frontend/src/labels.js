@@ -17,8 +17,18 @@ const PART_OF_SPEECH = {
 const STATUS = {
   NO_TRANSLATION: 'нет перевода',
   IMPORTED: 'импортировано',
+  AWAITING_REVIEW: 'ждёт проверки',
   COMPLETE: 'полностью обработано'
 }
+
+/**
+ * Состояния, о которых карточка молчит.
+ *
+ * `IMPORTED` носят 46 864 статьи из 47 019 — это норма словаря, а не сведение.
+ * Пометка, стоящая всегда, приучает не смотреть в то место, где появится важная
+ * (`.claude/rules/ux/core.md`, §12).
+ */
+const STATUS_SILENT = new Set(['IMPORTED'])
 
 /** Часть речи по-русски; пустая строка, если код неизвестен или его нет. */
 export function partOfSpeechName (code) {
@@ -30,6 +40,11 @@ export function partOfSpeechName (code) {
 export function statusName (code) {
   if (!code) return ''
   return STATUS[code] ?? ''
+}
+
+/** Стоит ли вообще показывать пометку состояния: см. `STATUS_SILENT`. */
+export function statusNotable (code) {
+  return Boolean(STATUS[code]) && !STATUS_SILENT.has(code)
 }
 
 /** Ключ оформления пометки о состоянии — для скромной подсветки. */

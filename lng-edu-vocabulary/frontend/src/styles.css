@@ -259,6 +259,7 @@ body:has(.theme-dark) { background: #1d1b18; color: #eee8dd; }
 }
 
 .status-mark.no-translation { color: #8a5a2b; }
+.review-warning { margin: 6px 0; padding: 8px 10px; border-left: 3px solid #b98a3e; background: var(--accent-soft); font-size: 14px; }
 .status-mark.complete { color: #3d6b45; }
 
 /* --- Значения ------------------------------------------------------------ */
