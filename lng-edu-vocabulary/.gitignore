@@ -1,0 +1,10 @@
+build/
+.gradle/
+node_modules/
+dist/
+
+# Сторонние словари и сканы (крупные, под чужими правами) — не в репозитории.
+.data/
+
+# В корневом .gitignore монорепозитория стоит `*.jar` — обёртку Gradle возвращаем.
+!gradle/wrapper/gradle-wrapper.jar

@@ -1,0 +1,384 @@
+/*
+ * Общее оформление словаря.
+ *
+ * @tag:accent — здесь задан шрифт для сербского текста с ударениями.
+ * Знаки ударения приходят комбинируемыми (U+0300, U+0301, U+030F, U+0311)
+ * плюс заударная долгота U+0304, поэтому:
+ *   - шрифт берём с полным покрытием этих знаков и правильной их расстановкой
+ *     (Charis SIL и Gentium Plus — лучшие; из системных подходят DejaVu Serif,
+ *     Noto Serif, Liberation Serif — все они покрывают нужные знаки);
+ *   - `letter-spacing` для такого текста НЕ задаём: лишний зазор отрывает знак
+ *     от буквы;
+ *   - кернинг и лигатуры оставляем включёнными — на них держится расстановка
+ *     знака над буквой и наложение двух знаков друг над другом.
+ */
+
+:root {
+  --paper: #fbfaf7;
+  --card: #ffffff;
+  --ink: #24211c;
+  --ink-soft: #5f594f;
+  --ink-faint: #8d857a;
+  --line: #e3ded4;
+  --accent: #7a5c3e;
+  --accent-soft: #f0e9df;
+  --serbian: #1f3f5c;
+  --radius: 8px;
+
+  /* Шрифт для сербского текста с ударениями. */
+  --font-accented: "Charis SIL", "Gentium Plus", "Gentium Book Plus",
+    "DejaVu Serif", "Noto Serif", "Liberation Serif", Georgia, serif;
+  --font-ui: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-ui);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* --- Сербский текст с ударениями ---------------------------------------- */
+
+/*
+ * Единственное место, где задаётся отрисовка ударений. Всё сербское — и заглавные
+ * слова, и примеры, и обороты — идёт через этот класс.
+ */
+.accented {
+  font-family: var(--font-accented);
+  letter-spacing: normal;   /* разрыв связи «буква + знак» недопустим */
+  font-kerning: normal;
+  font-variant-ligatures: normal;
+  font-feature-settings: normal;
+  /* Запас по высоте строки: два знака друг над другом выше обычной прописной. */
+  line-height: 1.45;
+}
+
+/* --- Разметка страницы --------------------------------------------------- */
+
+.layout {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+
+.theme-dark {
+  --paper: #1d1b18;
+  --card: #282520;
+  --ink: #eee8dd;
+  --ink-soft: #c7bfb2;
+  --ink-faint: #9b9284;
+  --line: #4a443b;
+  --accent: #d2ad7d;
+  --accent-soft: #493b2e;
+  --serbian: #9cc9ed;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+@media (prefers-color-scheme: dark) {
+  .theme-system {
+    --paper: #1d1b18;
+    --card: #282520;
+    --ink: #eee8dd;
+    --ink-soft: #c7bfb2;
+    --ink-faint: #9b9284;
+    --line: #4a443b;
+    --accent: #d2ad7d;
+    --accent-soft: #493b2e;
+    --serbian: #9cc9ed;
+    color: var(--ink);
+    background: var(--paper);
+  }
+
+  body:has(.theme-system) { background: #1d1b18; color: #eee8dd; }
+}
+
+body:has(.theme-dark) { background: #1d1b18; color: #eee8dd; }
+
+.site-head {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding-bottom: 14px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--line);
+}
+
+.site-head h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.site-head h1 a { color: var(--ink); }
+
+.site-head .subtitle {
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+.settings { margin-left: auto; font-size: 13px; color: var(--ink-soft); }
+.settings summary { cursor: pointer; color: var(--accent); }
+.settings label { display: block; margin-top: 8px; }
+.settings select { display: block; max-width: 100%; margin-top: 2px; }
+.grammar-button { border: 1px solid var(--line); border-radius: var(--radius); background: var(--card); color: var(--accent); padding: 4px 8px; cursor: pointer; }
+
+.quick-toggles { display: flex; gap: 6px; flex-wrap: wrap; margin: -12px 0 20px; }
+.quick-toggles button { border: 1px solid var(--line); border-radius: 14px; background: transparent; color: var(--ink-soft); padding: 3px 9px; cursor: pointer; }
+.quick-toggles button.active { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+
+/* --- Поле поиска --------------------------------------------------------- */
+
+.search-field {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 20px;
+  font-family: var(--font-accented);
+  color: var(--ink);
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  outline: none;
+}
+
+.search-field:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.search-hint {
+  margin: 8px 2px 20px;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+/* --- Список найденного --------------------------------------------------- */
+
+.results { list-style: none; margin: 0; padding: 0; }
+
+.results li + li { border-top: 1px solid var(--line); }
+
+.result-link {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 10px;
+  margin: 0 -10px;
+  border-radius: var(--radius);
+  color: inherit;
+}
+
+.result-link:hover {
+  background: var(--card);
+  text-decoration: none;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.result-headword {
+  font-size: 24px;
+  color: var(--serbian);
+  flex: 0 0 auto;
+}
+
+.result-translations {
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.results-total {
+  margin: 18px 2px 0;
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+/* --- Карточка слова ------------------------------------------------------ */
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 18px;
+  font-size: 14px;
+}
+
+.word-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+
+.word-headword {
+  font-size: 40px;
+  font-weight: 600;
+  color: var(--serbian);
+  margin: 0;
+}
+
+.word-latin {
+  font-size: 20px;
+  color: var(--ink-faint);
+}
+
+.word-marks {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 26px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.word-pos { font-style: italic; }
+
+.word-grammar {
+  font-family: var(--font-accented);
+  color: var(--ink-faint);
+}
+
+.status-mark {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.status-mark.no-translation { color: #8a5a2b; }
+.status-mark.complete { color: #3d6b45; }
+
+/* --- Значения ------------------------------------------------------------ */
+
+.senses { list-style: none; margin: 0 0 32px; padding: 0; }
+
+.sense { display: flex; gap: 12px; padding: 14px 0; }
+
+.sense + .sense { border-top: 1px solid var(--line); }
+
+.sense-number {
+  flex: 0 0 auto;
+  min-width: 20px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  padding-top: 2px;
+}
+
+.sense-body { flex: 1 1 auto; min-width: 0; }
+
+.sense-translations {
+  font-size: 19px;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+
+.examples { list-style: none; margin: 0; padding: 0; }
+
+.example {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 4px 0 4px 12px;
+  border-left: 2px solid var(--line);
+  margin-bottom: 4px;
+}
+
+.example-serbian { color: var(--serbian); font-size: 16px; }
+
+.example-russian {
+  color: var(--ink-soft);
+  font-size: 15px;
+  font-style: italic;
+}
+
+/* --- Устойчивые обороты -------------------------------------------------- */
+
+.idioms-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  text-transform: none;
+  margin: 0 0 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.idioms { list-style: none; margin: 0; padding: 0; }
+
+.idiom {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 7px 0;
+}
+
+.idiom + .idiom { border-top: 1px dotted var(--line); }
+
+.idiom-serbian { color: var(--serbian); font-size: 16px; }
+.idiom-russian { color: var(--ink-soft); font-size: 15px; font-style: italic; }
+.serbian-link { color: inherit; text-decoration: none; }
+.serbian-link:hover { color: var(--accent); text-decoration: underline; }
+
+.forms, .roots { list-style: none; padding: 0; margin: 0 0 28px; }
+.forms li, .roots li { display: flex; gap: 10px; flex-wrap: wrap; padding: 5px 0; }
+.forms li + li, .roots li + li { border-top: 1px dotted var(--line); }
+.form-label, .root-kind { color: var(--ink-faint); font-size: 13px; min-width: 130px; }
+.form-source { border: 0; background: none; padding: 0; color: var(--accent); font-style: italic; cursor: pointer; }
+.form-example { color: var(--ink-soft); }
+.form-serbian-example { color: var(--serbian); font-size: 14px; }
+.roots small { color: var(--ink-soft); }
+
+.grammar-overlay { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 20px; background: rgba(36, 33, 28, .45); }
+.grammar-dialog { width: min(860px, 100%); max-height: min(760px, 100%); overflow: auto; padding: 20px; border-radius: var(--radius); background: var(--card); box-shadow: 0 12px 40px rgba(0, 0, 0, .25); }
+.grammar-dialog header { display: flex; align-items: center; justify-content: space-between; }
+.grammar-dialog h2 { margin: 0; }
+.grammar-close { border: 0; background: none; font-size: 28px; cursor: pointer; }
+.grammar-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin: 16px 0; }
+.grammar-tabs button { border: 1px solid var(--line); border-radius: 14px; padding: 4px 9px; background: transparent; cursor: pointer; }
+.grammar-tabs button.active { background: var(--accent-soft); border-color: var(--accent); }
+.grammar-case { border-top: 1px solid var(--line); padding: 10px 0; }
+.grammar-case h3 { margin: 0; font-size: 17px; }
+.grammar-case h3 small { font-weight: normal; color: var(--ink-soft); }
+.grammar-case p { margin: 5px 0; }
+.grammar-example { color: var(--serbian); font-family: var(--font-accented); }
+.grammar-source { color: var(--ink-soft); font-size: 13px; }
+.grammar-content table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.grammar-content th, .grammar-content td { padding: 6px; border: 1px solid var(--line); text-align: left; }
+
+/* --- Состояния: ожидание, пусто, ошибка ---------------------------------- */
+
+.notice {
+  padding: 16px 0;
+  font-size: 15px;
+  color: var(--ink-faint);
+}
+
+.notice.error { color: #9c3b30; }
+
+.notice-retry {
+  margin-left: 10px;
+  font-size: 14px;
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 3px 10px;
+  color: var(--accent);
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.notice-retry:hover { background: var(--accent-soft); }
