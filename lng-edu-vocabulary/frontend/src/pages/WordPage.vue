@@ -4,33 +4,38 @@
 // каждое место показа это учитывает.
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
-import { loadWord, WordNotFound } from '../api/dictionary.js'
-import { partOfSpeechName, statusName, statusKey } from '../labels.js'
+import { loadWord, loadWordById, WordNotFound } from '../api/dictionary.js'
+import { partOfSpeechName, statusName, statusKey, formName, formNameSerbian } from '../labels.js'
 import Accented from '../components/Accented.vue'
 import SerbianText from '../components/SerbianText.vue'
 import Notice from '../components/Notice.vue'
 import { formLabels, showExamples, showForms, showIdioms, showRoots } from '../settings.js'
-import { openGrammarHelp } from '../grammar-help.js'
+import { openRule } from '../grammar-help.js'
 
 const route = useRoute()
 
-const word = ref(null)
+/** Ответ словаря: `{ matchedBy, words }`. */
+const found = ref(null)
 /** Состояние: 'loading', 'ready', 'missing' — слова нет, 'error' — сбой связи. */
 const state = ref('loading')
 
 let controller = null
 
-async function load (name) {
+/**
+ * Загружает статью. Есть `id` — открываем ровно это слово; нет — ищем по написанию,
+ * и тогда словарь вправе найти слово, у которого это написание лишь словоформа.
+ */
+async function load (name, id) {
   controller?.abort()
   controller = new AbortController()
   const own = controller
   state.value = 'loading'
-  word.value = null
+  found.value = null
 
   try {
-    const result = await loadWord(name, own.signal)
+    const result = id ? await loadWordById(id, own.signal) : await loadWord(name, own.signal)
     if (own !== controller) return
-    word.value = result
+    found.value = result
     state.value = 'ready'
   } catch (error) {
     if (own !== controller || error?.name === 'AbortError') return
@@ -38,21 +43,23 @@ async function load (name) {
   }
 }
 
-watch(() => route.params.name, name => {
-  if (typeof name === 'string' && name) load(name)
+watch(() => [route.params.name, route.query.id], ([name, id]) => {
+  if (typeof name === 'string' && name) load(name, id)
 }, { immediate: true })
 
 onBeforeUnmount(() => controller?.abort())
 
-/** Значения; если поле пустое — пустой список. */
 // Под одним написанием бывает несколько самостоятельных слов (бити — «быть» и «бить»).
 // Показываем все, иначе половина словаря окажется скрытой.
-const homonyms = computed(() => {
-  const all = word.value?.homonyms ?? []
-  return all.length ? all : word.value ? [word.value] : []
-})
-const manyHomonyms = computed(() => homonyms.value.length > 1)
+const homonyms = computed(() => found.value?.words ?? [])
+/** Нашлось не по написанию, а по словоформе: в списке разные слова, а не омонимы. */
+const foundByForm = computed(() => found.value?.matchedBy === 'form')
+const manyHomonyms = computed(() => !foundByForm.value && homonyms.value.length > 1)
 const roman = ['I', 'II', 'III', 'IV', 'V', 'VI']
+/** Заголовок: написание, которое спросили; при точном попадании — его ударная запись. */
+const headText = computed(() => foundByForm.value
+  ? route.params.name
+  : homonyms.value[0]?.headword || route.params.name)
 
 
 /** Номера показываем, только когда значений больше одного. */
@@ -121,10 +128,15 @@ const backToSearch = computed(() => {
       @retry="load(route.params.name)"
     />
 
-    <template v-else-if="word">
+    <template v-else-if="homonyms.length">
       <header class="word-head">
-        <Accented tag="h2" class="word-headword" :text="word.headword || word.name" />
+        <Accented tag="h2" class="word-headword" :text="headText" />
       </header>
+
+      <p v-if="foundByForm" class="found-by-form">
+        Заглавного слова «{{ route.params.name }}» в словаре нет.
+        {{ homonyms.length > 1 ? 'Так выглядят формы других слов:' : 'Так выглядит форма другого слова:' }}
+      </p>
 
       <section
         v-for="(homonym, hIndex) in homonyms"
@@ -134,6 +146,17 @@ const backToSearch = computed(() => {
         <h3 v-if="manyHomonyms" class="homonym-title">
           {{ roman[hIndex] ?? hIndex + 1 }}
         </h3>
+
+        <!-- Найдено по форме: у каждого слова своё написание, и надо сказать, чья это форма. -->
+        <p v-if="foundByForm" class="found-by-form-word">
+          <RouterLink :to="{ name: 'word', params: { name: homonym.name }, query: { id: homonym.id } }">
+            <Accented :text="homonym.headword || homonym.name" />
+          </RouterLink>
+          <span v-if="homonym.matchedForm">
+            — «{{ homonym.matchedForm.value }}» у него
+            {{ formName(homonym.matchedForm.grammar) || formNameSerbian(homonym.matchedForm.grammar) }}
+          </span>
+        </p>
 
         <div class="word-marks">
           <span v-for="mark in grammarOf(homonym)" :key="mark" class="word-grammar" :title="grammarTitle(mark)">
@@ -178,7 +201,13 @@ const backToSearch = computed(() => {
               <Accented :text="form.form" />
               <small v-if="form.grammar" class="form-example">{{ caseExample[form.grammar.split('.')[0]] }}</small>
               <Accented v-if="serbianPhrase(form)" class="form-serbian-example" :text="serbianPhrase(form)" />
-              <button v-if="form.rule" class="form-source" type="button" title="Открыть правило склонения" @click="openGrammarHelp('nouns')">по правилу</button>
+              <button
+                v-if="form.rule"
+                class="form-source"
+                type="button"
+                title="Показать правило целиком: окончания, примеры, исключения"
+                @click="openRule(form, homonym)"
+              >по правилу</button>
             </li>
           </ul>
         </section>

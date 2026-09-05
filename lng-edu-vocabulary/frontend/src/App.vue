@@ -2,7 +2,8 @@
 // Общая рамка: шапка со ссылкой на поиск и место под текущую страницу.
 import { RouterLink, RouterView } from 'vue-router'
 import {
-  displayAlphabet, searchAlphabet, showExamples, showForms, showIdioms, showRoots, formLabels, theme
+  displayAlphabet, searchAlphabet, searchForms, showExamples, showForms, showIdioms, showRoots,
+  formLabels, theme
 } from './settings.js'
 import { openGrammarHelp } from './grammar-help.js'
 import GrammarHelp from './components/GrammarHelp.vue'
@@ -45,7 +46,15 @@ import GrammarHelp from './components/GrammarHelp.vue'
       </details>
       <button class="grammar-button" type="button" @click="openGrammarHelp()">Грамматика</button>
     </header>
-    <nav class="quick-toggles" aria-label="Разделы карточки">
+    <nav class="quick-toggles" aria-label="Поиск и разделы карточки">
+      <button
+        type="button"
+        class="toggle-search"
+        :class="{ active: searchForms === 'true' }"
+        :aria-pressed="searchForms === 'true'"
+        title="Искать слово по любой его форме, а не только по заглавной"
+        @click="searchForms = searchForms === 'true' ? 'false' : 'true'"
+      >По словоформам</button>
       <button type="button" :class="{ active: showExamples === 'true' }" :aria-pressed="showExamples === 'true'" @click="showExamples = showExamples === 'true' ? 'false' : 'true'">Примеры</button>
       <button type="button" :class="{ active: showIdioms === 'true' }" :aria-pressed="showIdioms === 'true'" @click="showIdioms = showIdioms === 'true' ? 'false' : 'true'">Устойчивые обороты</button>
       <button type="button" :class="{ active: showRoots === 'true' }" :aria-pressed="showRoots === 'true'" @click="showRoots = showRoots === 'true' ? 'false' : 'true'">Связь с корнями</button>

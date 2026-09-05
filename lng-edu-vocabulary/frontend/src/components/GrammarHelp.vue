@@ -1,5 +1,32 @@
 <script setup>
-import { grammarHelpOpen, grammarTopic } from '../grammar-help.js'
+import { computed } from 'vue'
+import { grammarHelpOpen, grammarTopic, ruleForm, ruleWord } from '../grammar-help.js'
+import { ruleFor, breakdown, CASE_ORDER, CASE_USE } from '../grammar-rules.js'
+import { formName, formNameSerbian } from '../labels.js'
+import { ruleParadigm, ruleExamples, ruleExceptions, ruleWordBreakdown } from '../settings.js'
+import Accented from './Accented.vue'
+
+/** Правило, породившее форму, из-за которой справку открыли. */
+const rule = computed(() => ruleFor(ruleForm.value?.rule, ruleForm.value?.ruleType))
+/** Разбор этой формы: основа и окончание по той же таблице, что показана рядом. */
+const parts = computed(() => breakdown(rule.value, ruleForm.value))
+
+/**
+ * Парадигма конкретного слова — из его же карточки, а не пересчитанная заново:
+ * второй расчёт разошёлся бы с первым, и словарь начал бы спорить сам с собой.
+ */
+const paradigm = computed(() => {
+  const cells = {}
+  for (const form of ruleWord.value?.forms ?? []) {
+    const [caseKey, number] = (form.grammar ?? '').split('.')
+    if (!CASE_ORDER.includes(caseKey) || !['sg', 'pl'].includes(number)) continue
+    cells[caseKey] ??= { sg: [], pl: [] }
+    if (!cells[caseKey][number].includes(form.form)) cells[caseKey][number].push(form.form)
+  }
+  return cells
+})
+
+const cellText = (caseKey, number) => (paradigm.value[caseKey]?.[number] ?? []).join(' / ')
 
 const topics = [
   ['nouns', 'Падежи'], ['verbs', 'Глаголы'], ['pronouns', 'Местоимения'], ['adjectives', 'Прилагательные']
@@ -32,10 +59,85 @@ const nounEndings = [
         <button class="grammar-close" type="button" aria-label="Закрыть" @click="grammarHelpOpen = false">×</button>
       </header>
       <nav class="grammar-tabs" aria-label="Раздел грамматики">
+        <button v-if="ruleForm" type="button" :class="{ active: grammarTopic === 'rule' }" @click="grammarTopic = 'rule'">Правило формы</button>
         <button v-for="[key, title] in topics" :key="key" type="button" :class="{ active: grammarTopic === key }" @click="grammarTopic = key">{{ title }}</button>
       </nav>
 
-      <div v-if="grammarTopic === 'nouns'" class="grammar-content">
+      <!-- Правило, по которому получена форма в карточке: панель разделов такая же,
+           как у карточки, — что показывать, решает читающий. -->
+      <div v-if="grammarTopic === 'rule' && rule" class="grammar-content">
+        <h3 class="rule-title">
+          {{ rule.title }}
+          <small v-if="ruleForm?.grammar">— {{ formNameSerbian(ruleForm.grammar) }}, {{ formName(ruleForm.grammar) }}</small>
+        </h3>
+
+        <p v-if="rule.kind === 'absent'" class="rule-absent">{{ rule.reason }}</p>
+
+        <template v-else>
+          <p>{{ rule.summary }}</p>
+          <p class="grammar-source">
+            Окончания — те самые, по которым словарь построил форму (правило
+            <code>{{ ruleForm.rule }}</code>). Сверено с О. А. Просвириной, §5.2.3–5;
+            употребление падежей — по В. Краишник, «Научимо падеже».
+            <b>Ударение правилом не выводится</b>: у порождённых форм его нет.
+          </p>
+
+          <nav class="quick-toggles rule-toggles" aria-label="Разделы правила">
+            <button type="button" :class="{ active: ruleWordBreakdown === 'true' }" @click="ruleWordBreakdown = ruleWordBreakdown === 'true' ? 'false' : 'true'">Разбор слова</button>
+            <button type="button" :class="{ active: ruleParadigm === 'true' }" @click="ruleParadigm = ruleParadigm === 'true' ? 'false' : 'true'">Парадигма</button>
+            <button type="button" :class="{ active: ruleExamples === 'true' }" @click="ruleExamples = ruleExamples === 'true' ? 'false' : 'true'">Примеры</button>
+            <button type="button" :class="{ active: ruleExceptions === 'true' }" @click="ruleExceptions = ruleExceptions === 'true' ? 'false' : 'true'">Исключения</button>
+          </nav>
+
+          <section v-if="ruleWordBreakdown === 'true'" class="rule-block">
+            <h4>Разбор слова</h4>
+            <p>{{ rule.stemHint }}</p>
+            <p v-if="parts" class="rule-breakdown">
+              <Accented :text="ruleWord?.headword || ''" />
+              → основа <b>{{ parts.stem }}</b> + окончание <b>{{ parts.ending }}</b>
+              = <Accented :text="ruleForm.form" />
+            </p>
+            <p v-else class="rule-note">
+              Эта форма правилу не отвечает: она пришла из словаря, а не выведена окончанием.
+            </p>
+          </section>
+
+          <section v-if="ruleParadigm === 'true'" class="rule-block">
+            <h4>Окончания и формы слова</h4>
+            <table>
+              <thead><tr><th>Падеж</th><th>Ед. ч.</th><th>Слово</th><th>Мн. ч.</th><th>Слово</th></tr></thead>
+              <tbody>
+                <tr v-for="key in CASE_ORDER" :key="key" :class="{ 'rule-current': ruleForm?.grammar?.startsWith(key + '.') }">
+                  <th>{{ formNameSerbian(key + '.sg').split(' ')[0] }}</th>
+                  <td>{{ rule.endings[key][0] }}</td>
+                  <td><Accented :text="cellText(key, 'sg')" /></td>
+                  <td>{{ rule.endings[key][1] }}</td>
+                  <td><Accented :text="cellText(key, 'pl')" /></td>
+                </tr>
+              </tbody>
+            </table>
+            <p class="rule-note">Образец: {{ rule.sample.word }} «{{ rule.sample.translation }}», основа {{ rule.sample.stem }}-.</p>
+          </section>
+
+          <section v-if="ruleExamples === 'true'" class="rule-block">
+            <h4>Когда какой падеж</h4>
+            <article v-for="key in CASE_ORDER" :key="key" class="grammar-case">
+              <h3>{{ formNameSerbian(key + '.sg').split(' ')[0] }} <small>{{ CASE_USE[key][0] }}</small></h3>
+              <p>{{ CASE_USE[key][1] }}</p>
+              <p class="grammar-example">{{ CASE_USE[key][2] }}</p>
+            </article>
+          </section>
+
+          <section v-if="ruleExceptions === 'true'" class="rule-block">
+            <h4>Чего правило не делает</h4>
+            <ul class="rule-exceptions">
+              <li v-for="(item, index) in rule.exceptions" :key="index">{{ item }}</li>
+            </ul>
+          </section>
+        </template>
+      </div>
+
+      <div v-else-if="grammarTopic === 'nouns'" class="grammar-content">
         <p class="grammar-source">По О. А. Просвириной, §5.2.3–5; употребление падежей дополнено пособием В. Краишник «Научимо падеже».</p>
         <p>Склоняются существительные, прилагательные, местоимения и некоторые числительные. В сербском семь падежей: добавлен вокатив.</p>
         <article v-for="item in cases" :key="item[0]" class="grammar-case">
@@ -78,7 +180,7 @@ const nounEndings = [
         <p>Сравните: <i>Volim ga</i>, но <i>Mislim na njega</i>. Возвратное <i>sebe / se</i> относится к подлежащему и не имеет номинатива.</p>
       </div>
 
-      <div v-else class="grammar-content">
+      <div v-else-if="grammarTopic === 'adjectives'" class="grammar-content">
         <p class="grammar-source">По О. А. Просвириной, §5.3.1–2.</p>
         <p>Прилагательное согласуется с существительным в роде, числе и падеже. Качественные прилагательные имеют неопределённый и определённый вид: <i>On je dobar</i>, но <i>taj dobri mladić</i>. Относительные имеют только определённую форму.</p>
         <table><thead><tr><th>Падеж</th><th>м. р.</th><th>ж. р.</th><th>ср. р.</th></tr></thead><tbody>

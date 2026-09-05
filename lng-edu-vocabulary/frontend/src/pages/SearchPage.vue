@@ -4,7 +4,8 @@
 import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter, RouterLink } from 'vue-router'
 import { searchWords } from '../api/dictionary.js'
-import { searchAlphabet } from '../settings.js'
+import { searchAlphabet, searchForms } from '../settings.js'
+import { formName, formNameSerbian } from '../labels.js'
 import Accented from '../components/Accented.vue'
 import Notice from '../components/Notice.vue'
 
@@ -43,7 +44,8 @@ async function run (text) {
   errorText.value = ''
 
   try {
-    const result = await searchWords(text, LIMIT, own.signal, searchAlphabet.value)
+    const result = await searchWords(text, LIMIT, own.signal, searchAlphabet.value,
+      searchForms.value === 'true')
     // Ответ мог прийти после того, как запрос сменился — такой отбрасываем.
     if (own !== controller) return
     items.value = result.items
@@ -72,6 +74,7 @@ watch(query, text => {
 })
 
 watch(searchAlphabet, () => query.value && run(query.value))
+watch(searchForms, () => query.value && run(query.value))
 
 onMounted(() => {
   field.value?.focus()
@@ -82,6 +85,17 @@ onBeforeUnmount(() => {
   clearTimeout(timer)
   controller?.abort()
 })
+
+/**
+ * Объяснение, как слово попало в список: «во̏д — а «вода» это его творительный падеж».
+ * Пусто, когда совпало само заглавное слово или перевод — тогда объяснять нечего.
+ */
+const matchExplanation = (word) => {
+  const matched = word.matchedForm
+  if (!matched?.value) return ''
+  const name = formName(matched.grammar)
+  return name ? `${name}` : formNameSerbian(matched.grammar)
+}
 </script>
 
 <template>
@@ -97,7 +111,8 @@ onBeforeUnmount(() => {
       aria-label="Поиск слова"
     />
     <p class="search-hint">
-      Ударения набирать не нужно. Правило поиска выбирается в настройках.
+      Ударения набирать не нужно. Правило поиска выбирается в настройках,
+      поиск по словоформам — кнопкой «По словоформам».
     </p>
 
     <Notice v-if="state === 'empty'" text="Начните набирать слово." />
@@ -119,15 +134,23 @@ onBeforeUnmount(() => {
 
     <template v-else>
       <ul class="results">
-        <li v-for="word in items" :key="word.name">
-          <!-- `from` — набранный запрос: по нему ссылка «к поиску» вернёт найденное. -->
+        <li v-for="word in items" :key="word.id">
+          <!--
+            Ссылка ведёт по `id`: щелчок обязан открыть ровно это слово.
+            `from` — набранный запрос, по нему ссылка «к поиску» вернёт найденное.
+          -->
           <RouterLink
             class="result-link"
-            :to="{ name: 'word', params: { name: word.name }, query: { from: query.trim() } }"
+            :to="{ name: 'word', params: { name: word.name }, query: { id: word.id, from: query.trim() } }"
           >
             <Accented class="result-headword" :text="word.headword || word.name" />
             <span class="result-translations">
               {{ (word.translations ?? []).join(', ') }}
+            </span>
+            <span v-if="word.matchedForm" class="result-form">
+              нашлось по форме
+              <Accented class="result-form-value" :text="word.matchedForm.value" />
+              — {{ matchExplanation(word) }}
             </span>
           </RouterLink>
         </li>

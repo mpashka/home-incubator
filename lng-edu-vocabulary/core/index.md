@@ -42,6 +42,11 @@ tags: "@tag:markup @tag:accent @tag:part-of-speech @tag:word-forms"
 - `Alternations.java` — чередования на стыке основы и окончания: беглое «а», оглушение
   ([word-forms.md](../docs/implementation/word-forms.md))
 
+## Словоформы
+
+- `Form.java` — словоформа с грамматической пометой (`gen.sg`, `praes.1sg`, `adj`);
+  общий тип для правил, указателя поиска и карточки
+
 ## Перечисления
 
 - `PartOfSpeech.java` — часть речи

@@ -1,5 +1,6 @@
 package org.mpashka.vocabulary.backend;
 
+import org.mpashka.vocabulary.core.Form;
 import org.mpashka.vocabulary.core.Serbian;
 import org.mpashka.vocabulary.core.Gender;
 import org.mpashka.vocabulary.core.NounDeclension;
@@ -29,10 +30,28 @@ public class PostgresDictionary {
     }
 
     /**
-     * Поиск слов. Ищет по началу заглавного слова (латиница и кириллица),
-     * <b>по любой словоформе</b> и по русскому переводу.
+     * Условие совпадения словоформы: сама форма либо её латинская запись.
+     * Два знака вопроса — один и тот же образец дважды.
      */
-    public List<FoundWord> search(String query, int limit, String alphabet) {
+    private static final String FORM_MATCHES = """
+            (f.form_plain like ?
+              or lower(translate(replace(replace(replace(f.form_plain,
+                  'љ', 'lj'), 'њ', 'nj'), 'џ', 'dž'),
+                  'абвгдђежзијклмнопрстћуфхцчш',
+                  'abvgdđežzijklmnoprstćufhcčš')) like ?)
+            """;
+
+    /**
+     * Поиск слов. Ищет по началу заглавного слова (латиница и кириллица),
+     * по русскому переводу и — если это включено — <b>по любой словоформе</b>.
+     *
+     * <p>Поиск по формам находит слово, которого в запросе нет ни одной буквой из
+     * заглавной строки ({@code вода} находит {@code во̏д}), поэтому он выключаем:
+     * это разные способы искать, а не улучшение одного.
+     *
+     * @param matchForms искать ли по словоформам
+     */
+    public List<FoundWord> search(String query, int limit, String alphabet, boolean matchForms) {
         String normalized = query.trim().toLowerCase();
         if (normalized.isEmpty()) {
             return List.of();
@@ -40,26 +59,30 @@ public class PostgresDictionary {
         String prefix = normalized + "%";
         boolean cyrillic = normalized.codePoints()
                 .anyMatch(codePoint -> Character.UnicodeScript.of(codePoint) == Character.UnicodeScript.CYRILLIC);
-        String serbian = """
+        String serbian = matchForms
+                ? """
                 w.headword_plain like ?
                    or lower(w.headword_latin) like ?
                    or exists (select 1 from word_form f
-                              where f.word_id = w.id and (f.form_plain like ?
-                                or lower(translate(replace(replace(replace(f.form_plain,
-                                    'љ', 'lj'), 'њ', 'nj'), 'џ', 'dž'),
-                                    'абвгдђежзијклмнопрстћуфхцчш',
-                                    'abvgdđežzijklmnoprstćufhcčš')) like ?))
+                              where f.word_id = w.id and """ + FORM_MATCHES + ")"
+                : """
+                w.headword_plain like ?
+                   or lower(w.headword_latin) like ?
                 """;
         String russian = """
                 exists (select 1 from translation t
                         join sense s on s.id = t.sense_id
                         where s.word_id = w.id and lower(t.text) like ?)
                 """;
-        String where = switch (alphabet) {
-            case "separate" -> cyrillic ? russian : serbian;
-            case "any" -> "(" + serbian + " or " + russian + ")";
-            default -> cyrillic ? "(" + serbian + " or " + russian + ")" : serbian;
-        };
+        // Какие половины условия участвуют, решается один раз: и текст запроса, и его
+        // параметры собираются по этим двум признакам. Порознь они разъезжаются —
+        // на латинском запросе так и вышло: параметров было на один больше, чем
+        // знаков вопроса, и поиск отвечал ошибкой 500.
+        boolean withSerbian = !("separate".equals(alphabet) && cyrillic);
+        boolean withRussian = "any".equals(alphabet) || cyrillic;
+        String where = withSerbian && withRussian
+                ? "(" + serbian + " or " + russian + ")"
+                : withSerbian ? serbian : russian;
         // distinct: одно слово может совпасть сразу по нескольким словоформам.
         String sql = """
                 select w.id, w.headword, w.headword_plain, w.headword_latin,
@@ -72,13 +95,15 @@ public class PostgresDictionary {
                 limit ?
                 """.formatted(where);
         List<Object> arguments = new ArrayList<>();
-        if (!"separate".equals(alphabet) || !cyrillic) {
+        if (withSerbian) {
             arguments.add(prefix);
             arguments.add(prefix);
-            arguments.add(prefix);
-            arguments.add(prefix);
+            if (matchForms) {
+                arguments.add(prefix);
+                arguments.add(prefix);
+            }
         }
-        if (!"separate".equals(alphabet) || cyrillic) {
+        if (withRussian) {
             arguments.add("%" + normalized + "%");
         }
         arguments.add(prefix);
@@ -86,36 +111,117 @@ public class PostgresDictionary {
         List<FoundWord> found = jdbc.query(sql,
                 (rs, i) -> new FoundWord(rs.getLong("id"), rs.getString("headword"),
                         rs.getString("headword_plain"), rs.getString("headword_latin"),
-                        rs.getString("part_of_speech"), rs.getString("status"), List.of()),
+                        rs.getString("part_of_speech"), rs.getString("status"), List.of(), null),
                 arguments.toArray());
 
-        // Переводы одним запросом для всех найденных слов.
-        return attachTranslations(found);
+        return attachTranslations(attachMatchedForms(found, prefix, matchForms));
     }
 
     /**
-     * Статьи по заглавному слову без ударений.
+     * Дописывает к найденному слову ту форму, по которой оно нашлось.
      *
-     * <p>Возвращает <b>список</b>: под одним написанием может лежать несколько омонимов
-     * ({@code бити} — «быть» и «бить»), и показывать только первый значило бы прятать
-     * половину словаря.
+     * <p>Только тем словам, чьё заглавное слово запросу не отвечает: если совпало само
+     * заглавное, объяснять нечего. Иначе пользователь видит {@code во̏д} в ответ на
+     * «вода» и не понимает, как он там оказался.
      */
-    public List<WordCard> byHeadword(String headwordPlain) {
-        String name = Serbian.stripCombiningAccents(headwordPlain).toLowerCase();
-        List<WordRow> words = jdbc.query("""
-                        select id, headword, headword_plain, headword_latin,
-                               part_of_speech, status, needs_language_review, review_reason,
-                               homonym_index
-                        from word w where w.headword_plain = ?
-                           or exists (select 1 from word_form f
-                                      where f.word_id = w.id and f.form_plain = ?)
-                        order by homonym_index
-                        """,
-                WORD_ROW, name, name);
-        return words.stream().map(this::card).toList();
+    // @tag:word-forms
+    private List<FoundWord> attachMatchedForms(List<FoundWord> found, String prefix, boolean matchForms) {
+        if (!matchForms) {
+            return found;
+        }
+        String plainPrefix = prefix.substring(0, prefix.length() - 1);
+        List<FoundWord> result = new ArrayList<>(found.size());
+        for (FoundWord word : found) {
+            if (word.headwordPlain().startsWith(plainPrefix)
+                    || word.headwordLatin() != null
+                    && word.headwordLatin().toLowerCase().startsWith(plainPrefix)) {
+                result.add(word);
+                continue;
+            }
+            // Ярлык `.lat` носит латинская запись заглавного слова — это не словоформа.
+            List<Form> matched = jdbc.query("""
+                            select grammar, coalesce(form, form_plain) as form from word_form f
+                            where f.word_id = ? and coalesce(f.grammar, '') not like '%.lat'
+                              and """ + FORM_MATCHES + """
+                            order by length(f.form_plain), f.grammar
+                            limit 1
+                            """,
+                    (rs, i) -> new Form(rs.getString("grammar"), rs.getString("form")),
+                    word.id(), prefix, prefix);
+            result.add(word.withMatchedForm(matched.isEmpty() ? null : matched.getFirst()));
+        }
+        return result;
     }
 
-    private WordCard card(WordRow word) {
+    private static final String WORD_COLUMNS = """
+            select id, headword, headword_plain, headword_latin,
+                   part_of_speech, status, needs_language_review, review_reason,
+                   homonym_index
+            from word w
+            """;
+
+    /**
+     * Статьи по написанию слова.
+     *
+     * <p>Заглавное слово <b>сильнее словоформы</b>: пока есть статья с таким написанием,
+     * поиск по формам не включается вовсе. Иначе «вода» приводит к {@code во̏д}, у
+     * которого «вода» — родительный падеж, и два разных слова показываются как омонимы
+     * одного.
+     *
+     * <p>По заглавному слову находятся настоящие омонимы — самостоятельные слова с одним
+     * написанием ({@code бити} — «быть» и «бить»). По форме находятся <b>разные</b> слова,
+     * и {@code matchedBy} говорит, какой это случай.
+     */
+    public Lookup lookupByName(String name) {
+        String plain = Serbian.stripCombiningAccents(name).toLowerCase();
+        List<WordRow> exact = jdbc.query(
+                WORD_COLUMNS + "where w.headword_plain = ? order by homonym_index",
+                WORD_ROW, plain);
+        if (!exact.isEmpty()) {
+            return new Lookup("headword", exact.stream().map(word -> card(word, null)).toList());
+        }
+        List<WordRow> byForm = jdbc.query(WORD_COLUMNS + """
+                        where exists (select 1 from word_form f
+                                      where f.word_id = w.id and f.form_plain = ?)
+                        order by w.headword_plain, w.homonym_index
+                        """,
+                WORD_ROW, plain);
+        if (byForm.isEmpty()) {
+            return new Lookup("headword", List.of());
+        }
+        return new Lookup("form", byForm.stream().map(word -> card(word, matchedForm(word.id(), plain))).toList());
+    }
+
+    /**
+     * Статья по идентификатору слова — переход, при котором гадать не надо.
+     *
+     * <p>Рядом идут омонимы того же написания: они часть той же статьи, а не другое место,
+     * куда можно уйти по ссылке.
+     */
+    public Lookup lookupById(long id) {
+        List<WordRow> word = jdbc.query(WORD_COLUMNS + "where w.id = ?", WORD_ROW, id);
+        if (word.isEmpty()) {
+            return new Lookup("id", List.of());
+        }
+        List<WordRow> homonyms = jdbc.query(
+                WORD_COLUMNS + "where w.headword_plain = ? order by homonym_index",
+                WORD_ROW, word.getFirst().headwordPlain());
+        return new Lookup("id", homonyms.stream().map(row -> card(row, null)).toList());
+    }
+
+    /** Форма слова, совпавшая с написанием запроса, — чем объясняется попадание в список. */
+    private Form matchedForm(long wordId, String plain) {
+        List<Form> matched = jdbc.query("""
+                        select grammar, coalesce(form, form_plain) as form from word_form
+                        where word_id = ? and form_plain = ?
+                          and coalesce(grammar, '') not like '%.lat'
+                        order by grammar limit 1
+                        """,
+                (rs, i) -> new Form(rs.getString("grammar"), rs.getString("form")), wordId, plain);
+        return matched.isEmpty() ? null : matched.getFirst();
+    }
+
+    private WordCard card(WordRow word, Form matchedForm) {
         List<SenseRow> senses = jdbc.query("""
                 select id, number, ordinal from sense where word_id = ? order by ordinal
                 """, (rs, i) -> new SenseRow(rs.getLong("id"),
@@ -144,9 +250,9 @@ public class PostgresDictionary {
             default -> List.<String>of();
         };
 
-        return new WordCard(word.headwordPlain(), word.headword(), word.headwordLatin(),
+        return new WordCard(word.id(), word.headwordPlain(), word.headword(), word.headwordLatin(),
                 grammar, word.partOfSpeech(), senseCards, idioms, forms, roots, word.status(),
-                word.needsReview(), word.reviewReason(), word.homonymIndex());
+                word.needsReview(), word.reviewReason(), word.homonymIndex(), matchedForm);
     }
 
     private List<FoundWord> attachTranslations(List<FoundWord> found) {
@@ -196,18 +302,21 @@ public class PostgresDictionary {
     }
 
     private List<WordForm> forms(long wordId, String headword, String partOfSpeech, String gender) {
+        // Тип склонения — это и есть правило, по которому получены формы: по нему карточка
+        // показывает полную парадигму с примерами и исключениями.
+        String ruleType = "NOUN".equals(partOfSpeech) && gender != null
+                ? NounDeclension.typeOf(headword, Gender.valueOf(gender)).name()
+                : null;
         List<WordForm> stored = jdbc.query("""
                 select coalesce(form, form_plain) as form, grammar, source from word_form
                 where word_id = ? and coalesce(grammar, '') not like '%.lat'
                 order by grammar, is_preferred desc, form_plain
                 """, (rs, i) -> {
             String grammar = rs.getString("grammar");
-            if (grammar == null && "NOUN".equals(partOfSpeech)) {
-                grammar = "gen.sg";
-            }
             String source = rs.getString("source");
+            boolean byRule = "RULES".equals(source) && "NOUN".equals(partOfSpeech);
             return new WordForm(rs.getString("form"), grammar, source,
-                    "RULES".equals(source) && "NOUN".equals(partOfSpeech) ? "noun-declension" : null);
+                    byRule ? "noun-declension" : null, byRule ? ruleType : null);
         }, wordId);
         if (!"NOUN".equals(partOfSpeech) || gender == null) {
             return stored;
@@ -217,10 +326,11 @@ public class PostgresDictionary {
             known.add(form.grammar() + "\u0000" + Serbian.stripCombiningAccents(form.form()));
         }
         List<WordForm> result = new ArrayList<>(stored);
-        for (NounDeclension.Form form : NounDeclension.regularParadigm(headword, Gender.valueOf(gender))) {
+        for (Form form : NounDeclension.regularParadigm(headword, Gender.valueOf(gender))) {
             String key = form.grammar() + "\u0000" + form.value();
             if (known.add(key)) {
-                result.add(new WordForm(form.value(), form.grammar(), "RULES", "noun-declension"));
+                result.add(new WordForm(form.value(), form.grammar(), "RULES", "noun-declension",
+                        NounDeclension.typeOf(headword, Gender.valueOf(gender)).name()));
             }
         }
         return result;
@@ -251,20 +361,42 @@ public class PostgresDictionary {
 
     // --- то, что отдаётся наружу ---
 
-    /** Найденное слово в списке поиска. */
+    /**
+     * Найденное слово в списке поиска.
+     *
+     * @param matchedForm форма, по которой слово нашлось; {@code null}, когда совпало
+     *                    само заглавное слово или перевод
+     */
     public record FoundWord(long id, String headword, String headwordPlain, String headwordLatin,
-                            String partOfSpeech, String status, List<String> translations) {
+                            String partOfSpeech, String status, List<String> translations,
+                            Form matchedForm) {
         FoundWord withTranslations(List<String> translations) {
             return new FoundWord(id, headword, headwordPlain, headwordLatin, partOfSpeech,
-                    status, translations);
+                    status, translations, matchedForm);
+        }
+
+        FoundWord withMatchedForm(Form matchedForm) {
+            return new FoundWord(id, headword, headwordPlain, headwordLatin, partOfSpeech,
+                    status, translations, matchedForm);
         }
     }
 
+    /**
+     * Что нашлось по запросу статьи.
+     *
+     * @param matchedBy {@code headword} — совпало написание слова (тогда в списке омонимы
+     *                  одного написания), {@code form} — совпала словоформа (тогда в списке
+     *                  разные слова), {@code id} — переход по конкретному слову
+     */
+    public record Lookup(String matchedBy, List<WordCard> words) {
+    }
+
     /** Карточка слова. */
-    public record WordCard(String name, String headword, String headwordLatin, List<String> grammar,
-                           String partOfSpeech, List<Sense> senses, List<Example> idioms,
-                           List<WordForm> forms, List<Root> roots, String status,
-                           boolean needsLanguageReview, String reviewReason, int homonymIndex) {
+    public record WordCard(long id, String name, String headword, String headwordLatin,
+                           List<String> grammar, String partOfSpeech, List<Sense> senses,
+                           List<Example> idioms, List<WordForm> forms, List<Root> roots,
+                           String status, boolean needsLanguageReview, String reviewReason,
+                           int homonymIndex, Form matchedForm) {
     }
 
     public record Sense(Integer number, List<String> translations, List<Example> examples) {
@@ -273,7 +405,15 @@ public class PostgresDictionary {
     public record Example(String serbian, String russian) {
     }
 
-    public record WordForm(String form, String grammar, String source, String rule) {
+    /**
+     * Форма слова в карточке.
+     *
+     * @param source   откуда взята: {@code SOURCE_DICTIONARY}, {@code RULES}, …
+     * @param rule     ключ правила, породившего форму; {@code null} — форма не от правила
+     * @param ruleType разновидность правила (тип склонения) — по ней показывается
+     *                 полная парадигма с примерами и исключениями
+     */
+    public record WordForm(String form, String grammar, String source, String rule, String ruleType) {
     }
 
     // @tag:word-roots

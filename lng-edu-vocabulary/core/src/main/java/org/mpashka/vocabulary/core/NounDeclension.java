@@ -15,10 +15,6 @@ package org.mpashka.vocabulary.core;
 // @tag:word-forms
 public final class NounDeclension {
 
-    /** Одна ячейка парадигмы: падеж, число и форма без ударения. */
-    public record Form(String grammar, String value) {
-    }
-
     /** Тип склонения. */
     public enum Type {
         /** Мужской род на согласный: {@code абажу’р, абажу’ра}. */

@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node test-serbian.mjs"
+    "test": "node test-serbian.mjs && node test-grammar.mjs"
   },
   "dependencies": {
     "vue": "^3.5.13",

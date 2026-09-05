@@ -3,6 +3,7 @@ package org.mpashka.vocabulary.importer;
 import org.mpashka.vocabulary.core.Chunk;
 import org.mpashka.vocabulary.core.Entry;
 import org.mpashka.vocabulary.core.EntryParser;
+import org.mpashka.vocabulary.core.Form;
 import org.mpashka.vocabulary.core.Gender;
 import org.mpashka.vocabulary.core.MarkupParser;
 import org.mpashka.vocabulary.core.PartOfSpeech;
@@ -213,11 +214,12 @@ public final class MigrateToPostgres {
             w.insertForm(wordId, null, latinPlain, "nom.sg.lat", "SOURCE_DICTIONARY", null, false);
             c.forms++;
         }
-        for (String form : WordForms.searchForms(entry, gender, chunks)) {
-            if (form.equals(headwordPlain)) {
+        for (Form form : WordForms.searchForms(entry, gender, chunks)) {
+            if (form.value().equals(headwordPlain)) {
+                // Заглавная форма уже записана выше — достоверной и с ударением.
                 continue;
             }
-            w.insertForm(wordId, null, form, null, "RULES", null, false);
+            w.insertForm(wordId, null, form.value(), form.grammar(), "RULES", null, false);
             c.forms++;
         }
     }

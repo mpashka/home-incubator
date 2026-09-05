@@ -27,15 +27,19 @@ export class WordNotFound extends Error {
  * @param {string} query строка поиска
  * @param {number} limit сколько записей вернуть
  * @param {AbortSignal} [signal] отмена устаревшего запроса
- * @returns {Promise<{items: Array, total: number}>}
+ * @param {string} [alphabet] правило выбора сербского или русского поиска
+ * @param {boolean} [forms] искать ли по словоформам
+ * @returns {Promise<{items: Array, total: number}>} у найденного по форме слова
+ *   заполнено `matchedForm` — сама форма и её грамматическая помета
  */
-export async function searchWords (query, limit = 20, signal, alphabet = 'current') {
+export async function searchWords (query, limit = 20, signal, alphabet = 'current', forms = true) {
   const cleaned = (query ?? '').trim()
   if (!cleaned) return { items: [], total: 0 }
 
   if (USE_MOCK) return mockSearch(cleaned, limit)
 
-  const url = `/api/words?q=${encodeURIComponent(cleaned)}&limit=${limit}&alphabet=${alphabet}`
+  const url = `/api/words?q=${encodeURIComponent(cleaned)}&limit=${limit}`
+    + `&alphabet=${alphabet}&forms=${forms ? 'true' : 'false'}`
   const response = await fetch(url, { signal, headers: { Accept: 'application/json' } })
   if (!response.ok) throw new Error(`Сервер ответил ошибкой ${response.status}`)
   const data = await response.json()
@@ -47,22 +51,45 @@ export async function searchWords (query, limit = 20, signal, alphabet = 'curren
 }
 
 /**
- * Полная карточка слова.
- * @param {string} name латиница без ударений — поле `name`
+ * Статья по написанию слова.
+ *
+ * Ответ — `{ matchedBy, words }`. `matchedBy = 'headword'` значит, что нашлось слово
+ * с таким написанием и в `words` стоят его омонимы; `'form'` — что такого написания
+ * в словаре нет и слова найдены по словоформе, у каждого своя `matchedForm`.
+ *
+ * @param {string} name кириллица без ударений — поле `name`
  * @param {AbortSignal} [signal] отмена устаревшего запроса
- * @returns {Promise<Object>}
+ * @returns {Promise<{matchedBy: string, words: Array}>}
  * @throws {WordNotFound} если слова в словаре нет
  */
 export async function loadWord (name, signal) {
   if (USE_MOCK) return mockWord(name)
+  return await requestWord(`/api/words/${encodeURIComponent(name)}`, name, signal)
+}
 
-  const response = await fetch(`/api/words/${encodeURIComponent(name)}`, {
-    signal,
-    headers: { Accept: 'application/json' }
-  })
+/**
+ * Статья по идентификатору слова — переход, при котором словарь не гадает.
+ *
+ * Так открываются ссылки из списка найденного и из карточки: щелчок по строке
+ * обязан привести ровно в то слово, по которому щёлкнули, а не в поиск по формам.
+ *
+ * @param {number|string} id идентификатор слова
+ * @param {AbortSignal} [signal] отмена устаревшего запроса
+ */
+export async function loadWordById (id, signal) {
+  if (USE_MOCK) return mockWordById(id)
+  return await requestWord(`/api/words/id/${encodeURIComponent(id)}`, String(id), signal)
+}
+
+async function requestWord (url, name, signal) {
+  const response = await fetch(url, { signal, headers: { Accept: 'application/json' } })
   if (response.status === 404) throw new WordNotFound(name)
   if (!response.ok) throw new Error(`Сервер ответил ошибкой ${response.status}`)
-  return await response.json()
+  const data = await response.json()
+  return {
+    matchedBy: data?.matchedBy ?? 'headword',
+    words: Array.isArray(data?.words) ? data.words : []
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -177,6 +204,11 @@ function stripAccents (text) {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 }
 
+// Идентификатор заготовки — её порядковый номер: заготовки не в базе, но ссылки
+// в списке найденного ведут по id, и без него переход не проверить.
+const mockId = (name) => Object.keys(MOCK_WORDS).indexOf(name) + 1
+const mockById = (id) => MOCK_WORDS[Object.keys(MOCK_WORDS)[Number(id) - 1]]
+
 function mockSearch (query, limit) {
   const pattern = stripAccents(query)
   const found = Object.values(MOCK_WORDS).filter(word =>
@@ -186,9 +218,11 @@ function mockSearch (query, limit) {
       (sense.translations ?? []).some(t => stripAccents(t).startsWith(pattern)))
   )
   const brief = found.map(word => ({
+    id: mockId(word.name),
     name: word.name,
     headword: word.headword,
-    translations: (word.senses ?? []).flatMap(sense => sense.translations ?? [])
+    translations: (word.senses ?? []).flatMap(sense => sense.translations ?? []),
+    matchedForm: null
   }))
   return delayed({ items: brief.slice(0, limit), total: brief.length })
 }
@@ -196,7 +230,13 @@ function mockSearch (query, limit) {
 function mockWord (name) {
   const word = MOCK_WORDS[name]
   if (!word) return delayed(Promise.reject(new WordNotFound(name)))
-  return delayed(word)
+  return delayed({ matchedBy: 'headword', words: [{ ...word, id: mockId(name) }] })
+}
+
+function mockWordById (id) {
+  const word = mockById(id)
+  if (!word) return delayed(Promise.reject(new WordNotFound(String(id))))
+  return delayed({ matchedBy: 'id', words: [{ ...word, id: Number(id) }] })
 }
 
 /** Небольшая задержка — чтобы состояние ожидания было видно и на заготовках. */

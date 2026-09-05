@@ -44,13 +44,13 @@ class NounDeclensionTest {
     void regularParadigm() {
         assertThat(NounDeclension.regularParadigm("зид", Gender.MASCULINE))
                 .containsExactly(
-                        new NounDeclension.Form("nom.sg", "зид"), new NounDeclension.Form("gen.sg", "зида"),
-                        new NounDeclension.Form("dat.sg", "зиду"), new NounDeclension.Form("acc.sg", "зид"),
-                        new NounDeclension.Form("voc.sg", "зиде"), new NounDeclension.Form("ins.sg", "зидом"),
-                        new NounDeclension.Form("loc.sg", "зиду"), new NounDeclension.Form("nom.pl", "зидови"),
-                        new NounDeclension.Form("gen.pl", "зидова"), new NounDeclension.Form("dat.pl", "зидовима"),
-                        new NounDeclension.Form("acc.pl", "зидове"), new NounDeclension.Form("voc.pl", "зидови"),
-                        new NounDeclension.Form("ins.pl", "зидовима"), new NounDeclension.Form("loc.pl", "зидовима"));
+                        new Form("nom.sg", "зид"), new Form("gen.sg", "зида"),
+                        new Form("dat.sg", "зиду"), new Form("acc.sg", "зид"),
+                        new Form("voc.sg", "зиде"), new Form("ins.sg", "зидом"),
+                        new Form("loc.sg", "зиду"), new Form("nom.pl", "зидови"),
+                        new Form("gen.pl", "зидова"), new Form("dat.pl", "зидовима"),
+                        new Form("acc.pl", "зидове"), new Form("voc.pl", "зидови"),
+                        new Form("ins.pl", "зидовима"), new Form("loc.pl", "зидовима"));
         assertThat(NounDeclension.regularParadigm("вода", Gender.FEMININE)).hasSize(14);
         assertThat(NounDeclension.regularParadigm("село", Gender.NEUTER)).hasSize(14);
     }

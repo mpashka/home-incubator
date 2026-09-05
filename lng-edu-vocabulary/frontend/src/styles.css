@@ -357,6 +357,29 @@ body:has(.theme-dark) { background: #1d1b18; color: #eee8dd; }
 .grammar-example { color: var(--serbian); font-family: var(--font-accented); }
 .grammar-source { color: var(--ink-soft); font-size: 13px; }
 .grammar-content table { width: 100%; border-collapse: collapse; font-size: 14px; }
+
+/* --- Справка по правилу словоформы ---------------------------------------- */
+
+.rule-title { margin: 0 0 6px; font-size: 18px; }
+.rule-title small { font-weight: normal; color: var(--ink-soft); }
+.rule-toggles { margin: 14px 0 10px; }
+.rule-block { border-top: 1px solid var(--line); padding: 10px 0; }
+.rule-block h4 { margin: 0 0 6px; font-size: 15px; }
+.rule-breakdown { font-size: 16px; }
+.rule-current > th, .rule-current > td { background: var(--accent-soft); }
+.rule-note, .rule-absent { color: var(--ink-soft); font-size: 14px; }
+.rule-exceptions { margin: 0; padding-left: 18px; }
+.rule-exceptions li { margin: 4px 0; }
+
+/* --- Как слово попало в список ------------------------------------------- */
+
+.result-form { flex: 1 0 100%; color: var(--ink-soft); font-size: 14px; }
+.result-form-value { color: var(--serbian); }
+.found-by-form { color: var(--ink-soft); }
+.found-by-form-word { font-size: 18px; }
+.quick-toggles button.toggle-search { border-style: dashed; }
+.quick-toggles button.toggle-search.active { border-style: solid; }
+
 .grammar-content th, .grammar-content td { padding: 6px; border: 1px solid var(--line); text-align: left; }
 
 /* --- Состояния: ожидание, пусто, ошибка ---------------------------------- */
