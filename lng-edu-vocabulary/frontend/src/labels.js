@@ -87,3 +87,48 @@ export function formNameSerbian (grammar) {
   if (!CASE_SERBIAN[kind]) return grammar
   return `${CASE_SERBIAN[kind]}${NUMBER_SERBIAN[number] ? ' ' + NUMBER_SERBIAN[number] : ''}`
 }
+
+const NUMBER_SHORT = { sg: 'ед. ч.', pl: 'мн. ч.' }
+
+/** Помета по-русски коротко: `gen.sg` → «родительный, ед. ч.» — для подписей и таблиц. */
+export function formNameShort (grammar) {
+  if (!grammar) return ''
+  if (WHOLE[grammar]) return WHOLE[grammar][0]
+  const [kind, number] = grammar.split('.')
+  if (!CASE_RUSSIAN[kind]) return grammar
+  return `${CASE_RUSSIAN[kind]}${NUMBER_SHORT[number] ? ', ' + NUMBER_SHORT[number] : ''}`
+}
+
+/**
+ * Подпись формы в выбранном виде. Владелец всех подписей: карточка и справка по
+ * правилу подписывают падежи одинаково, иначе одно и то же место называлось бы
+ * в двух местах по-разному.
+ *
+ * @param {string} grammar помета вроде `gen.sg`
+ * @param {string} mode `both` — по-сербски и по-русски, `russian`, `serbian`, `code`
+ */
+export function formLabel (grammar, mode = 'both') {
+  if (!grammar) return 'форма'
+  switch (mode) {
+    case 'code': return grammar
+    case 'russian': return formNameShort(grammar)
+    case 'serbian': return formNameSerbian(grammar)
+    default: {
+      const serbian = formNameSerbian(grammar)
+      const russian = formNameShort(grammar)
+      return serbian === russian ? serbian : `${serbian} · ${russian}`
+    }
+  }
+}
+
+/** Подпись одного падежа, без числа: для первого столбца таблицы склонения. */
+export function caseLabel (key, mode = 'both') {
+  const serbian = CASE_SERBIAN[key] ?? key
+  const russian = CASE_RUSSIAN[key] ?? key
+  switch (mode) {
+    case 'code': return key
+    case 'russian': return russian
+    case 'serbian': return serbian
+    default: return `${serbian} · ${russian}`
+  }
+}

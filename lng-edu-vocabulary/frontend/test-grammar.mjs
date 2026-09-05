@@ -1,7 +1,7 @@
 // Проверки расшифровки помет и разбора формы по правилу.
 // Запуск: npm test (вместе с test-serbian.mjs).
 import assert from 'node:assert/strict'
-import { formName, formNameSerbian, caseKey } from './src/labels.js'
+import { formName, formNameSerbian, formNameShort, formLabel, caseLabel, caseKey } from './src/labels.js'
 import { ruleFor, breakdown } from './src/grammar-rules.js'
 
 // --- пометы ---------------------------------------------------------------
@@ -15,6 +15,22 @@ assert.equal(formNameSerbian('ins.sg'), 'Instrumental jednine')
 assert.equal(formNameSerbian('nom.pl'), 'Nominativ množine')
 assert.equal(caseKey('loc.pl'), 'loc')
 assert.equal(caseKey('praes.1sg'), '')
+
+// Короткая русская подпись — для таблиц и списка форм.
+assert.equal(formNameShort('gen.sg'), 'родительный, ед. ч.')
+assert.equal(formNameShort('loc.pl'), 'местный, мн. ч.')
+
+// Подпись в выбранном виде: падеж всегда можно прочитать по-русски.
+assert.equal(formLabel('gen.sg', 'russian'), 'родительный, ед. ч.')
+assert.equal(formLabel('gen.sg', 'serbian'), 'Genitiv jednine')
+assert.equal(formLabel('gen.sg', 'code'), 'gen.sg')
+assert.equal(formLabel('gen.sg', 'both'), 'Genitiv jednine · родительный, ед. ч.')
+assert.equal(formLabel(null, 'both'), 'форма')
+// У непадежной пометы русское и сербское название не дублируются в одну строку дважды.
+assert.equal(formLabel('adj', 'both'), 'Pridev · форма прилагательного')
+
+assert.equal(caseLabel('ins', 'russian'), 'творительный')
+assert.equal(caseLabel('ins', 'both'), 'Instrumental · творительный')
 
 // --- правило --------------------------------------------------------------
 

@@ -2,8 +2,8 @@
 import { computed } from 'vue'
 import { grammarHelpOpen, grammarTopic, ruleForm, ruleWord } from '../grammar-help.js'
 import { ruleFor, breakdown, CASE_ORDER, CASE_USE } from '../grammar-rules.js'
-import { formName, formNameSerbian } from '../labels.js'
-import { ruleParadigm, ruleExamples, ruleExceptions, ruleWordBreakdown } from '../settings.js'
+import { formName, formNameSerbian, formLabel, caseLabel as caseLabelOf } from '../labels.js'
+import { formLabels, ruleParadigm, ruleExamples, ruleExceptions, ruleWordBreakdown } from '../settings.js'
 import Accented from './Accented.vue'
 
 /** Правило, породившее форму, из-за которой справку открыли. */
@@ -27,27 +27,31 @@ const paradigm = computed(() => {
 })
 
 const cellText = (caseKey, number) => (paradigm.value[caseKey]?.[number] ?? []).join(' / ')
+/** Подпись падежа — тем же способом, что и в карточке: настройка одна на весь показ. */
+const caseLabel = (key) => caseLabelOf(key, formLabels.value)
 
 const topics = [
   ['nouns', 'Падежи'], ['verbs', 'Глаголы'], ['pronouns', 'Местоимения'], ['adjectives', 'Прилагательные']
 ]
+// Ключ падежа, а не готовое название: подпись собирается по настройке — по-русски,
+// по-сербски или и так и так.
 const cases = [
-  ['Nominativ', 'Ko? Šta?', 'Подлежащее и называние предмета.', 'Student uči gramatiku.'],
-  ['Genitiv', 'Koga? Čega?', 'Принадлежность, количество и многие предлоги.', 'Bez rečnika; odgovor od studenta.'],
-  ['Dativ', 'Kome? Čemu?', 'Косвенное дополнение: адресат, направление.', 'Profesor odgovara studentu.'],
-  ['Akuzativ', 'Koga? Šta?', 'Прямое дополнение; направление движения.', 'Profesor pita studenta.'],
-  ['Vokativ', '—', 'Обращение; у многих существительных имеет особое окончание.', 'Gde si, brate!'],
-  ['Instrumental', 'Kim? Čim?', 'Средство или совместность.', 'Student piše olovkom.'],
-  ['Lokativ', 'Kome? Čemu?', 'Место или тема; употребляется с предлогом.', 'Student studira na univerzitetu.']
+  ['nom', 'Ko? Šta?', 'Подлежащее и называние предмета.', 'Student uči gramatiku.'],
+  ['gen', 'Koga? Čega?', 'Принадлежность, количество и многие предлоги.', 'Bez rečnika; odgovor od studenta.'],
+  ['dat', 'Kome? Čemu?', 'Косвенное дополнение: адресат, направление.', 'Profesor odgovara studentu.'],
+  ['acc', 'Koga? Šta?', 'Прямое дополнение; направление движения.', 'Profesor pita studenta.'],
+  ['voc', '—', 'Обращение; у многих существительных имеет особое окончание.', 'Gde si, brate!'],
+  ['ins', 'Kim? Čim?', 'Средство или совместность.', 'Student piše olovkom.'],
+  ['loc', 'Kome? Čemu?', 'Место или тема; употребляется с предлогом.', 'Student studira na univerzitetu.']
 ]
 const nounEndings = [
-  ['Nom.', '—', '-i'],
-  ['Gen.', '-a', '-a'],
-  ['Dat.', '-u', '-ima'],
-  ['Akuz.', '= Nom. / Gen.*', '-e'],
-  ['Vok.', '-e / -u', '= Nom.'],
-  ['Inst.', '-om / -em', '-ima'],
-  ['Lok.', '-u', '-ima']
+  ['nom', '—', '-i'],
+  ['gen', '-a', '-a'],
+  ['dat', '-u', '-ima'],
+  ['acc', '= Nom. / Gen.*', '-e'],
+  ['voc', '-e / -u', '= Nom.'],
+  ['ins', '-om / -em', '-ima'],
+  ['loc', '-u', '-ima']
 ]
 </script>
 
@@ -69,6 +73,7 @@ const nounEndings = [
         <h3 class="rule-title">
           {{ rule.title }}
           <small v-if="ruleForm?.grammar">— {{ formNameSerbian(ruleForm.grammar) }}, {{ formName(ruleForm.grammar) }}</small>
+          <small v-if="ruleWord?.headword" class="rule-word">слово {{ ruleWord.headword }}</small>
         </h3>
 
         <p v-if="rule.kind === 'absent'" class="rule-absent">{{ rule.reason }}</p>
@@ -108,7 +113,7 @@ const nounEndings = [
               <thead><tr><th>Падеж</th><th>Ед. ч.</th><th>Слово</th><th>Мн. ч.</th><th>Слово</th></tr></thead>
               <tbody>
                 <tr v-for="key in CASE_ORDER" :key="key" :class="{ 'rule-current': ruleForm?.grammar?.startsWith(key + '.') }">
-                  <th>{{ formNameSerbian(key + '.sg').split(' ')[0] }}</th>
+                  <th>{{ caseLabel(key) }}</th>
                   <td>{{ rule.endings[key][0] }}</td>
                   <td><Accented :text="cellText(key, 'sg')" /></td>
                   <td>{{ rule.endings[key][1] }}</td>
@@ -122,7 +127,7 @@ const nounEndings = [
           <section v-if="ruleExamples === 'true'" class="rule-block">
             <h4>Когда какой падеж</h4>
             <article v-for="key in CASE_ORDER" :key="key" class="grammar-case">
-              <h3>{{ formNameSerbian(key + '.sg').split(' ')[0] }} <small>{{ CASE_USE[key][0] }}</small></h3>
+              <h3>{{ caseLabel(key) }} <small>{{ CASE_USE[key][0] }}</small></h3>
               <p>{{ CASE_USE[key][1] }}</p>
               <p class="grammar-example">{{ CASE_USE[key][2] }}</p>
             </article>
@@ -141,13 +146,13 @@ const nounEndings = [
         <p class="grammar-source">По О. А. Просвириной, §5.2.3–5; употребление падежей дополнено пособием В. Краишник «Научимо падеже».</p>
         <p>Склоняются существительные, прилагательные, местоимения и некоторые числительные. В сербском семь падежей: добавлен вокатив.</p>
         <article v-for="item in cases" :key="item[0]" class="grammar-case">
-          <h3>{{ item[0] }} <small>{{ item[1] }}</small></h3>
+          <h3>{{ caseLabel(item[0]) }} <small>{{ item[1] }}</small></h3>
           <p>{{ item[2] }}</p>
           <p class="grammar-example">{{ item[3] }}</p>
         </article>
         <h3>Первое склонение: мужской род на согласный</h3>
         <table><thead><tr><th>Падеж</th><th>Единственное</th><th>Множественное</th></tr></thead><tbody>
-          <tr v-for="row in nounEndings" :key="row[0]"><th>{{ row[0] }}</th><td>{{ row[1] }}</td><td>{{ row[2] }}</td></tr>
+          <tr v-for="row in nounEndings" :key="row[0]"><th>{{ caseLabel(row[0]) }}</th><td>{{ row[1] }}</td><td>{{ row[2] }}</td></tr>
         </tbody></table>
         <p>* В аккузативе единственного числа неодушевлённое существительное совпадает с номинативом, одушевлённое — с генитивом: <i>vidim rečnik / studenta</i>.</p>
         <p>Это образец, не универсальный алгоритм: чередования и исключения (например, беглое <i>a</i>) словарь показывает готовой формой из источника.</p>
@@ -170,12 +175,12 @@ const nounEndings = [
         <p class="grammar-source">По О. А. Просвириной, §5.4.1.</p>
         <p>В генитиве, дативе и аккузативе есть полные ударные и краткие безударные формы. Полная обязательна после предлога, в начале фразы и при логическом выделении; краткая обычно стоит после первого ударного слова.</p>
         <table><thead><tr><th>Падеж</th><th>Я</th><th>Ты</th><th>Он</th><th>Она</th><th>Мы</th><th>Они</th></tr></thead><tbody>
-          <tr><th>Nominativ</th><td>ja</td><td>ti</td><td>on</td><td>ona</td><td>mi</td><td>oni</td></tr>
-          <tr><th>Genitiv</th><td>mene / me</td><td>tebe / te</td><td>njega / ga</td><td>nje / je</td><td>nas</td><td>njih / ih</td></tr>
-          <tr><th>Dativ</th><td>meni / mi</td><td>tebi / ti</td><td>njemu / mu</td><td>njoj / joj</td><td>nama / nam</td><td>njima / im</td></tr>
-          <tr><th>Akuzativ</th><td>mene / me</td><td>tebe / te</td><td>njega / ga</td><td>nju / je</td><td>nas</td><td>njih / ih</td></tr>
-          <tr><th>Instrumental</th><td>mnom</td><td>tobom</td><td>njim</td><td>njom</td><td>nama</td><td>njima</td></tr>
-          <tr><th>Lokativ</th><td>meni</td><td>tebi</td><td>njemu</td><td>njoj</td><td>nama</td><td>njima</td></tr>
+          <tr><th>{{ caseLabel('nom') }}</th><td>ja</td><td>ti</td><td>on</td><td>ona</td><td>mi</td><td>oni</td></tr>
+          <tr><th>{{ caseLabel('gen') }}</th><td>mene / me</td><td>tebe / te</td><td>njega / ga</td><td>nje / je</td><td>nas</td><td>njih / ih</td></tr>
+          <tr><th>{{ caseLabel('dat') }}</th><td>meni / mi</td><td>tebi / ti</td><td>njemu / mu</td><td>njoj / joj</td><td>nama / nam</td><td>njima / im</td></tr>
+          <tr><th>{{ caseLabel('acc') }}</th><td>mene / me</td><td>tebe / te</td><td>njega / ga</td><td>nju / je</td><td>nas</td><td>njih / ih</td></tr>
+          <tr><th>{{ caseLabel('ins') }}</th><td>mnom</td><td>tobom</td><td>njim</td><td>njom</td><td>nama</td><td>njima</td></tr>
+          <tr><th>{{ caseLabel('loc') }}</th><td>meni</td><td>tebi</td><td>njemu</td><td>njoj</td><td>nama</td><td>njima</td></tr>
         </tbody></table>
         <p>Сравните: <i>Volim ga</i>, но <i>Mislim na njega</i>. Возвратное <i>sebe / se</i> относится к подлежащему и не имеет номинатива.</p>
       </div>
@@ -184,12 +189,12 @@ const nounEndings = [
         <p class="grammar-source">По О. А. Просвириной, §5.3.1–2.</p>
         <p>Прилагательное согласуется с существительным в роде, числе и падеже. Качественные прилагательные имеют неопределённый и определённый вид: <i>On je dobar</i>, но <i>taj dobri mladić</i>. Относительные имеют только определённую форму.</p>
         <table><thead><tr><th>Падеж</th><th>м. р.</th><th>ж. р.</th><th>ср. р.</th></tr></thead><tbody>
-          <tr><th>Nominativ</th><td>dobar čovek</td><td>dobra žena</td><td>dobro dete</td></tr>
-          <tr><th>Genitiv</th><td>dobrog čoveka</td><td>dobre žene</td><td>dobrog deteta</td></tr>
-          <tr><th>Dativ</th><td>dobrom čoveku</td><td>dobroj ženi</td><td>dobrom detetu</td></tr>
-          <tr><th>Akuzativ</th><td>dobrog čoveka / dobar sto</td><td>dobru ženu</td><td>dobro dete</td></tr>
-          <tr><th>Instrumental</th><td>s dobrim čovekom</td><td>s dobrom ženom</td><td>s dobrim detetom</td></tr>
-          <tr><th>Lokativ</th><td>o dobrom čoveku</td><td>o dobroj ženi</td><td>o dobrom detetu</td></tr>
+          <tr><th>{{ caseLabel('nom') }}</th><td>dobar čovek</td><td>dobra žena</td><td>dobro dete</td></tr>
+          <tr><th>{{ caseLabel('gen') }}</th><td>dobrog čoveka</td><td>dobre žene</td><td>dobrog deteta</td></tr>
+          <tr><th>{{ caseLabel('dat') }}</th><td>dobrom čoveku</td><td>dobroj ženi</td><td>dobrom detetu</td></tr>
+          <tr><th>{{ caseLabel('acc') }}</th><td>dobrog čoveka / dobar sto</td><td>dobru ženu</td><td>dobro dete</td></tr>
+          <tr><th>{{ caseLabel('ins') }}</th><td>s dobrim čovekom</td><td>s dobrom ženom</td><td>s dobrim detetom</td></tr>
+          <tr><th>{{ caseLabel('loc') }}</th><td>o dobrom čoveku</td><td>o dobroj ženi</td><td>o dobrom detetu</td></tr>
         </tbody></table>
         <p>В аккузативе единственного числа мужского рода форма зависит от одушевлённости: <i>vidim debelog mačka</i>, но <i>vidim debeli rečnik</i>. После <i>dva, tri, četiri, oba</i> появляется окончание <i>-a</i>: <i>dva dobra studenta</i>.</p>
       </div>

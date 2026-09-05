@@ -5,7 +5,9 @@
 import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import { useRoute, RouterLink } from 'vue-router'
 import { loadWord, loadWordById, WordNotFound } from '../api/dictionary.js'
-import { partOfSpeechName, statusName, statusKey, formName, formNameSerbian } from '../labels.js'
+import {
+  partOfSpeechName, statusName, statusKey, formName, formNameSerbian, formLabel as labelOf
+} from '../labels.js'
 import Accented from '../components/Accented.vue'
 import SerbianText from '../components/SerbianText.vue'
 import Notice from '../components/Notice.vue'
@@ -76,15 +78,8 @@ const posName = (w) => partOfSpeechName(w?.partOfSpeech)
 const statusOf = (w) => statusName(w?.status)
 const statusClassOf = (w) => statusKey(w?.status)
 
-const formNames = {
-  nom: 'Nominativ', gen: 'Genitiv', dat: 'Dativ', acc: 'Akuzativ', voc: 'Vokativ',
-  ins: 'Instrumental', loc: 'Lokativ', praes: 'Prezent', inf: 'Infinitiv'
-}
-const formLabel = (grammar) => {
-  if (formLabels.value === 'code' || !grammar) return grammar || 'форма'
-  const [kind, number] = grammar.split('.')
-  return `${formNames[kind] ?? kind}${number === 'sg' ? ' jednine' : number === 'pl' ? ' množine' : ''}`
-}
+/** Подпись формы в выбранном виде: по-русски, по-сербски, и так и так, либо кодом. */
+const formLabel = (grammar) => labelOf(grammar, formLabels.value)
 const caseExample = {
   nom: 'Это …', gen: 'Нет …', dat: 'Помогаю …', acc: 'Люблю …',
   voc: 'Эй, …!', ins: 'Играю с …', loc: 'Говорю о …'

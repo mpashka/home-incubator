@@ -37,9 +37,13 @@ import GrammarHelp from './components/GrammarHelp.vue'
           </select>
         </label>
         <label><input v-model="showForms" type="checkbox" true-value="true" false-value="false"> Словоформы</label>
-        <label v-if="showForms === 'true'">Подписи словоформ
+        <!-- Подписи падежей общие для карточки и справки по правилу, поэтому
+             настройка видна всегда, а не только при показе словоформ. -->
+        <label>Названия падежей
           <select v-model="formLabels">
-            <option value="serbian">названия по-сербски</option>
+            <option value="both">по-сербски и по-русски</option>
+            <option value="russian">по-русски</option>
+            <option value="serbian">по-сербски</option>
             <option value="code">грамматические коды</option>
           </select>
         </label>

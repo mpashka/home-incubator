@@ -362,6 +362,8 @@ body:has(.theme-dark) { background: #1d1b18; color: #eee8dd; }
 
 .rule-title { margin: 0 0 6px; font-size: 18px; }
 .rule-title small { font-weight: normal; color: var(--ink-soft); }
+.rule-title .rule-word { display: block; font-size: 14px; font-family: var(--font-accented); color: var(--serbian); }
+.grammar-content th { white-space: normal; }
 .rule-toggles { margin: 14px 0 10px; }
 .rule-block { border-top: 1px solid var(--line); padding: 10px 0; }
 .rule-block h4 { margin: 0 0 6px; font-size: 15px; }

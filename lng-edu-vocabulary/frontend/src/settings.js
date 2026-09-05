@@ -20,7 +20,21 @@ export const showForms = persistent('vocabulary.showForms', 'true')
 export const showExamples = persistent('vocabulary.showExamples', 'true')
 export const showIdioms = persistent('vocabulary.showIdioms', 'true')
 export const showRoots = persistent('vocabulary.showRoots', 'true')
-export const formLabels = persistent('vocabulary.formLabels', 'serbian')
+/**
+ * Как подписывать падежи и прочие пометы форм — в карточке и в справке по правилу:
+ * `both` (по-сербски и по-русски), `russian`, `serbian`, `code`.
+ *
+ * Прежде выбора «по-русски» не было вовсе, и подпись стояла только сербская. Значение
+ * `serbian`, оставшееся у тех, кто настройку не трогал, — не выбор, а старая
+ * умолчательная величина, поэтому один раз поднимается до `both`. Осознанно выбранные
+ * `russian` и `code` не трогаются.
+ */
+export const formLabels = persistent('vocabulary.formLabels', 'both')
+if (localStorage.getItem('vocabulary.formLabels') === 'serbian'
+    && !localStorage.getItem('vocabulary.formLabelsChosen')) {
+  formLabels.value = 'both'
+}
+watch(formLabels, () => localStorage.setItem('vocabulary.formLabelsChosen', 'true'))
 export const theme = persistent('vocabulary.theme', 'system')
 
 // Разделы справки по правилу — своя панель, как у карточки.
