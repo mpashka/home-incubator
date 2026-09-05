@@ -71,6 +71,10 @@ curl 'http://localhost:8180/api/words?q=%D0%B2%D0%BE%D0%B4&limit=3'
 к отдельной базе `vocabulary` под ролью `vocabulary`; схема применяется Flyway при запуске.
 Диапазон **8180–8189** отведён проекту: бэкенд занимает 8180, фронтенд — 8181.
 
+Пароль роли в репозитории не лежит: он берётся из `secrets.properties` в корне, файл
+закрыт `.gitignore`, в git едет шаблон `secrets.properties.template`. Что и куда
+вписывать — [README.md](../../README.md), раздел «Секреты». @tag:secrets
+
 ```bash
 psql -h localhost -p 5432 -U vocabulary -d vocabulary   # проверка
 ```

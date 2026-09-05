@@ -26,6 +26,7 @@ tags: "@tag:meta"
 | `@tag:import` | Конвертация исходной базы в целевую | `importer/`, [testing/rules-reports.md](testing/rules-reports.md) |
 | `@tag:llm` | Пополнение словаря через LLM | [implementation/llm.md](implementation/llm.md) |
 | `@tag:book-import` | Импорт книги и двуязычный перевод | пока только план, этап 11 |
+| `@tag:secrets` | Секреты вне git: `secrets.properties`, его шаблон и потребители | [README.md](../README.md), `secrets.properties.template`, `application.yaml`, `importer/MigrateToPostgres` |
 
 Заводя новый тэг — добавь строку в эту таблицу **до** того, как поставишь токен.
 Тэг — для сквозного концепта, а не для разовой детали.

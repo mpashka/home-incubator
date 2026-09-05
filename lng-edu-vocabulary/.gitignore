@@ -6,5 +6,8 @@ dist/
 # Сторонние словари и сканы (крупные, под чужими правами) — не в репозитории.
 .data/
 
+# Секреты: пароль базы, ключи к моделям. В git едет только secrets.properties.template.
+secrets.properties
+
 # В корневом .gitignore монорепозитория стоит `*.jar` — обёртку Gradle возвращаем.
 !gradle/wrapper/gradle-wrapper.jar

@@ -40,4 +40,11 @@ subprojects {
     tasks.withType<Test>().configureEach {
         useJUnitPlatform()
     }
+
+    // Всё запускаемое стартует из корня репозитория, а не из каталога своего модуля:
+    // там лежит secrets.properties, который читают и бэкенд, и конвертер данных.
+    // BootRun — наследник JavaExec, поэтому попадает сюда же.
+    tasks.withType<JavaExec>().configureEach {
+        workingDir = rootProject.projectDir
+    }
 }

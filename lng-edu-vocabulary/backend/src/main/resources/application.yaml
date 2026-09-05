@@ -2,10 +2,17 @@ spring:
   application:
     name: lng-edu-vocabulary
 
+  # Подключение к базе приезжает из secrets.properties в корне репозитория: пароля
+  # в git нет. Шаблон — secrets.properties.template, что вписывать — README.md.
+  # `optional:` нужен, чтобы отсутствие файла не мешало собирать и гонять тесты;
+  # при запуске без него не разрешится ${vocabulary.db.password}, и это видно сразу.
+  config:
+    import: "optional:file:./secrets.properties"
+
   datasource:
-    url: jdbc:postgresql://localhost:5432/vocabulary
-    username: vocabulary
-    password: vocabulary
+    url: ${vocabulary.db.url}
+    username: ${vocabulary.db.username}
+    password: ${vocabulary.db.password}
 
   flyway:
     enabled: true
