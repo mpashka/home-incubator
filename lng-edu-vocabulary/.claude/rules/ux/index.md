@@ -60,7 +60,7 @@
 ## Установка
 
 Канон соглашения и его инструкция по установке —
-`~/Projects/github/m_pashka/home-incubator/ux-principles/`. Коротко: скопировать
+`~/Projects/github/m_pashka/ai/ux/`. Коротко: скопировать
 `core.md`, `desktop.md`, `process.md` и `positions.md` в целевой репозиторий как
 `.claude/rules/ux/` и добавить одну строку в его `AGENTS.md`, чтобы агенты, не
 подхватывающие `.claude/rules/` сами, знали, где читать.

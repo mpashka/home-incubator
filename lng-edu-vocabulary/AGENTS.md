@@ -69,7 +69,7 @@ sqlite3.connect('file:/home/ya-pashka/Documents/Srpski/Recnik/srb_rus_apk/srbbas
 
 **Правила взаимодействия** лежат в [`.claude/rules/ux/`](.claude/rules/ux/) — Claude Code
 грузит их сам, остальные агенты читают их там же. Это соглашение
-**ux-principles**, канон — `~/Projects/github/m_pashka/home-incubator/ux-principles/`
+**ux-principles**, канон — `~/Projects/github/m_pashka/ai/ux/`
 (в отдельный репозиторий пока не вынесено), в трёх слоях: `core` (любой
 интерфейс), `desktop` (курсор, клавиатура, окна), `process` (как записать сценарий и
 посчитать шаги), плюс `positions` — спорные позиции.
